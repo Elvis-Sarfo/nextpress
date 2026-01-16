@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model ContentType {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  pluralName String  @default("")
+  description String?
+  version   Int      @default(1)
+  schema    Json     // FieldDefinition[]
+  singletonMode Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  entries   ContentEntry[]
+}
+
+model ContentEntry {
+  id            String   @id @default(uuid())
+  typeId        String
+  defaultLocale String   @default("en")
+  createdAt     DateTime @default(now())
+  createdBy     String
+
+  type     ContentType      @relation(fields: [typeId], references: [id])
+  versions ContentVersion[]
+  locks    ContentLock[]
+
+  @@index([typeId])
+  @@index([createdBy])
+}
+
+model ContentVersion {
+  id          String   @id @default(uuid())
+  entryId     String
+  version     Int
+  status      String   // DRAFT, PUBLISHED, SCHEDULED, ARCHIVED
+  data        Json     // VersionData[]
+  createdAt   DateTime @default(now())
+  createdBy   String
+  publishedAt DateTime?
+  scheduledAt DateTime?
+
+  entry ContentEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@unique([entryId, version])
+  @@index([entryId, status])
+  @@index([status, scheduledAt])
+}
+
+model ContentLock {
+  id        String   @id @default(uuid())
+  entryId   String   @unique
+  lockedBy  String
+  lockedAt  DateTime @default(now())
+  expiresAt DateTime
+
+  entry ContentEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+}
+
+model SlugRedirect {
+  id          String   @id @default(uuid())
+  contentType String
+  locale      String
+  fromSlug    String
+  toSlug      String
+  createdAt   DateTime @default(now())
+
+  @@unique([contentType, locale, fromSlug])
+  @@index([contentType, locale])
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  permissions Json     // Permission[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users UserRole[]
+}
+
+model UserRole {
+  userId String
+  roleId String
+
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+}
