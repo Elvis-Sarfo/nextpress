@@ -7,43 +7,63 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ============================================================================
+// CONTENT TYPE SCHEMA
+// ============================================================================
+
 model ContentType {
-  id        String   @id @default(uuid())
-  name      String   @unique
-  pluralName String  @default("")
-  description String?
-  version   Int      @default(1)
-  schema    Json     // FieldDefinition[]
-  singletonMode Boolean @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(uuid())
+  name         String   @unique @db.VarChar(100)
+  displayName  String   @db.VarChar(255)
+  description  String?  @db.Text
+  version      Int      @default(1)
+  schema       Json     // FieldDefinition[]
+  localization Json     // LocalizationPolicy
+  seo          Json     // SEOPolicy
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   entries   ContentEntry[]
+  redirects SlugRedirect[]
+
+  @@map("content_type")
 }
 
-model ContentEntry {
-  id            String   @id @default(uuid())
-  typeId        String
-  defaultLocale String   @default("en")
-  createdAt     DateTime @default(now())
-  createdBy     String
+// ============================================================================
+// CONTENT ENTRY
+// ============================================================================
 
-  type     ContentType      @relation(fields: [typeId], references: [id])
-  versions ContentVersion[]
-  locks    ContentLock[]
+model ContentEntry {
+  id            String    @id @default(uuid())
+  typeId        String
+  defaultLocale String    @default("en") @db.VarChar(10)
+  createdAt     DateTime  @default(now())
+  createdBy     String    @db.VarChar(255)
+  deletedAt     DateTime?
+
+  type      ContentType      @relation(fields: [typeId], references: [id])
+  versions  ContentVersion[]
+  lock      ContentLock?
+  redirects SlugRedirect[]
 
   @@index([typeId])
   @@index([createdBy])
+  @@index([createdAt(sort: Desc)])
+  @@map("content_entry")
 }
 
+// ============================================================================
+// CONTENT VERSION
+// ============================================================================
+
 model ContentVersion {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   entryId     String
   version     Int
-  status      String   // DRAFT, PUBLISHED, SCHEDULED, ARCHIVED
-  data        Json     // VersionData[]
-  createdAt   DateTime @default(now())
-  createdBy   String
+  status      String    @db.VarChar(20) // DRAFT, PUBLISHED, SCHEDULED, ARCHIVED
+  data        Json      // VersionData
+  createdAt   DateTime  @default(now())
+  createdBy   String    @db.VarChar(255)
   publishedAt DateTime?
   scheduledAt DateTime?
 
@@ -52,48 +72,77 @@ model ContentVersion {
   @@unique([entryId, version])
   @@index([entryId, status])
   @@index([status, scheduledAt])
+  @@map("content_version")
 }
+
+// ============================================================================
+// CONTENT LOCK
+// ============================================================================
 
 model ContentLock {
   id        String   @id @default(uuid())
   entryId   String   @unique
-  lockedBy  String
+  lockedBy  String   @db.VarChar(255)
   lockedAt  DateTime @default(now())
   expiresAt DateTime
 
   entry ContentEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
 
   @@index([expiresAt])
+  @@map("content_lock")
 }
+
+// ============================================================================
+// SLUG REDIRECT
+// ============================================================================
 
 model SlugRedirect {
-  id          String   @id @default(uuid())
-  contentType String
-  locale      String
-  fromSlug    String
-  toSlug      String
-  createdAt   DateTime @default(now())
+  id            String   @id @default(uuid())
+  contentTypeId String
+  locale        String   @db.VarChar(10)
+  fromSlug      String   @db.VarChar(255)
+  toEntryId     String
+  createdAt     DateTime @default(now())
 
-  @@unique([contentType, locale, fromSlug])
-  @@index([contentType, locale])
+  contentType ContentType  @relation(fields: [contentTypeId], references: [id])
+  toEntry     ContentEntry @relation(fields: [toEntryId], references: [id], onDelete: Cascade)
+
+  @@unique([contentTypeId, locale, fromSlug])
+  @@index([toEntryId])
+  @@map("slug_redirect")
 }
+
+// ============================================================================
+// RBAC - ROLES
+// ============================================================================
 
 model Role {
   id          String   @id @default(uuid())
-  name        String   @unique
-  description String?
+  name        String   @unique @db.VarChar(100)
+  displayName String   @db.VarChar(255)
   permissions Json     // Permission[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   users UserRole[]
+
+  @@map("role")
 }
 
+// ============================================================================
+// RBAC - USER ROLE ASSIGNMENT
+// ============================================================================
+
 model UserRole {
-  userId String
-  roleId String
+  userId     String   @db.VarChar(255)
+  roleId     String
+  assignedAt DateTime @default(now())
+  assignedBy String   @db.VarChar(255)
 
   role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@id([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+  @@map("user_role")
 }

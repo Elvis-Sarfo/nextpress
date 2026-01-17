@@ -2,31 +2,33 @@ import { PrismaClient } from '@prisma/client';
 
 declare global {
   // eslint-disable-next-line no-var
-  var prisma: PrismaClient | undefined;
+  var __prisma: PrismaClient | undefined;
 }
 
 /**
- * Prisma client singleton
- * In development, we reuse the client to avoid too many connections
+ * Singleton Prisma client.
+ * In development, stores in global to survive hot reload.
  */
-export const prisma = global.prisma ?? new PrismaClient();
+function createPrismaClient(): PrismaClient {
+  const client = new PrismaClient({
+    log: process.env.NODE_ENV === 'development'
+      ? ['query', 'error', 'warn']
+      : ['error'],
+  });
+
+  return client;
+}
+
+export const prisma = globalThis.__prisma ?? createPrismaClient();
 
 if (process.env.NODE_ENV !== 'production') {
-  global.prisma = prisma;
+  globalThis.__prisma = prisma;
 }
 
 /**
- * Create a new Prisma client instance
- * Use this if you need a separate client for specific operations
+ * Disconnect Prisma (for graceful shutdown).
  */
-export function createPrismaClient(): PrismaClient {
-  return new PrismaClient();
-}
-
-/**
- * Disconnect the Prisma client
- */
-export async function disconnectPrisma(): Promise<void> {
+export async function disconnect(): Promise<void> {
   await prisma.$disconnect();
 }
 

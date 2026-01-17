@@ -1,12 +1,9 @@
-// Prisma client
-export { prisma, createPrismaClient, disconnectPrisma, type PrismaClient } from './client.js';
+// Client
+export { prisma, disconnect } from './client.js';
+export type { PrismaClient } from './client.js';
+
+// Mappers
+export * from './mappers/index.js';
 
 // Repositories
-export { PrismaContentEntryRepository } from './content-repository.js';
-export { PrismaContentVersionRepository } from './version-repository.js';
-export { PrismaSchemaRepository } from './schema-repository.js';
-export { PrismaContentLockRepository } from './lock-repository.js';
-
-// Mappers (for advanced use cases)
-export * from './mappers/content-mapper.js';
-export * from './mappers/schema-mapper.js';
+export * from './repositories/index.js';

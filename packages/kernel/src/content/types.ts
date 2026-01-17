@@ -88,6 +88,26 @@ export interface ContentLockRepository {
 }
 
 // ============================================================================
+// SLUG REDIRECT
+// ============================================================================
+
+export interface SlugRedirect {
+  id: string;
+  contentTypeId: ContentTypeId;
+  locale: Locale;
+  fromSlug: string;
+  toEntryId: ContentEntryId;
+  createdAt: Date;
+}
+
+export interface SlugRedirectRepository {
+  findBySlug(typeId: ContentTypeId, locale: Locale, slug: string): Promise<SlugRedirect | null>;
+  findByEntry(entryId: ContentEntryId): Promise<SlugRedirect[]>;
+  save(redirect: SlugRedirect): Promise<void>;
+  delete(id: string): Promise<void>;
+}
+
+// ============================================================================
 // QUERY OPTIONS
 // ============================================================================
 

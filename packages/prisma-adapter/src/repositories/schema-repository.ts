@@ -1,43 +1,36 @@
 import type { PrismaClient } from '@prisma/client';
-import type { ContentTypeId, ContentTypeSchema, SchemaRepository } from '@cms/kernel';
 import {
-  mapPrismaSchemaToDomain,
-  mapDomainSchemaToPrismaCreate,
-  mapDomainSchemaToPrismaUpdate,
-} from './mappers/schema-mapper.js';
+  type ContentTypeId,
+  type ContentTypeSchema,
+  type SchemaRepository,
+} from '@cms/kernel';
+import { schemaMapper } from '../mappers/schema-mapper.js';
 
-/**
- * Prisma implementation of SchemaRepository
- */
 export class PrismaSchemaRepository implements SchemaRepository {
   constructor(private prisma: PrismaClient) {}
 
   async findById(id: ContentTypeId): Promise<ContentTypeSchema | null> {
-    const schema = await this.prisma.contentType.findUnique({
+    const record = await this.prisma.contentType.findUnique({
       where: { id },
     });
 
-    if (!schema) return null;
-
-    return mapPrismaSchemaToDomain(schema);
+    return record ? schemaMapper.toDomain(record) : null;
   }
 
   async findByName(name: string): Promise<ContentTypeSchema | null> {
-    const schema = await this.prisma.contentType.findUnique({
+    const record = await this.prisma.contentType.findUnique({
       where: { name },
     });
 
-    if (!schema) return null;
-
-    return mapPrismaSchemaToDomain(schema);
+    return record ? schemaMapper.toDomain(record) : null;
   }
 
   async findAll(): Promise<ContentTypeSchema[]> {
-    const schemas = await this.prisma.contentType.findMany({
+    const records = await this.prisma.contentType.findMany({
       orderBy: { name: 'asc' },
     });
 
-    return schemas.map(mapPrismaSchemaToDomain);
+    return records.map((r) => schemaMapper.toDomain(r));
   }
 
   async save(schema: ContentTypeSchema): Promise<void> {
@@ -48,11 +41,11 @@ export class PrismaSchemaRepository implements SchemaRepository {
     if (existing) {
       await this.prisma.contentType.update({
         where: { id: schema.id },
-        data: mapDomainSchemaToPrismaUpdate(schema),
+        data: schemaMapper.toUpdateInput(schema),
       });
     } else {
       await this.prisma.contentType.create({
-        data: mapDomainSchemaToPrismaCreate(schema),
+        data: schemaMapper.toCreateInput(schema),
       });
     }
   }

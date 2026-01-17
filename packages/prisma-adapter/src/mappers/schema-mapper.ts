@@ -1,109 +1,106 @@
-import type { ContentTypeSchema, FieldDefinition, LocalizationPolicy, SEOPolicy } from '@cms/kernel';
-import { ContentTypeId, Locale } from '@cms/kernel';
 import type { ContentType as PrismaContentType } from '@prisma/client';
-
-// Extended Prisma schema type that includes optional fields stored in schema JSON
-interface PrismaSchemaData {
-  fields: FieldDefinition[];
-  displayName?: string;
-  localization?: LocalizationPolicy;
-  seo?: SEOPolicy;
-}
-
-// Default localization policy
-const defaultLocalizationPolicy: LocalizationPolicy = {
-  enabled: false,
-  requiredLocales: [Locale('en')],
-  optionalLocales: [],
-};
-
-// Default SEO policy
-const defaultSeoPolicy: SEOPolicy = {
-  slugPolicy: {
-    maxLength: 200,
-    lowercase: true,
-    reservedSlugs: [],
-  },
-  metaDescriptionPolicy: {
-    required: false,
-    minLength: 0,
-    maxLength: 160,
-  },
-  canonicalPolicy: {
-    strategy: 'self',
-  },
-};
+import {
+  ContentTypeId,
+  Locale,
+  type ContentTypeSchema,
+  type FieldDefinition,
+  type LocalizationPolicy,
+  type SEOPolicy,
+} from '@cms/kernel';
 
 /**
- * Map Prisma ContentType to domain ContentTypeSchema
+ * Maps between Prisma ContentType and kernel ContentTypeSchema.
  */
-export function mapPrismaSchemaToDomain(
-  prismaSchema: PrismaContentType
-): ContentTypeSchema {
-  const schemaData = prismaSchema.schema as unknown as PrismaSchemaData;
+export class SchemaMapper {
+  /**
+   * Prisma model → Kernel domain object.
+   */
+  toDomain(prisma: PrismaContentType): ContentTypeSchema {
+    return {
+      id: ContentTypeId(prisma.id),
+      name: prisma.name,
+      displayName: prisma.displayName,
+      description: prisma.description ?? undefined,
+      version: prisma.version,
+      fields: prisma.schema as unknown as FieldDefinition[],
+      localization: this.mapLocalization(prisma.localization),
+      seo: prisma.seo as unknown as SEOPolicy,
+      createdAt: prisma.createdAt,
+      updatedAt: prisma.updatedAt,
+    };
+  }
 
-  return {
-    id: ContentTypeId(prismaSchema.id),
-    name: prismaSchema.name,
-    displayName: schemaData.displayName ?? prismaSchema.name,
-    description: prismaSchema.description ?? undefined,
-    version: prismaSchema.version,
-    fields: schemaData.fields ?? [],
-    localization: schemaData.localization ?? defaultLocalizationPolicy,
-    seo: schemaData.seo ?? defaultSeoPolicy,
-    createdAt: prismaSchema.createdAt,
-    updatedAt: prismaSchema.updatedAt,
-  };
+  /**
+   * Kernel domain object → Prisma create input.
+   */
+  toCreateInput(domain: ContentTypeSchema): {
+    id: string;
+    name: string;
+    displayName: string;
+    description?: string;
+    version: number;
+    schema: object;
+    localization: object;
+    seo: object;
+  } {
+    return {
+      id: domain.id,
+      name: domain.name,
+      displayName: domain.displayName,
+      description: domain.description,
+      version: domain.version,
+      schema: domain.fields as object,
+      localization: this.serializeLocalization(domain.localization),
+      seo: domain.seo as object,
+    };
+  }
+
+  /**
+   * Kernel domain object → Prisma update input.
+   */
+  toUpdateInput(domain: Partial<ContentTypeSchema>): {
+    name?: string;
+    displayName?: string;
+    description?: string;
+    version?: number;
+    schema?: object;
+    localization?: object;
+    seo?: object;
+  } {
+    const input: ReturnType<typeof this.toUpdateInput> = {};
+
+    if (domain.name !== undefined) input.name = domain.name;
+    if (domain.displayName !== undefined) input.displayName = domain.displayName;
+    if (domain.description !== undefined) input.description = domain.description;
+    if (domain.version !== undefined) input.version = domain.version;
+    if (domain.fields !== undefined) input.schema = domain.fields as object;
+    if (domain.localization !== undefined) input.localization = this.serializeLocalization(domain.localization);
+    if (domain.seo !== undefined) input.seo = domain.seo as object;
+
+    return input;
+  }
+
+  private mapLocalization(json: unknown): LocalizationPolicy {
+    const data = json as {
+      enabled?: boolean;
+      requiredLocales?: string[];
+      optionalLocales?: string[];
+    };
+
+    return {
+      enabled: data.enabled ?? false,
+      requiredLocales: (data.requiredLocales ?? ['en']).map(Locale),
+      optionalLocales: (data.optionalLocales ?? []).map(Locale),
+    };
+  }
+
+  private serializeLocalization(policy: LocalizationPolicy): object {
+    return {
+      enabled: policy.enabled,
+      requiredLocales: policy.requiredLocales,
+      optionalLocales: policy.optionalLocales,
+    };
+  }
 }
 
-/**
- * Map domain ContentTypeSchema to Prisma create input
- */
-export function mapDomainSchemaToPrismaCreate(schema: ContentTypeSchema): {
-  id: string;
-  name: string;
-  description: string | null;
-  version: number;
-  schema: object;
-  createdAt: Date;
-  updatedAt: Date;
-} {
-  return {
-    id: schema.id,
-    name: schema.name,
-    description: schema.description ?? null,
-    version: schema.version,
-    schema: {
-      fields: schema.fields,
-      displayName: schema.displayName,
-      localization: schema.localization,
-      seo: schema.seo,
-    } as object,
-    createdAt: schema.createdAt,
-    updatedAt: schema.updatedAt,
-  };
-}
-
-/**
- * Map domain ContentTypeSchema to Prisma update input
- */
-export function mapDomainSchemaToPrismaUpdate(schema: ContentTypeSchema): {
-  name: string;
-  description: string | null;
-  version: number;
-  schema: object;
-  updatedAt: Date;
-} {
-  return {
-    name: schema.name,
-    description: schema.description ?? null,
-    version: schema.version,
-    schema: {
-      fields: schema.fields,
-      displayName: schema.displayName,
-      localization: schema.localization,
-      seo: schema.seo,
-    } as object,
-    updatedAt: schema.updatedAt,
-  };
-}
+export const schemaMapper = new SchemaMapper();
