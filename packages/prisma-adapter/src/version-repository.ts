@@ -1,10 +1,12 @@
 import type { PrismaClient } from '@prisma/client';
 import type {
-  ContentId,
-  VersionId,
+  ContentEntryId,
+  ContentVersionId,
+  ContentTypeId,
   ContentVersion,
-  ContentStatus,
-  VersionRepository,
+  VersionStatus,
+  ContentVersionRepository,
+  Locale,
 } from '@cms/kernel';
 import {
   mapPrismaVersionToDomain,
@@ -13,12 +15,12 @@ import {
 } from './mappers/content-mapper.js';
 
 /**
- * Prisma implementation of VersionRepository
+ * Prisma implementation of ContentVersionRepository
  */
-export class PrismaVersionRepository implements VersionRepository {
+export class PrismaContentVersionRepository implements ContentVersionRepository {
   constructor(private prisma: PrismaClient) {}
 
-  async findById(id: VersionId): Promise<ContentVersion | null> {
+  async findById(id: ContentVersionId): Promise<ContentVersion | null> {
     const version = await this.prisma.contentVersion.findUnique({
       where: { id },
     });
@@ -28,7 +30,7 @@ export class PrismaVersionRepository implements VersionRepository {
     return mapPrismaVersionToDomain(version);
   }
 
-  async findByEntryId(entryId: ContentId): Promise<ContentVersion[]> {
+  async findByEntry(entryId: ContentEntryId): Promise<ContentVersion[]> {
     const versions = await this.prisma.contentVersion.findMany({
       where: { entryId },
       orderBy: { version: 'asc' },
@@ -37,7 +39,34 @@ export class PrismaVersionRepository implements VersionRepository {
     return versions.map(mapPrismaVersionToDomain);
   }
 
-  async findLatestByEntryId(entryId: ContentId): Promise<ContentVersion | null> {
+  async findByEntryAndStatus(
+    entryId: ContentEntryId,
+    status: VersionStatus
+  ): Promise<ContentVersion | null> {
+    const version = await this.prisma.contentVersion.findFirst({
+      where: { entryId, status },
+      orderBy: { version: 'desc' },
+    });
+
+    if (!version) return null;
+
+    return mapPrismaVersionToDomain(version);
+  }
+
+  async findByEntryAndVersion(
+    entryId: ContentEntryId,
+    versionNumber: number
+  ): Promise<ContentVersion | null> {
+    const version = await this.prisma.contentVersion.findFirst({
+      where: { entryId, version: versionNumber },
+    });
+
+    if (!version) return null;
+
+    return mapPrismaVersionToDomain(version);
+  }
+
+  async findLatestByEntry(entryId: ContentEntryId): Promise<ContentVersion | null> {
     const version = await this.prisma.contentVersion.findFirst({
       where: { entryId },
       orderBy: { version: 'desc' },
@@ -48,31 +77,12 @@ export class PrismaVersionRepository implements VersionRepository {
     return mapPrismaVersionToDomain(version);
   }
 
-  async findPublishedByEntryId(entryId: ContentId): Promise<ContentVersion | null> {
-    const version = await this.prisma.contentVersion.findFirst({
-      where: { entryId, status: 'PUBLISHED' },
-    });
-
-    if (!version) return null;
-
-    return mapPrismaVersionToDomain(version);
-  }
-
-  async findByStatus(status: ContentStatus): Promise<ContentVersion[]> {
-    const versions = await this.prisma.contentVersion.findMany({
-      where: { status },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    return versions.map(mapPrismaVersionToDomain);
-  }
-
-  async findDueScheduled(before: Date): Promise<ContentVersion[]> {
+  async findScheduledBefore(date: Date): Promise<ContentVersion[]> {
     const versions = await this.prisma.contentVersion.findMany({
       where: {
         status: 'SCHEDULED',
         scheduledAt: {
-          lte: before,
+          lte: date,
         },
       },
       orderBy: { scheduledAt: 'asc' },
@@ -81,29 +91,60 @@ export class PrismaVersionRepository implements VersionRepository {
     return versions.map(mapPrismaVersionToDomain);
   }
 
-  async save(version: ContentVersion): Promise<ContentVersion> {
+  async findPublishedBySlug(
+    typeId: ContentTypeId,
+    locale: Locale,
+    slug: string
+  ): Promise<ContentVersion | null> {
+    // Find all published versions and filter by slug in data
+    const versions = await this.prisma.contentVersion.findMany({
+      where: {
+        status: 'PUBLISHED',
+        entry: {
+          typeId,
+        },
+      },
+      include: {
+        entry: true,
+      },
+    });
+
+    for (const version of versions) {
+      const data = version.data as Record<string, unknown>;
+      const locales = data?.locales as Record<string, Record<string, unknown>> | undefined;
+      const localeData = locales?.[locale];
+      if (localeData?.slug === slug) {
+        return mapPrismaVersionToDomain(version);
+      }
+    }
+
+    return null;
+  }
+
+  async save(version: ContentVersion): Promise<void> {
     const existing = await this.prisma.contentVersion.findUnique({
       where: { id: version.id },
     });
 
     if (existing) {
-      // Update existing version
-      const updated = await this.prisma.contentVersion.update({
+      await this.prisma.contentVersion.update({
         where: { id: version.id },
         data: mapDomainVersionToPrismaUpdate(version),
       });
-      return mapPrismaVersionToDomain(updated);
+    } else {
+      await this.prisma.contentVersion.create({
+        data: mapDomainVersionToPrismaCreate(version),
+      });
     }
-
-    // Create new version
-    const created = await this.prisma.contentVersion.create({
-      data: mapDomainVersionToPrismaCreate(version),
-    });
-
-    return mapPrismaVersionToDomain(created);
   }
 
-  async getNextVersionNumber(entryId: ContentId): Promise<number> {
+  async delete(id: ContentVersionId): Promise<void> {
+    await this.prisma.contentVersion.delete({
+      where: { id },
+    });
+  }
+
+  async getNextVersionNumber(entryId: ContentEntryId): Promise<number> {
     const latest = await this.prisma.contentVersion.findFirst({
       where: { entryId },
       orderBy: { version: 'desc' },

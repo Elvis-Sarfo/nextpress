@@ -1,63 +1,58 @@
 import type {
   ContentEntry as DomainContentEntry,
   ContentVersion as DomainContentVersion,
-  ContentWithVersions,
   VersionData,
-  ContentStatus,
+  VersionStatus,
 } from '@cms/kernel';
-import { contentId, contentTypeId, userId, versionId } from '@cms/kernel';
+
+import {
+  ContentEntryId,
+  ContentTypeId,
+  ContentVersionId,
+  PrincipalId,
+  Locale,
+} from '@cms/kernel';
+
 import type {
   ContentEntry as PrismaContentEntry,
   ContentVersion as PrismaContentVersion,
 } from '@prisma/client';
 
-type PrismaContentEntryWithVersions = PrismaContentEntry & {
-  versions: PrismaContentVersion[];
-};
+/**
+ * Extended content entry with version information for repository queries
+ */
+export interface ContentEntryWithVersions extends DomainContentEntry {
+  versions: DomainContentVersion[];
+}
 
 /**
  * Map Prisma ContentEntry to domain ContentEntry
  */
 export function mapPrismaEntryToDomain(
-  prismaEntry: PrismaContentEntry,
-  currentVersion?: PrismaContentVersion | null,
-  publishedVersion?: PrismaContentVersion | null
+  prismaEntry: PrismaContentEntry
 ): DomainContentEntry {
   return {
-    id: contentId(prismaEntry.id),
-    typeId: contentTypeId(prismaEntry.typeId),
-    defaultLocale: prismaEntry.defaultLocale,
+    id: ContentEntryId(prismaEntry.id),
+    typeId: ContentTypeId(prismaEntry.typeId),
+    defaultLocale: Locale(prismaEntry.defaultLocale),
     createdAt: prismaEntry.createdAt,
-    createdBy: userId(prismaEntry.createdBy),
-    currentVersion: currentVersion
-      ? mapPrismaVersionToDomain(currentVersion)
-      : undefined,
-    publishedVersion: publishedVersion
-      ? mapPrismaVersionToDomain(publishedVersion)
-      : undefined,
+    createdBy: PrincipalId(prismaEntry.createdBy),
   };
 }
 
 /**
- * Map Prisma ContentEntry with versions to domain ContentWithVersions
+ * Map Prisma ContentEntry with versions to domain type
  */
 export function mapPrismaEntryWithVersionsToDomain(
-  prismaEntry: PrismaContentEntryWithVersions
-): ContentWithVersions {
-  const versions = prismaEntry.versions.map(mapPrismaVersionToDomain);
-  const sortedVersions = versions.sort((a, b) => b.version - a.version);
-  const currentVersion = sortedVersions[0];
-  const publishedVersion = versions.find((v) => v.status === 'PUBLISHED');
-
+  prismaEntry: PrismaContentEntry & { versions: PrismaContentVersion[] }
+): ContentEntryWithVersions {
   return {
-    id: contentId(prismaEntry.id),
-    typeId: contentTypeId(prismaEntry.typeId),
-    defaultLocale: prismaEntry.defaultLocale,
+    id: ContentEntryId(prismaEntry.id),
+    typeId: ContentTypeId(prismaEntry.typeId),
+    defaultLocale: Locale(prismaEntry.defaultLocale),
     createdAt: prismaEntry.createdAt,
-    createdBy: userId(prismaEntry.createdBy),
-    currentVersion,
-    publishedVersion,
-    versions,
+    createdBy: PrincipalId(prismaEntry.createdBy),
+    versions: prismaEntry.versions.map(mapPrismaVersionToDomain),
   };
 }
 
@@ -68,13 +63,13 @@ export function mapPrismaVersionToDomain(
   prismaVersion: PrismaContentVersion
 ): DomainContentVersion {
   return {
-    id: versionId(prismaVersion.id),
-    entryId: contentId(prismaVersion.entryId),
+    id: ContentVersionId(prismaVersion.id),
+    entryId: ContentEntryId(prismaVersion.entryId),
     version: prismaVersion.version,
-    status: prismaVersion.status as ContentStatus,
-    data: prismaVersion.data as VersionData[],
+    status: prismaVersion.status as VersionStatus,
+    data: prismaVersion.data as unknown as VersionData,
     createdAt: prismaVersion.createdAt,
-    createdBy: userId(prismaVersion.createdBy),
+    createdBy: PrincipalId(prismaVersion.createdBy),
     publishedAt: prismaVersion.publishedAt ?? undefined,
     scheduledAt: prismaVersion.scheduledAt ?? undefined,
   };
@@ -107,7 +102,7 @@ export function mapDomainVersionToPrismaCreate(version: DomainContentVersion): {
   entryId: string;
   version: number;
   status: string;
-  data: unknown;
+  data: object;
   createdBy: string;
   createdAt: Date;
   publishedAt: Date | null;
@@ -118,7 +113,7 @@ export function mapDomainVersionToPrismaCreate(version: DomainContentVersion): {
     entryId: version.entryId,
     version: version.version,
     status: version.status,
-    data: version.data,
+    data: version.data as object,
     createdBy: version.createdBy,
     createdAt: version.createdAt,
     publishedAt: version.publishedAt ?? null,
@@ -131,13 +126,13 @@ export function mapDomainVersionToPrismaCreate(version: DomainContentVersion): {
  */
 export function mapDomainVersionToPrismaUpdate(version: DomainContentVersion): {
   status: string;
-  data: unknown;
+  data: object;
   publishedAt: Date | null;
   scheduledAt: Date | null;
 } {
   return {
     status: version.status,
-    data: version.data,
+    data: version.data as object,
     publishedAt: version.publishedAt ?? null,
     scheduledAt: version.scheduledAt ?? null,
   };

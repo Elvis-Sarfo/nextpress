@@ -1,52 +1,37 @@
 import type { PrismaClient } from '@prisma/client';
 import type {
-  ContentId,
+  ContentEntryId,
   ContentTypeId,
-  PaginatedResult,
   ContentEntry,
-  ContentWithVersions,
-  ContentQueryOptions,
-  ContentRepository,
+  ContentEntryRepository,
+  ListOptions,
+  ListResult,
   VersionData,
 } from '@cms/kernel';
-import { paginate } from '@cms/kernel';
 import {
   mapPrismaEntryToDomain,
   mapPrismaEntryWithVersionsToDomain,
   mapDomainEntryToPrismaCreate,
+  ContentEntryWithVersions,
 } from './mappers/content-mapper.js';
 
 /**
- * Prisma implementation of ContentRepository
+ * Prisma implementation of ContentEntryRepository
  */
-export class PrismaContentRepository implements ContentRepository {
+export class PrismaContentEntryRepository implements ContentEntryRepository {
   constructor(private prisma: PrismaClient) {}
 
-  async findById(id: ContentId): Promise<ContentEntry | null> {
+  async findById(id: ContentEntryId): Promise<ContentEntry | null> {
     const entry = await this.prisma.contentEntry.findUnique({
       where: { id },
-      include: {
-        versions: {
-          orderBy: { version: 'desc' },
-          take: 1,
-        },
-      },
     });
 
     if (!entry) return null;
 
-    const publishedVersion = await this.prisma.contentVersion.findFirst({
-      where: { entryId: id, status: 'PUBLISHED' },
-    });
-
-    return mapPrismaEntryToDomain(
-      entry,
-      entry.versions[0],
-      publishedVersion
-    );
+    return mapPrismaEntryToDomain(entry);
   }
 
-  async findByIdWithVersions(id: ContentId): Promise<ContentWithVersions | null> {
+  async findByIdWithVersions(id: ContentEntryId): Promise<ContentEntryWithVersions | null> {
     const entry = await this.prisma.contentEntry.findUnique({
       where: { id },
       include: {
@@ -61,46 +46,38 @@ export class PrismaContentRepository implements ContentRepository {
     return mapPrismaEntryWithVersionsToDomain(entry);
   }
 
-  async findByType(
-    typeId: ContentTypeId,
-    options?: ContentQueryOptions
-  ): Promise<PaginatedResult<ContentEntry>> {
-    const page = options?.page ?? 1;
-    const pageSize = options?.pageSize ?? 20;
-    const skip = (page - 1) * pageSize;
+  async findByType(typeId: ContentTypeId, options?: ListOptions): Promise<ContentEntry[]> {
+    const limit = options?.limit ?? 20;
+    const offset = options?.offset ?? 0;
 
-    const where = {
-      typeId,
-      ...(options?.filter?.status && {
-        versions: {
-          some: {
-            status: options.filter.status,
-          },
+    const where: Record<string, unknown> = { typeId };
+
+    if (options?.createdBy) {
+      where.createdBy = options.createdBy;
+    }
+
+    if (options?.status) {
+      where.versions = {
+        some: {
+          status: options.status,
         },
-      }),
-    };
+      };
+    }
 
-    const [entries, total] = await Promise.all([
-      this.prisma.contentEntry.findMany({
-        where,
-        skip,
-        take: pageSize,
-        orderBy: { createdAt: options?.sort?.direction ?? 'desc' },
-        include: {
-          versions: {
-            orderBy: { version: 'desc' },
-            take: 1,
-          },
-        },
-      }),
-      this.prisma.contentEntry.count({ where }),
-    ]);
+    const entries = await this.prisma.contentEntry.findMany({
+      where,
+      skip: offset,
+      take: limit,
+      orderBy: { [options?.orderBy ?? 'createdAt']: options?.orderDirection ?? 'desc' },
+    });
 
-    const items = entries.map((entry) =>
-      mapPrismaEntryToDomain(entry, entry.versions[0])
-    );
+    return entries.map(mapPrismaEntryToDomain);
+  }
 
-    return paginate(items, total, { page, pageSize });
+  async countByType(typeId: ContentTypeId): Promise<number> {
+    return this.prisma.contentEntry.count({
+      where: { typeId },
+    });
   }
 
   async findBySlug(
@@ -108,7 +85,6 @@ export class PrismaContentRepository implements ContentRepository {
     slug: string,
     locale: string
   ): Promise<ContentEntry | null> {
-    // Find entry where the published version has this slug for this locale
     const entries = await this.prisma.contentEntry.findMany({
       where: {
         typeId,
@@ -126,85 +102,21 @@ export class PrismaContentRepository implements ContentRepository {
       },
     });
 
-    // Filter by slug in the version data
     for (const entry of entries) {
       const version = entry.versions[0];
       if (!version) continue;
 
-      const versionData = version.data as VersionData[];
-      const localeData = versionData.find((d) => d.locale === locale);
-      if (localeData?.slug === slug) {
-        return mapPrismaEntryToDomain(entry, version, version);
+      const versionData = version.data as unknown as VersionData;
+      const localeData = versionData.locales?.[locale];
+      if (localeData && (localeData as Record<string, unknown>).slug === slug) {
+        return mapPrismaEntryToDomain(entry);
       }
     }
 
     return null;
   }
 
-  async query(options: ContentQueryOptions): Promise<PaginatedResult<ContentEntry>> {
-    const page = options?.page ?? 1;
-    const pageSize = options?.pageSize ?? 20;
-    const skip = (page - 1) * pageSize;
-
-    const where: Record<string, unknown> = {};
-
-    if (options.filter?.typeId) {
-      where.typeId = options.filter.typeId;
-    }
-
-    if (options.filter?.createdBy) {
-      where.createdBy = options.filter.createdBy;
-    }
-
-    if (options.filter?.createdAfter || options.filter?.createdBefore) {
-      where.createdAt = {};
-      if (options.filter.createdAfter) {
-        (where.createdAt as Record<string, Date>).gte = options.filter.createdAfter;
-      }
-      if (options.filter.createdBefore) {
-        (where.createdAt as Record<string, Date>).lte = options.filter.createdBefore;
-      }
-    }
-
-    if (options.filter?.status) {
-      where.versions = {
-        some: {
-          status: options.filter.status,
-        },
-      };
-    }
-
-    const orderBy: Record<string, string> = {};
-    if (options.sort) {
-      orderBy[options.sort.field] = options.sort.direction;
-    } else {
-      orderBy.createdAt = 'desc';
-    }
-
-    const [entries, total] = await Promise.all([
-      this.prisma.contentEntry.findMany({
-        where,
-        skip,
-        take: pageSize,
-        orderBy,
-        include: {
-          versions: {
-            orderBy: { version: 'desc' },
-            take: 1,
-          },
-        },
-      }),
-      this.prisma.contentEntry.count({ where }),
-    ]);
-
-    const items = entries.map((entry) =>
-      mapPrismaEntryToDomain(entry, entry.versions[0])
-    );
-
-    return paginate(items, total, { page, pageSize });
-  }
-
-  async save(entry: ContentEntry): Promise<ContentEntry> {
+  async save(entry: ContentEntry): Promise<void> {
     const data = mapDomainEntryToPrismaCreate(entry);
 
     await this.prisma.contentEntry.upsert({
@@ -214,11 +126,9 @@ export class PrismaContentRepository implements ContentRepository {
         defaultLocale: data.defaultLocale,
       },
     });
-
-    return entry;
   }
 
-  async delete(id: ContentId): Promise<void> {
+  async delete(id: ContentEntryId): Promise<void> {
     await this.prisma.contentEntry.delete({
       where: { id },
     });
@@ -228,9 +138,8 @@ export class PrismaContentRepository implements ContentRepository {
     typeId: ContentTypeId,
     slug: string,
     locale: string,
-    excludeId?: ContentId
+    excludeId?: ContentEntryId
   ): Promise<boolean> {
-    // Find entries with this content type
     const entries = await this.prisma.contentEntry.findMany({
       where: {
         typeId,
@@ -247,18 +156,53 @@ export class PrismaContentRepository implements ContentRepository {
       },
     });
 
-    // Check if any entry has this slug
     for (const entry of entries) {
       const version = entry.versions[0];
       if (!version) continue;
 
-      const versionData = version.data as VersionData[];
-      const localeData = versionData.find((d) => d.locale === locale);
-      if (localeData?.slug === slug) {
+      const versionData = version.data as unknown as VersionData;
+      const localeData = versionData.locales?.[locale];
+      if (localeData && (localeData as Record<string, unknown>).slug === slug) {
         return false;
       }
     }
 
     return true;
+  }
+
+  async list(options?: ListOptions): Promise<ListResult<ContentEntry>> {
+    const limit = options?.limit ?? 20;
+    const offset = options?.offset ?? 0;
+
+    const where: Record<string, unknown> = {};
+
+    if (options?.createdBy) {
+      where.createdBy = options.createdBy;
+    }
+
+    if (options?.status) {
+      where.versions = {
+        some: {
+          status: options.status,
+        },
+      };
+    }
+
+    const [entries, total] = await Promise.all([
+      this.prisma.contentEntry.findMany({
+        where,
+        skip: offset,
+        take: limit,
+        orderBy: { [options?.orderBy ?? 'createdAt']: options?.orderDirection ?? 'desc' },
+      }),
+      this.prisma.contentEntry.count({ where }),
+    ]);
+
+    return {
+      items: entries.map(mapPrismaEntryToDomain),
+      total,
+      limit,
+      offset,
+    };
   }
 }

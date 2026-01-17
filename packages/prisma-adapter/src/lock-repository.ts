@@ -1,98 +1,14 @@
 import type { PrismaClient } from '@prisma/client';
-import type { ContentId, ContentLock, LockRepository } from '@cms/kernel';
-import { contentId } from '@cms/kernel';
+import type { ContentEntryId, ContentLock, ContentLockRepository } from '@cms/kernel';
+import { ContentEntryId as createContentEntryId, PrincipalId } from '@cms/kernel';
 
 /**
- * Prisma implementation of LockRepository
+ * Prisma implementation of ContentLockRepository
  */
-export class PrismaLockRepository implements LockRepository {
+export class PrismaContentLockRepository implements ContentLockRepository {
   constructor(private prisma: PrismaClient) {}
 
-  async acquire(
-    entryId: ContentId,
-    userId: string,
-    durationMs: number
-  ): Promise<ContentLock | null> {
-    const now = new Date();
-    const expiresAt = new Date(now.getTime() + durationMs);
-
-    try {
-      // Use upsert to handle both new locks and extending existing locks
-      const lock = await this.prisma.contentLock.upsert({
-        where: { entryId },
-        create: {
-          entryId,
-          lockedBy: userId,
-          lockedAt: now,
-          expiresAt,
-        },
-        update: {
-          lockedBy: userId,
-          lockedAt: now,
-          expiresAt,
-        },
-      });
-
-      // If the lock was held by another user and not expired, reject
-      // This check happens after upsert to handle race conditions
-      const existingLock = await this.prisma.contentLock.findUnique({
-        where: { entryId },
-      });
-
-      if (
-        existingLock &&
-        existingLock.lockedBy !== userId &&
-        existingLock.expiresAt > now
-      ) {
-        return null;
-      }
-
-      return {
-        id: lock.id,
-        entryId: contentId(lock.entryId),
-        lockedBy: lock.lockedBy,
-        lockedAt: lock.lockedAt,
-        expiresAt: lock.expiresAt,
-      };
-    } catch {
-      // Lock acquisition failed (likely due to constraint)
-      return null;
-    }
-  }
-
-  async release(entryId: ContentId, userId: string): Promise<boolean> {
-    try {
-      const lock = await this.prisma.contentLock.findUnique({
-        where: { entryId },
-      });
-
-      if (!lock) return true; // No lock to release
-
-      if (lock.lockedBy !== userId) {
-        return false; // Not the owner
-      }
-
-      await this.prisma.contentLock.delete({
-        where: { entryId },
-      });
-
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  async isLocked(entryId: ContentId): Promise<boolean> {
-    const lock = await this.prisma.contentLock.findUnique({
-      where: { entryId },
-    });
-
-    if (!lock) return false;
-
-    return lock.expiresAt > new Date();
-  }
-
-  async getLock(entryId: ContentId): Promise<ContentLock | null> {
+  async findByEntry(entryId: ContentEntryId): Promise<ContentLock | null> {
     const lock = await this.prisma.contentLock.findUnique({
       where: { entryId },
     });
@@ -112,14 +28,40 @@ export class PrismaLockRepository implements LockRepository {
 
     return {
       id: lock.id,
-      entryId: contentId(lock.entryId),
-      lockedBy: lock.lockedBy,
+      entryId: createContentEntryId(lock.entryId),
+      lockedBy: PrincipalId(lock.lockedBy),
       lockedAt: lock.lockedAt,
       expiresAt: lock.expiresAt,
     };
   }
 
-  async releaseExpired(): Promise<number> {
+  async save(lock: ContentLock): Promise<void> {
+    await this.prisma.contentLock.upsert({
+      where: { entryId: lock.entryId },
+      create: {
+        id: lock.id,
+        entryId: lock.entryId,
+        lockedBy: lock.lockedBy,
+        lockedAt: lock.lockedAt,
+        expiresAt: lock.expiresAt,
+      },
+      update: {
+        lockedBy: lock.lockedBy,
+        lockedAt: lock.lockedAt,
+        expiresAt: lock.expiresAt,
+      },
+    });
+  }
+
+  async delete(entryId: ContentEntryId): Promise<void> {
+    await this.prisma.contentLock.delete({
+      where: { entryId },
+    }).catch(() => {
+      // Ignore if lock doesn't exist
+    });
+  }
+
+  async deleteExpired(): Promise<number> {
     const result = await this.prisma.contentLock.deleteMany({
       where: {
         expiresAt: {
@@ -129,5 +71,77 @@ export class PrismaLockRepository implements LockRepository {
     });
 
     return result.count;
+  }
+
+  // Additional helper methods (not in interface but useful)
+
+  async acquire(
+    entryId: ContentEntryId,
+    userId: string,
+    durationMs: number
+  ): Promise<ContentLock | null> {
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + durationMs);
+
+    // Check if lock exists and is held by another user
+    const existingLock = await this.prisma.contentLock.findUnique({
+      where: { entryId },
+    });
+
+    if (existingLock && existingLock.lockedBy !== userId && existingLock.expiresAt > now) {
+      return null; // Lock held by someone else
+    }
+
+    try {
+      const lock = await this.prisma.contentLock.upsert({
+        where: { entryId },
+        create: {
+          entryId,
+          lockedBy: userId,
+          lockedAt: now,
+          expiresAt,
+        },
+        update: {
+          lockedBy: userId,
+          lockedAt: now,
+          expiresAt,
+        },
+      });
+
+      return {
+        id: lock.id,
+        entryId: createContentEntryId(lock.entryId),
+        lockedBy: PrincipalId(lock.lockedBy),
+        lockedAt: lock.lockedAt,
+        expiresAt: lock.expiresAt,
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  async release(entryId: ContentEntryId, userId: string): Promise<boolean> {
+    const lock = await this.prisma.contentLock.findUnique({
+      where: { entryId },
+    });
+
+    if (!lock) return true;
+    if (lock.lockedBy !== userId) return false;
+
+    await this.prisma.contentLock.delete({
+      where: { entryId },
+    });
+
+    return true;
+  }
+
+  async isLocked(entryId: ContentEntryId): Promise<boolean> {
+    const lock = await this.prisma.contentLock.findUnique({
+      where: { entryId },
+    });
+
+    if (!lock) return false;
+
+    return lock.expiresAt > new Date();
   }
 }

@@ -1,7 +1,7 @@
 import type { PrismaClient } from '@prisma/client';
 import type { ContentTypeId, ContentTypeSchema, SchemaRepository } from '@cms/kernel';
 import {
-  mapPrismaSchemaToMomain,
+  mapPrismaSchemaToDomain,
   mapDomainSchemaToPrismaCreate,
   mapDomainSchemaToPrismaUpdate,
 } from './mappers/schema-mapper.js';
@@ -19,7 +19,7 @@ export class PrismaSchemaRepository implements SchemaRepository {
 
     if (!schema) return null;
 
-    return mapPrismaSchemaToMomain(schema);
+    return mapPrismaSchemaToDomain(schema);
   }
 
   async findByName(name: string): Promise<ContentTypeSchema | null> {
@@ -29,7 +29,7 @@ export class PrismaSchemaRepository implements SchemaRepository {
 
     if (!schema) return null;
 
-    return mapPrismaSchemaToMomain(schema);
+    return mapPrismaSchemaToDomain(schema);
   }
 
   async findAll(): Promise<ContentTypeSchema[]> {
@@ -37,29 +37,24 @@ export class PrismaSchemaRepository implements SchemaRepository {
       orderBy: { name: 'asc' },
     });
 
-    return schemas.map(mapPrismaSchemaToMomain);
+    return schemas.map(mapPrismaSchemaToDomain);
   }
 
-  async save(schema: ContentTypeSchema): Promise<ContentTypeSchema> {
+  async save(schema: ContentTypeSchema): Promise<void> {
     const existing = await this.prisma.contentType.findUnique({
       where: { id: schema.id },
     });
 
     if (existing) {
-      // Update existing schema
-      const updated = await this.prisma.contentType.update({
+      await this.prisma.contentType.update({
         where: { id: schema.id },
         data: mapDomainSchemaToPrismaUpdate(schema),
       });
-      return mapPrismaSchemaToMomain(updated);
+    } else {
+      await this.prisma.contentType.create({
+        data: mapDomainSchemaToPrismaCreate(schema),
+      });
     }
-
-    // Create new schema
-    const created = await this.prisma.contentType.create({
-      data: mapDomainSchemaToPrismaCreate(schema),
-    });
-
-    return mapPrismaSchemaToMomain(created);
   }
 
   async delete(id: ContentTypeId): Promise<void> {
