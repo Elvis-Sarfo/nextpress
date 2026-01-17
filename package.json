@@ -9,6 +9,7 @@
     "clean": "turbo clean && rm -rf node_modules"
   },
   "devDependencies": {
+    "@types/node": "^25.0.9",
     "turbo": "^2.0.0",
     "typescript": "^5.4.0"
   },

@@ -1,16 +1,37 @@
 import Link from 'next/link';
-import { contentStore, schemaEngine } from '@/lib/cms';
+import { getContentTypes, getContentEntries } from '@/lib/cms';
 import { Plus } from 'lucide-react';
 import { getStatusColor, formatDate } from '@/lib/utils';
+import type { ContentTypeId } from '@cms/kernel';
 
 export default async function ContentListPage() {
-  const content = await contentStore.query({
-    pageSize: 50,
-    sort: { field: 'createdAt', direction: 'desc' },
-  });
+  const schemas = await getContentTypes();
+  const schemaMap = new Map(schemas.map((s) => [s.id as ContentTypeId, s]));
 
-  const schemas = await schemaEngine.getAllSchemas();
-  const schemaMap = new Map(schemas.map((s) => [s.id, s]));
+  // Gather content from all types
+  const allContent: Array<{
+    id: string;
+    typeId: ContentTypeId;
+    status: string;
+    createdAt: Date;
+  }> = [];
+
+  for (const schema of schemas) {
+    const result = await getContentEntries(schema.id, { limit: 50 });
+    for (const { entry, version } of result.entries) {
+      allContent.push({
+        id: entry.id,
+        typeId: entry.typeId,
+        status: version.status,
+        createdAt: entry.createdAt,
+      });
+    }
+  }
+
+  // Sort by createdAt desc
+  const sortedContent = allContent.sort(
+    (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+  );
 
   return (
     <div>
@@ -25,7 +46,7 @@ export default async function ContentListPage() {
         </Link>
       </div>
 
-      {content.items.length === 0 ? (
+      {sortedContent.length === 0 ? (
         <div className="text-center py-12 bg-secondary/30 rounded-lg">
           <p className="text-muted-foreground mb-4">No content entries yet.</p>
           <Link
@@ -59,7 +80,7 @@ export default async function ContentListPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {content.items.map((item) => {
+              {sortedContent.map((item) => {
                 const schema = schemaMap.get(item.typeId);
                 return (
                   <tr key={item.id} className="hover:bg-secondary/30">
@@ -77,10 +98,10 @@ export default async function ContentListPage() {
                     <td className="px-6 py-4">
                       <span
                         className={`px-2 py-1 text-xs rounded-full ${getStatusColor(
-                          item.currentVersion?.status ?? 'DRAFT'
+                          item.status
                         )}`}
                       >
-                        {item.currentVersion?.status ?? 'No version'}
+                        {item.status}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-muted-foreground">
@@ -99,24 +120,6 @@ export default async function ContentListPage() {
               })}
             </tbody>
           </table>
-        </div>
-      )}
-
-      {content.totalPages > 1 && (
-        <div className="mt-4 flex justify-center gap-2">
-          {Array.from({ length: content.totalPages }, (_, i) => (
-            <Link
-              key={i}
-              href={`/content?page=${i + 1}`}
-              className={`px-3 py-1 rounded ${
-                i + 1 === content.page
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-secondary hover:bg-secondary/80'
-              }`}
-            >
-              {i + 1}
-            </Link>
-          ))}
         </div>
       )}
     </div>

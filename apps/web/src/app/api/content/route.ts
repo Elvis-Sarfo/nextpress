@@ -1,22 +1,75 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { contentStore, schemaEngine } from '@/lib/cms';
-import { contentTypeId, userId } from '@cms/kernel';
+import {
+  getContentTypes,
+  getContentEntries,
+  getContentType,
+  contentEntryRepository,
+  contentVersionRepository,
+  requirePrincipal,
+  localeEngine,
+} from '@/lib/cms';
+import {
+  ContentTypeId,
+  ContentEntryId,
+  ContentVersionId,
+  Locale,
+} from '@cms/kernel';
+import { randomUUID } from 'crypto';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const typeId = searchParams.get('typeId');
-  const page = parseInt(searchParams.get('page') ?? '1', 10);
-  const pageSize = parseInt(searchParams.get('pageSize') ?? '20', 10);
+  const limit = parseInt(searchParams.get('limit') ?? '20', 10);
+  const offset = parseInt(searchParams.get('offset') ?? '0', 10);
 
   try {
-    const result = await contentStore.query({
-      filter: typeId ? { typeId: contentTypeId(typeId) } : undefined,
-      page,
-      pageSize,
-      sort: { field: 'createdAt', direction: 'desc' },
-    });
+    if (typeId) {
+      // Get entries for specific type
+      const result = await getContentEntries(typeId, { limit, offset });
+      return NextResponse.json({
+        entries: result.entries.map(({ entry, version }) => ({
+          id: entry.id,
+          typeId: entry.typeId,
+          createdBy: entry.createdBy,
+          createdAt: entry.createdAt,
+          defaultLocale: entry.defaultLocale,
+          version: {
+            id: version.id,
+            version: version.version,
+            status: version.status,
+            data: version.data,
+          },
+        })),
+        total: result.total,
+        limit,
+        offset,
+      });
+    } else {
+      // Get all content types with their entries
+      const types = await getContentTypes();
+      const allEntries = [];
 
-    return NextResponse.json(result);
+      for (const type of types) {
+        const result = await getContentEntries(type.id, { limit: 10 });
+        for (const { entry, version } of result.entries) {
+          allEntries.push({
+            id: entry.id,
+            typeId: entry.typeId,
+            typeName: type.name,
+            createdBy: entry.createdBy,
+            createdAt: entry.createdAt,
+            status: version.status,
+          });
+        }
+      }
+
+      return NextResponse.json({
+        entries: allEntries.slice(offset, offset + limit),
+        total: allEntries.length,
+        limit,
+        offset,
+      });
+    }
   } catch (error) {
     console.error('Failed to fetch content:', error);
     return NextResponse.json(
@@ -29,17 +82,20 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { typeId: typeIdStr, data, createdBy } = body;
+    const { typeId: typeIdStr, data, locale } = body;
 
-    if (!typeIdStr || !data || !createdBy) {
+    if (!typeIdStr || !data) {
       return NextResponse.json(
-        { error: 'Missing required fields: typeId, data, createdBy' },
+        { error: 'Missing required fields: typeId, data' },
         { status: 400 }
       );
     }
 
+    // Get the current principal (user)
+    const principal = await requirePrincipal();
+
     // Validate content type exists
-    const schema = await schemaEngine.getSchema(contentTypeId(typeIdStr));
+    const schema = await getContentType(typeIdStr);
     if (!schema) {
       return NextResponse.json(
         { error: `Content type ${typeIdStr} not found` },
@@ -47,20 +103,55 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await contentStore.create({
-      typeId: contentTypeId(typeIdStr),
-      data,
-      createdBy: userId(createdBy),
-    });
+    // Create the entry
+    const entryId = ContentEntryId(randomUUID());
+    const versionId = ContentVersionId(randomUUID());
+    const defaultLocale = Locale(locale ?? localeEngine.getDefaultLocale());
 
-    if (!result.ok) {
-      return NextResponse.json(
-        { error: result.error.message, details: result.error.details },
-        { status: 400 }
-      );
-    }
+    const entry = {
+      id: entryId,
+      typeId: ContentTypeId(typeIdStr),
+      createdBy: principal.id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      defaultLocale,
+      deletedAt: undefined,
+    };
 
-    return NextResponse.json(result.value, { status: 201 });
+    await contentEntryRepository.save(entry);
+
+    // Create initial draft version
+    const version = {
+      id: versionId,
+      entryId,
+      version: 1,
+      status: 'DRAFT' as const,
+      data: {
+        locales: {
+          [defaultLocale]: data,
+        },
+      },
+      createdBy: principal.id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      publishedAt: undefined,
+      scheduledAt: undefined,
+    };
+
+    await contentVersionRepository.save(version);
+
+    return NextResponse.json(
+      {
+        id: entryId,
+        typeId: typeIdStr,
+        version: {
+          id: versionId,
+          version: 1,
+          status: 'DRAFT',
+        },
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error('Failed to create content:', error);
     return NextResponse.json(

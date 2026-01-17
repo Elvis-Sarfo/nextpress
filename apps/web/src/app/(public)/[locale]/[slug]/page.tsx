@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { contentStore, schemaEngine, localeEngine } from '@/lib/cms';
+import { getContentTypes, getPublishedContent, localeEngine } from '@/lib/cms';
 import { ArrowLeft } from 'lucide-react';
 
 interface Props {
@@ -11,36 +11,49 @@ export default async function ContentPage({ params }: Props) {
   const { locale, slug } = await params;
 
   // Validate locale
-  if (!localeEngine.isLocaleEnabled(locale)) {
+  if (!localeEngine.isSupported(locale)) {
     notFound();
   }
 
-  // Find content by slug
-  const schemas = await schemaEngine.getAllSchemas();
-  let entry = null;
+  // Find content by slug across all content types
+  const schemas = await getContentTypes();
+  let foundEntry = null;
+  let foundVersion = null;
+  let foundSchema = null;
 
-  // Search through all content types for the slug
   for (const schema of schemas) {
-    const found = await contentStore.getBySlug(schema.id, slug, locale);
-    if (found && found.publishedVersion) {
-      entry = found;
+    const result = await getPublishedContent(schema.id, locale, slug);
+    if (result) {
+      foundEntry = result.entry;
+      foundVersion = result.version;
+      foundSchema = schema;
       break;
     }
   }
 
-  if (!entry || !entry.publishedVersion) {
+  if (!foundEntry || !foundVersion) {
     notFound();
   }
 
-  const schema = await schemaEngine.getSchema(entry.typeId);
-  const localeData = localeEngine.getLocalizedData(
-    entry.publishedVersion.data,
-    locale
-  );
+  // Parse version data
+  const versionData = foundVersion.data as {
+    locales?: Record<string, { slug?: string; fields?: Record<string, unknown>; meta?: { title?: string; description?: string } }>;
+  };
+  const localeData = versionData?.locales?.[locale];
 
   if (!localeData) {
     notFound();
   }
+
+  const fields = localeData.fields ?? {};
+  const meta = localeData.meta;
+
+  // Get available locales for language switcher
+  const availableLocales = versionData?.locales
+    ? Object.entries(versionData.locales)
+        .filter(([loc, data]) => loc !== locale && data.slug)
+        .map(([loc, data]) => ({ locale: loc, slug: data.slug! }))
+    : [];
 
   return (
     <article className="container mx-auto px-4 py-16 max-w-3xl">
@@ -54,25 +67,25 @@ export default async function ContentPage({ params }: Props) {
 
       <header className="mb-8">
         <p className="text-sm text-muted-foreground mb-2">
-          {schema?.name ?? 'Content'}
+          {foundSchema?.displayName ?? foundSchema?.name ?? 'Content'}
         </p>
         <h1 className="text-4xl font-bold">{localeData.slug}</h1>
-        {localeData.meta?.description && (
+        {meta?.description && (
           <p className="text-xl text-muted-foreground mt-4">
-            {localeData.meta.description}
+            {meta.description}
           </p>
         )}
         <div className="mt-4 text-sm text-muted-foreground">
           Published{' '}
           {new Date(
-            entry.publishedVersion.publishedAt ?? entry.publishedVersion.createdAt
+            foundVersion.publishedAt ?? foundVersion.createdAt
           ).toLocaleDateString()}
         </div>
       </header>
 
       {/* Render content fields */}
       <div className="prose prose-lg dark:prose-invert">
-        {Object.entries(localeData.fields).map(([key, value]) => {
+        {Object.entries(fields).map(([key, value]) => {
           if (typeof value === 'string') {
             // Check if it looks like HTML
             if (value.startsWith('<') && value.includes('>')) {
@@ -97,23 +110,21 @@ export default async function ContentPage({ params }: Props) {
       </div>
 
       {/* Locale alternates */}
-      {entry.publishedVersion.data.length > 1 && (
+      {availableLocales.length > 0 && (
         <div className="mt-12 pt-8 border-t border-border">
           <p className="text-sm text-muted-foreground mb-2">
             Available in other languages:
           </p>
           <div className="flex gap-2">
-            {entry.publishedVersion.data
-              .filter((d) => d.locale !== locale && d.slug)
-              .map((d) => (
-                <Link
-                  key={d.locale}
-                  href={`/${d.locale}/${d.slug}`}
-                  className="px-3 py-1 bg-secondary rounded hover:bg-secondary/80"
-                >
-                  {d.locale.toUpperCase()}
-                </Link>
-              ))}
+            {availableLocales.map((alt) => (
+              <Link
+                key={alt.locale}
+                href={`/${alt.locale}/${alt.slug}`}
+                className="px-3 py-1 bg-secondary rounded hover:bg-secondary/80"
+              >
+                {alt.locale.toUpperCase()}
+              </Link>
+            ))}
           </div>
         </div>
       )}
@@ -125,14 +136,15 @@ export async function generateMetadata({ params }: Props) {
   const { locale, slug } = await params;
 
   // Find content by slug
-  const schemas = await schemaEngine.getAllSchemas();
+  const schemas = await getContentTypes();
 
   for (const schema of schemas) {
-    const entry = await contentStore.getBySlug(schema.id, slug, locale);
-    if (entry?.publishedVersion) {
-      const localeData = entry.publishedVersion.data.find(
-        (d) => d.locale === locale
-      );
+    const result = await getPublishedContent(schema.id, locale, slug);
+    if (result) {
+      const versionData = result.version.data as {
+        locales?: Record<string, { meta?: { title?: string; description?: string } }>;
+      };
+      const localeData = versionData?.locales?.[locale];
       return {
         title: localeData?.meta?.title ?? slug,
         description: localeData?.meta?.description,

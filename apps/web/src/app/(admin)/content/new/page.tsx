@@ -1,9 +1,9 @@
 import Link from 'next/link';
-import { schemaEngine } from '@/lib/cms';
+import { getContentTypes } from '@/lib/cms';
 import { ArrowLeft, FileText } from 'lucide-react';
 
 export default async function NewContentPage() {
-  const schemas = await schemaEngine.getAllSchemas();
+  const schemas = await getContentTypes();
 
   return (
     <div>
@@ -46,7 +46,7 @@ export default async function NewContentPage() {
                   <FileText className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-semibold">{schema.name}</h3>
+                  <h3 className="font-semibold">{schema.displayName ?? schema.name}</h3>
                   <p className="text-sm text-muted-foreground mt-1">
                     {schema.description ?? `Create a new ${schema.name}`}
                   </p>

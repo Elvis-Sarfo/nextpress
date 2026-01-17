@@ -1,10 +1,10 @@
 import Link from 'next/link';
-import { schemaEngine } from '@/lib/cms';
+import { getContentTypes } from '@/lib/cms';
 import { Plus, Layers } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 
 export default async function SchemasPage() {
-  const schemas = await schemaEngine.getAllSchemas();
+  const schemas = await getContentTypes();
 
   return (
     <div>
@@ -42,9 +42,9 @@ export default async function SchemasPage() {
                   v{schema.version}
                 </span>
               </div>
-              <h3 className="font-semibold text-lg">{schema.name}</h3>
+              <h3 className="font-semibold text-lg">{schema.displayName ?? schema.name}</h3>
               <p className="text-sm text-muted-foreground">
-                {schema.pluralName}
+                {schema.name}
               </p>
               {schema.description && (
                 <p className="text-sm text-muted-foreground mt-2">

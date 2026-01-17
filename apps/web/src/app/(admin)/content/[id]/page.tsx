@@ -1,9 +1,9 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { contentStore, schemaEngine } from '@/lib/cms';
-import { contentId } from '@cms/kernel';
+import { getContentEntry, contentVersionRepository } from '@/lib/cms';
 import { ArrowLeft } from 'lucide-react';
 import { formatDateTime, getStatusColor } from '@/lib/utils';
+import type { ContentVersion } from '@cms/kernel';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -11,13 +11,22 @@ interface Props {
 
 export default async function ContentEditPage({ params }: Props) {
   const { id } = await params;
-  const entry = await contentStore.getByIdWithVersions(contentId(id));
+  const result = await getContentEntry(id);
 
-  if (!entry) {
+  if (!result) {
     notFound();
   }
 
-  const schema = await schemaEngine.getSchema(entry.typeId);
+  const { entry, version, schema } = result;
+
+  // Get all versions for this entry
+  const allVersions = await contentVersionRepository.findByEntry(entry.id);
+
+  // Parse version data - it's stored as JSON with locales
+  const versionData = version.data as {
+    locales?: Record<string, { slug?: string; fields?: Record<string, unknown> }>;
+  };
+  const locales = versionData?.locales ?? {};
 
   return (
     <div>
@@ -33,16 +42,14 @@ export default async function ContentEditPage({ params }: Props) {
           <div>
             <h1 className="text-3xl font-bold">Edit Content</h1>
             <p className="text-muted-foreground mt-1">
-              Type: {schema?.name ?? 'Unknown'} • ID: {entry.id}
+              Type: {schema.name} • ID: {entry.id}
             </p>
           </div>
           <div className="flex gap-2">
             <span
-              className={`px-3 py-1 rounded-full ${getStatusColor(
-                entry.currentVersion?.status ?? 'DRAFT'
-              )}`}
+              className={`px-3 py-1 rounded-full ${getStatusColor(version.status)}`}
             >
-              {entry.currentVersion?.status ?? 'No version'}
+              {version.status}
             </span>
           </div>
         </div>
@@ -53,12 +60,12 @@ export default async function ContentEditPage({ params }: Props) {
         <div className="col-span-2">
           <div className="bg-secondary/30 rounded-lg p-6">
             <h2 className="text-xl font-semibold mb-4">Content Data</h2>
-            {entry.currentVersion ? (
+            {Object.keys(locales).length > 0 ? (
               <div className="space-y-4">
-                {entry.currentVersion.data.map((localeData) => (
-                  <div key={localeData.locale} className="border border-border rounded-lg p-4">
+                {Object.entries(locales).map(([locale, localeData]) => (
+                  <div key={locale} className="border border-border rounded-lg p-4">
                     <h3 className="font-medium mb-2">
-                      Locale: {localeData.locale}
+                      Locale: {locale}
                     </h3>
                     {localeData.slug && (
                       <p className="text-sm text-muted-foreground mb-2">
@@ -66,13 +73,17 @@ export default async function ContentEditPage({ params }: Props) {
                       </p>
                     )}
                     <pre className="bg-background p-4 rounded text-sm overflow-x-auto">
-                      {JSON.stringify(localeData.fields, null, 2)}
+                      {JSON.stringify(localeData.fields ?? {}, null, 2)}
                     </pre>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-muted-foreground">No version data available.</p>
+              <div className="border border-border rounded-lg p-4">
+                <pre className="bg-background p-4 rounded text-sm overflow-x-auto">
+                  {JSON.stringify(version.data, null, 2)}
+                </pre>
+              </div>
             )}
           </div>
         </div>
@@ -95,34 +106,32 @@ export default async function ContentEditPage({ params }: Props) {
                 <dt className="text-muted-foreground">Default Locale</dt>
                 <dd>{entry.defaultLocale}</dd>
               </div>
-              {entry.currentVersion && (
-                <div>
-                  <dt className="text-muted-foreground">Version</dt>
-                  <dd>{entry.currentVersion.version}</dd>
-                </div>
-              )}
+              <div>
+                <dt className="text-muted-foreground">Version</dt>
+                <dd>{version.version}</dd>
+              </div>
             </dl>
           </div>
 
           {/* Versions */}
           <div className="bg-secondary/30 rounded-lg p-6">
             <h2 className="text-lg font-semibold mb-4">Versions</h2>
-            {entry.versions.length === 0 ? (
+            {allVersions.length === 0 ? (
               <p className="text-muted-foreground text-sm">No versions yet.</p>
             ) : (
               <ul className="space-y-2">
-                {entry.versions.map((version) => (
+                {allVersions.map((v: ContentVersion) => (
                   <li
-                    key={version.id}
+                    key={v.id}
                     className="flex items-center justify-between p-2 bg-background rounded text-sm"
                   >
-                    <span>v{version.version}</span>
+                    <span>v{v.version}</span>
                     <span
                       className={`px-2 py-0.5 text-xs rounded-full ${getStatusColor(
-                        version.status
+                        v.status
                       )}`}
                     >
-                      {version.status}
+                      {v.status}
                     </span>
                   </li>
                 ))}

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { contentStore, localeEngine } from '@/lib/cms';
-import { contentId } from '@cms/kernel';
-import { cookies, draftMode } from 'next/headers';
+import { getContentEntry, localeEngine } from '@/lib/cms';
+import { draftMode } from 'next/headers';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -19,15 +18,19 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const entry = await contentStore.getById(contentId(contentIdStr));
+    const result = await getContentEntry(contentIdStr);
 
-    if (!entry) {
+    if (!result) {
       return NextResponse.json({ error: 'Content not found' }, { status: 404 });
     }
 
-    // Get the draft version data
-    const localeData = entry.currentVersion?.data.find((d) => d.locale === locale);
-    const slug = localeData?.slug ?? entry.id;
+    const { entry, version } = result;
+
+    // Get the slug from version data
+    const versionData = version.data as {
+      locales?: Record<string, { slug?: string }>;
+    };
+    const slug = versionData?.locales?.[locale]?.slug ?? entry.id;
 
     // Enable draft mode
     const draft = await draftMode();
