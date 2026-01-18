@@ -13,7 +13,14 @@ import {
   Settings,
   ChevronDown,
   ChevronRight,
+  Bell,
+  User,
+  Home,
+  Plus,
+  Users,
+  Package,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -154,36 +161,72 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen">
-      {/* Sidebar */}
-      <aside className="w-64 border-r border-border bg-secondary/30 flex flex-col">
-        <div className="p-6 border-b border-border">
-          <Link href="/admin/dashboard" className="text-xl font-bold">
-            NextPress
+    <div className="flex flex-col min-h-screen">
+      {/* Top admin bar (WordPress style) */}
+      <div className="w-full bg-gray-900 text-white flex items-center justify-between px-6 py-2 shadow-sm">
+        <div className="flex items-center gap-6">
+          <Link href="/admin" className="flex items-center gap-2 font-bold text-lg hover:text-blue-200">
+            <Menu className="w-5 h-5" /> NextPress
           </Link>
-          <p className="text-sm text-muted-foreground mt-1">Content Management</p>
-        </div>
-        <nav className="flex-1 px-3 py-4 overflow-y-auto">
-          <ul className="space-y-1">
-            {navItems.map((item) => (
-              <NavLink key={item.href} item={item} />
-            ))}
-          </ul>
-        </nav>
-        <div className="p-4 border-t border-border">
-          <Link
-            href="/"
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            View Site
+          <Link href="/" className="flex items-center gap-2 text-sm hover:text-blue-200">
+            <Home className="w-4 h-4" /> View Site
           </Link>
+          <Link href="/admin/content/new" className="flex items-center gap-2 text-sm hover:text-blue-200">
+            <Plus className="w-4 h-4" /> New
+          </Link>
+          <Link href="/admin/plugins" className="flex items-center gap-2 text-sm hover:text-blue-200">
+            <Package className="w-4 h-4" /> Plugins
+          </Link>
+          <Link href="/admin/users" className="flex items-center gap-2 text-sm hover:text-blue-200">
+            <Users className="w-4 h-4" /> Users
+          </Link>
+          {/* Removed Tools link due to missing Tool icon in lucide-react */}
         </div>
-      </aside>
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon">
+            <Bell className="w-5 h-5" />
+          </Button>
+          <Button variant="ghost" size="icon">
+            <Settings className="w-5 h-5" />
+          </Button>
+          <div className="flex items-center gap-2 bg-gray-800 px-3 py-1 rounded text-sm">
+            <User className="w-4 h-4" />
+            <span>Howdy, admin</span>
+          </div>
+        </div>
+      </div>
 
-      {/* Main content */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="p-8">{children}</div>
-      </main>
+      <div className="flex min-h-screen">
+        {/* Sidebar */}
+        <aside className="w-64 border-r border-border bg-secondary/30 flex flex-col">
+          {/* <div className="p-6 border-b border-border">
+            <Link href="/admin/dashboard" className="text-xl font-bold">
+              NextPress
+            </Link>
+            <p className="text-sm text-muted-foreground mt-1">Content Management</p>
+          </div> */}
+          <nav className="flex-1 px-3 py-4 overflow-y-auto">
+            <ul className="space-y-1">
+              {navItems.map((item) => (
+                <NavLink key={item.href} item={item} />
+              ))}
+            </ul>
+          </nav>
+          <div className="p-4 border-t border-border">
+            <Link
+              href="/"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              View Site
+            </Link>
+          </div>
+        </aside>
+
+        {/* Main content */}
+        <main className="flex-1 overflow-y-auto">
+          <div className="p-8">{children}</div>
+        </main>
+      </div>
     </div>
   );
 }
