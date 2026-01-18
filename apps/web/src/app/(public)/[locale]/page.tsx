@@ -1,4 +1,4 @@
-import { getContentTypes, getPublishedList, localeEngine } from '@/lib/cms';
+import { getPublishedPosts, getLocalizedField, localeEngine } from '@/lib/cms';
 import Link from 'next/link';
 
 interface Props {
@@ -26,47 +26,13 @@ export default async function LocaleHomePage({ params }: Props) {
     );
   }
 
-  // Fetch all content types
-  const schemas = await getContentTypes();
-
-  // Gather all published content across types
-  const allPublished: Array<{
-    id: string;
-    typeId: string;
-    typeName: string;
-    slug: string;
-    publishedAt: Date;
-  }> = [];
-
-  for (const schema of schemas) {
-    const published = await getPublishedList(schema.id, locale, { limit: 20 });
-
-    for (const { entry, version } of published) {
-      // Extract slug from version data
-      const versionData = version.data as {
-        locales?: Record<string, { slug?: string }>;
-      };
-      const slug = versionData?.locales?.[locale]?.slug ?? entry.id;
-
-      allPublished.push({
-        id: entry.id,
-        typeId: entry.typeId,
-        typeName: schema.displayName ?? schema.name,
-        slug,
-        publishedAt: version.publishedAt ?? version.createdAt,
-      });
-    }
-  }
-
-  // Sort by publishedAt desc
-  allPublished.sort((a, b) => b.publishedAt.getTime() - a.publishedAt.getTime());
+  // Fetch published posts
+  const posts = await getPublishedPosts(locale, { limit: 20 });
 
   return (
     <div className="container mx-auto px-4 py-16">
       <h1 className="text-4xl font-bold mb-4">Welcome</h1>
-      <p className="text-xl text-muted-foreground mb-8">
-        Current locale: {locale}
-      </p>
+      <p className="text-xl text-muted-foreground mb-8">Current locale: {locale}</p>
 
       {/* Locale switcher */}
       <div className="mb-8">
@@ -86,25 +52,34 @@ export default async function LocaleHomePage({ params }: Props) {
         ))}
       </div>
 
-      {/* Published content */}
-      <h2 className="text-2xl font-semibold mb-4">Published Content</h2>
-      {allPublished.length === 0 ? (
-        <p className="text-muted-foreground">No published content yet.</p>
+      {/* Published posts */}
+      <h2 className="text-2xl font-semibold mb-4">Latest Posts</h2>
+      {posts.length === 0 ? (
+        <p className="text-muted-foreground">No published posts yet.</p>
       ) : (
         <div className="grid gap-4">
-          {allPublished.map((item) => (
-            <Link
-              key={item.id}
-              href={`/${locale}/${item.slug}`}
-              className="block p-6 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors"
-            >
-              <p className="text-xs text-muted-foreground mb-1">{item.typeName}</p>
-              <h3 className="font-semibold">{item.slug}</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Published {new Date(item.publishedAt).toLocaleDateString()}
-              </p>
-            </Link>
-          ))}
+          {posts.map((post) => {
+            const localeData = getLocalizedField(post, locale);
+            if (!localeData) return null;
+
+            return (
+              <Link
+                key={post.id}
+                href={`/${locale}/${localeData.slug}`}
+                className="block p-6 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors"
+              >
+                <p className="text-xs text-muted-foreground mb-1">Post</p>
+                <h3 className="font-semibold">{localeData.title}</h3>
+                {localeData.excerpt && (
+                  <p className="text-sm text-muted-foreground mt-2">{localeData.excerpt}</p>
+                )}
+                <p className="text-sm text-muted-foreground mt-2">
+                  Published{' '}
+                  {new Date(post.publishedAt ?? post.createdAt).toLocaleDateString()}
+                </p>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

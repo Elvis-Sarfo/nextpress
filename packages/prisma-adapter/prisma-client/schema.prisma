@@ -8,107 +8,320 @@ datasource db {
 }
 
 // ============================================================================
-// CONTENT TYPE SCHEMA
+// PAGE - Hierarchical content (like WordPress pages)
 // ============================================================================
 
-model ContentType {
+model Page {
+  id          String    @id @default(uuid())
+  documentId  String // Links draft/published versions
+  status      String    @db.VarChar(20) // DRAFT, PUBLISHED, SCHEDULED, ARCHIVED
+  parentId    String? // Hierarchy
+  order       Int       @default(0)
+  template    String?   @db.VarChar(100)
+  metadata    Json? // Custom fields, SEO, etc.
+  publishedAt DateTime?
+  scheduledAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdBy   String    @db.VarChar(255)
+
+  parent    Page?        @relation("PageHierarchy", fields: [parentId], references: [id])
+  children  Page[]       @relation("PageHierarchy")
+  locales   PageLocale[]
+  comments  Comment[]
+  menuItems MenuItem[]
+  // Note: versions are queried via documentId, not a direct relation
+
+  @@unique([documentId, status])
+  @@index([status])
+  @@index([parentId])
+  @@index([documentId])
+  @@map("page")
+}
+
+model PageLocale {
+  id      String  @id @default(uuid())
+  pageId  String
+  locale  String  @db.VarChar(10)
+  title   String  @db.VarChar(500)
+  slug    String  @db.VarChar(255)
+  content String  @db.Text
+  excerpt String? @db.Text
+
+  page Page @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@unique([pageId, locale])
+  @@unique([locale, slug])
+  @@index([locale])
+  @@map("page_locale")
+}
+
+model PageVersion {
+  id         String   @id @default(uuid())
+  documentId String
+  version    Int
+  data       Json // Full snapshot
+  createdAt  DateTime @default(now())
+  createdBy  String   @db.VarChar(255)
+
+  @@unique([documentId, version])
+  @@index([documentId])
+  @@map("page_version")
+}
+
+// ============================================================================
+// POST - Blog posts (like WordPress posts)
+// ============================================================================
+
+model Post {
+  id            String    @id @default(uuid())
+  documentId    String
+  status        String    @db.VarChar(20)
+  featuredImage String?   @db.VarChar(500)
+  metadata      Json?
+  publishedAt   DateTime?
+  scheduledAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  createdBy     String    @db.VarChar(255)
+
+  locales  PostLocale[]
+  comments Comment[]
+  // Note: versions are queried via documentId, not a direct relation
+
+  @@unique([documentId, status])
+  @@index([status])
+  @@index([documentId])
+  @@index([publishedAt(sort: Desc)])
+  @@map("post")
+}
+
+model PostLocale {
+  id      String  @id @default(uuid())
+  postId  String
+  locale  String  @db.VarChar(10)
+  title   String  @db.VarChar(500)
+  slug    String  @db.VarChar(255)
+  content String  @db.Text
+  excerpt String? @db.Text
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, locale])
+  @@unique([locale, slug])
+  @@index([locale])
+  @@map("post_locale")
+}
+
+model PostVersion {
+  id         String   @id @default(uuid())
+  documentId String
+  version    Int
+  data       Json
+  createdAt  DateTime @default(now())
+  createdBy  String   @db.VarChar(255)
+
+  @@unique([documentId, version])
+  @@index([documentId])
+  @@map("post_version")
+}
+
+// ============================================================================
+// NEWS - News articles (date-focused content)
+// ============================================================================
+
+model News {
+  id            String    @id @default(uuid())
+  documentId    String
+  status        String    @db.VarChar(20)
+  category      String?   @db.VarChar(100)
+  featuredImage String?   @db.VarChar(500)
+  metadata      Json?
+  publishedAt   DateTime?
+  scheduledAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  createdBy     String    @db.VarChar(255)
+
+  locales  NewsLocale[]
+  comments Comment[]
+  // Note: versions are queried via documentId, not a direct relation
+
+  @@unique([documentId, status])
+  @@index([status])
+  @@index([documentId])
+  @@index([category])
+  @@index([publishedAt(sort: Desc)])
+  @@map("news")
+}
+
+model NewsLocale {
+  id      String  @id @default(uuid())
+  newsId  String
+  locale  String  @db.VarChar(10)
+  title   String  @db.VarChar(500)
+  slug    String  @db.VarChar(255)
+  content String  @db.Text
+  excerpt String? @db.Text
+
+  news News @relation(fields: [newsId], references: [id], onDelete: Cascade)
+
+  @@unique([newsId, locale])
+  @@unique([locale, slug])
+  @@index([locale])
+  @@map("news_locale")
+}
+
+model NewsVersion {
+  id         String   @id @default(uuid())
+  documentId String
+  version    Int
+  data       Json
+  createdAt  DateTime @default(now())
+  createdBy  String   @db.VarChar(255)
+
+  @@unique([documentId, version])
+  @@index([documentId])
+  @@map("news_version")
+}
+
+// ============================================================================
+// MENU & MENU ITEMS
+// ============================================================================
+
+model Menu {
+  id          String   @id @default(uuid())
+  name        String   @unique @db.VarChar(100)
+  displayName String   @db.VarChar(255)
+  location    String?  @db.VarChar(100) // header, footer, sidebar
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdBy   String   @db.VarChar(255)
+
+  items MenuItem[]
+
+  @@map("menu")
+}
+
+model MenuItem {
+  id        String   @id @default(uuid())
+  menuId    String
+  parentId  String?
+  order     Int      @default(0)
+  label     Json // { "en": "About", "fr": "À propos" }
+  url       String?  @db.VarChar(500)
+  pageId    String? // Link to Page
+  postId    String? // Link to Post
+  newsId    String? // Link to News
+  target    String   @default("_self") @db.VarChar(20)
+  cssClass  String?  @db.VarChar(100)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  menu     Menu       @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  parent   MenuItem?  @relation("MenuItemHierarchy", fields: [parentId], references: [id])
+  children MenuItem[] @relation("MenuItemHierarchy")
+  page     Page?      @relation(fields: [pageId], references: [id], onDelete: SetNull)
+
+  @@index([menuId])
+  @@index([parentId])
+  @@index([menuId, order])
+  @@map("menu_item")
+}
+
+// ============================================================================
+// LINK COLLECTIONS
+// ============================================================================
+
+model LinkCollection {
+  id          String   @id @default(uuid())
+  name        String   @unique @db.VarChar(100)
+  displayName String   @db.VarChar(255)
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdBy   String   @db.VarChar(255)
+
+  links Link[]
+
+  @@map("link_collection")
+}
+
+model Link {
   id           String   @id @default(uuid())
-  name         String   @unique @db.VarChar(100)
-  displayName  String   @db.VarChar(255)
-  description  String?  @db.Text
-  version      Int      @default(1)
-  schema       Json // FieldDefinition[]
-  localization Json // LocalizationPolicy
-  seo          Json // SEOPolicy
+  collectionId String
+  order        Int      @default(0)
+  title        Json // Localized
+  description  Json? // Localized
+  url          String   @db.VarChar(500)
+  imageUrl     String?  @db.VarChar(500)
+  target       String   @default("_self") @db.VarChar(20)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  entries   ContentEntry[]
-  redirects SlugRedirect[]
+  collection LinkCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
 
-  @@map("content_type")
+  @@index([collectionId])
+  @@index([collectionId, order])
+  @@map("link")
 }
 
 // ============================================================================
-// CONTENT ENTRY
+// COMMENTS (polymorphic - can attach to Page, Post, or News)
 // ============================================================================
 
-model ContentEntry {
-  id            String    @id @default(uuid())
-  typeId        String
-  defaultLocale String    @default("en") @db.VarChar(10)
-  createdAt     DateTime  @default(now())
-  createdBy     String    @db.VarChar(255)
-  deletedAt     DateTime?
-
-  type      ContentType      @relation(fields: [typeId], references: [id])
-  versions  ContentVersion[]
-  lock      ContentLock?
-  redirects SlugRedirect[]
-
-  @@index([typeId])
-  @@index([createdBy])
-  @@index([createdAt(sort: Desc)])
-  @@map("content_entry")
-}
-
-// ============================================================================
-// CONTENT VERSION
-// ============================================================================
-
-model ContentVersion {
+model Comment {
   id          String    @id @default(uuid())
-  entryId     String
-  version     Int
-  status      String    @db.VarChar(20) // DRAFT, PUBLISHED, SCHEDULED, ARCHIVED
-  data        Json // VersionData
+  // Polymorphic reference
+  pageId      String?
+  postId      String?
+  newsId      String?
+  // Threading
+  parentId    String?
+  // Author info
+  authorName  String    @db.VarChar(255)
+  authorEmail String    @db.VarChar(255)
+  authorUrl   String?   @db.VarChar(500)
+  authorIp    String?   @db.VarChar(45)
+  // Content
+  content     String    @db.Text
+  status      String    @default("pending") @db.VarChar(20)
+  // Moderation
+  moderatedBy String?   @db.VarChar(255)
+  moderatedAt DateTime?
+  userAgent   String?   @db.VarChar(500)
   createdAt   DateTime  @default(now())
-  createdBy   String    @db.VarChar(255)
-  publishedAt DateTime?
-  scheduledAt DateTime?
+  updatedAt   DateTime  @updatedAt
 
-  entry ContentEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  page    Page?     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  post    Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  news    News?     @relation(fields: [newsId], references: [id], onDelete: Cascade)
+  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies Comment[] @relation("CommentReplies")
 
-  @@unique([entryId, version])
-  @@index([entryId, status])
-  @@index([status, scheduledAt])
-  @@map("content_version")
+  @@index([pageId])
+  @@index([postId])
+  @@index([newsId])
+  @@index([parentId])
+  @@index([status])
+  @@index([createdAt(sort: Desc)])
+  @@map("comment")
 }
 
 // ============================================================================
-// CONTENT LOCK
-// ============================================================================
-
-model ContentLock {
-  id        String   @id @default(uuid())
-  entryId   String   @unique
-  lockedBy  String   @db.VarChar(255)
-  lockedAt  DateTime @default(now())
-  expiresAt DateTime
-
-  entry ContentEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
-
-  @@index([expiresAt])
-  @@map("content_lock")
-}
-
-// ============================================================================
-// SLUG REDIRECT
+// SLUG REDIRECTS (for URL preservation when slugs change)
 // ============================================================================
 
 model SlugRedirect {
-  id            String   @id @default(uuid())
-  contentTypeId String
-  locale        String   @db.VarChar(10)
-  fromSlug      String   @db.VarChar(255)
-  toEntryId     String
-  createdAt     DateTime @default(now())
+  id           String   @id @default(uuid())
+  contentType  String   @db.VarChar(20) // 'page', 'post', 'news'
+  locale       String   @db.VarChar(10)
+  fromSlug     String   @db.VarChar(255)
+  toDocumentId String // documentId of target
+  createdAt    DateTime @default(now())
 
-  contentType ContentType  @relation(fields: [contentTypeId], references: [id])
-  toEntry     ContentEntry @relation(fields: [toEntryId], references: [id], onDelete: Cascade)
-
-  @@unique([contentTypeId, locale, fromSlug])
-  @@index([toEntryId])
+  @@unique([contentType, locale, fromSlug])
+  @@index([toDocumentId])
   @@map("slug_redirect")
 }
 
@@ -120,7 +333,7 @@ model Role {
   id          String   @id @default(uuid())
   name        String   @unique @db.VarChar(100)
   displayName String   @db.VarChar(255)
-  permissions Json // Permission[]
+  permissions Json
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

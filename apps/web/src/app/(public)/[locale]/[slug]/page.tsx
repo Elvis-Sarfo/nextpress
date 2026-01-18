@@ -1,10 +1,37 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { getContentTypes, getPublishedContent, localeEngine } from '@/lib/cms';
+import {
+  getPublishedPage,
+  getPublishedPost,
+  getPublishedNewsItem,
+  getLocalizedField,
+  localeEngine,
+} from '@/lib/cms';
 import { ArrowLeft } from 'lucide-react';
+import type { PageWithLocales, PostWithLocales, NewsWithLocales } from '@cms/kernel';
 
 interface Props {
   params: Promise<{ locale: string; slug: string }>;
+}
+
+type ContentItem =
+  | { type: 'page'; data: PageWithLocales }
+  | { type: 'post'; data: PostWithLocales }
+  | { type: 'news'; data: NewsWithLocales };
+
+async function findContent(locale: string, slug: string): Promise<ContentItem | null> {
+  // Try to find content by slug across all content types
+  const [page, post, news] = await Promise.all([
+    getPublishedPage(locale, slug),
+    getPublishedPost(locale, slug),
+    getPublishedNewsItem(locale, slug),
+  ]);
+
+  if (page) return { type: 'page', data: page };
+  if (post) return { type: 'post', data: post };
+  if (news) return { type: 'news', data: news };
+
+  return null;
 }
 
 export default async function ContentPage({ params }: Props) {
@@ -15,45 +42,25 @@ export default async function ContentPage({ params }: Props) {
     notFound();
   }
 
-  // Find content by slug across all content types
-  const schemas = await getContentTypes();
-  let foundEntry = null;
-  let foundVersion = null;
-  let foundSchema = null;
+  const content = await findContent(locale, slug);
 
-  for (const schema of schemas) {
-    const result = await getPublishedContent(schema.id, locale, slug);
-    if (result) {
-      foundEntry = result.entry;
-      foundVersion = result.version;
-      foundSchema = schema;
-      break;
-    }
-  }
-
-  if (!foundEntry || !foundVersion) {
+  if (!content) {
     notFound();
   }
 
-  // Parse version data
-  const versionData = foundVersion.data as {
-    locales?: Record<string, { slug?: string; fields?: Record<string, unknown>; meta?: { title?: string; description?: string } }>;
-  };
-  const localeData = versionData?.locales?.[locale];
+  const localeData = getLocalizedField(content.data, locale);
 
   if (!localeData) {
     notFound();
   }
 
-  const fields = localeData.fields ?? {};
-  const meta = localeData.meta;
-
   // Get available locales for language switcher
-  const availableLocales = versionData?.locales
-    ? Object.entries(versionData.locales)
-        .filter(([loc, data]) => loc !== locale && data.slug)
-        .map(([loc, data]) => ({ locale: loc, slug: data.slug! }))
-    : [];
+  const availableLocales = content.data.locales
+    .filter((l) => l.locale !== locale)
+    .map((l) => ({ locale: l.locale, slug: l.slug }));
+
+  const typeLabel =
+    content.type === 'page' ? 'Page' : content.type === 'post' ? 'Post' : 'News';
 
   return (
     <article className="container mx-auto px-4 py-16 max-w-3xl">
@@ -66,55 +73,30 @@ export default async function ContentPage({ params }: Props) {
       </Link>
 
       <header className="mb-8">
-        <p className="text-sm text-muted-foreground mb-2">
-          {foundSchema?.displayName ?? foundSchema?.name ?? 'Content'}
-        </p>
-        <h1 className="text-4xl font-bold">{localeData.slug}</h1>
-        {meta?.description && (
-          <p className="text-xl text-muted-foreground mt-4">
-            {meta.description}
-          </p>
+        <p className="text-sm text-muted-foreground mb-2">{typeLabel}</p>
+        <h1 className="text-4xl font-bold">{localeData.title}</h1>
+        {localeData.excerpt && (
+          <p className="text-xl text-muted-foreground mt-4">{localeData.excerpt}</p>
         )}
         <div className="mt-4 text-sm text-muted-foreground">
           Published{' '}
-          {new Date(
-            foundVersion.publishedAt ?? foundVersion.createdAt
-          ).toLocaleDateString()}
+          {new Date(content.data.publishedAt ?? content.data.createdAt).toLocaleDateString()}
         </div>
       </header>
 
-      {/* Render content fields */}
+      {/* Render content */}
       <div className="prose prose-lg dark:prose-invert">
-        {Object.entries(fields).map(([key, value]) => {
-          if (typeof value === 'string') {
-            // Check if it looks like HTML
-            if (value.startsWith('<') && value.includes('>')) {
-              return (
-                <div
-                  key={key}
-                  dangerouslySetInnerHTML={{ __html: value }}
-                />
-              );
-            }
-            return <p key={key}>{value}</p>;
-          }
-          if (typeof value === 'object') {
-            return (
-              <pre key={key} className="bg-secondary p-4 rounded text-sm overflow-x-auto">
-                {JSON.stringify(value, null, 2)}
-              </pre>
-            );
-          }
-          return <p key={key}>{String(value)}</p>;
-        })}
+        {localeData.content.startsWith('<') && localeData.content.includes('>') ? (
+          <div dangerouslySetInnerHTML={{ __html: localeData.content }} />
+        ) : (
+          <div className="whitespace-pre-wrap">{localeData.content}</div>
+        )}
       </div>
 
       {/* Locale alternates */}
       {availableLocales.length > 0 && (
         <div className="mt-12 pt-8 border-t border-border">
-          <p className="text-sm text-muted-foreground mb-2">
-            Available in other languages:
-          </p>
+          <p className="text-sm text-muted-foreground mb-2">Available in other languages:</p>
           <div className="flex gap-2">
             {availableLocales.map((alt) => (
               <Link
@@ -135,24 +117,16 @@ export default async function ContentPage({ params }: Props) {
 export async function generateMetadata({ params }: Props) {
   const { locale, slug } = await params;
 
-  // Find content by slug
-  const schemas = await getContentTypes();
+  const content = await findContent(locale, slug);
 
-  for (const schema of schemas) {
-    const result = await getPublishedContent(schema.id, locale, slug);
-    if (result) {
-      const versionData = result.version.data as {
-        locales?: Record<string, { meta?: { title?: string; description?: string } }>;
-      };
-      const localeData = versionData?.locales?.[locale];
-      return {
-        title: localeData?.meta?.title ?? slug,
-        description: localeData?.meta?.description,
-      };
-    }
+  if (!content) {
+    return { title: slug };
   }
 
+  const localeData = getLocalizedField(content.data, locale);
+
   return {
-    title: slug,
+    title: localeData?.title ?? slug,
+    description: localeData?.excerpt,
   };
 }

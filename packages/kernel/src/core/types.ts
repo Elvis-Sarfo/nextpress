@@ -12,20 +12,53 @@
 declare const __brand: unique symbol;
 type Brand<T, B> = T & { [__brand]: B };
 
-export type ContentEntryId = Brand<string, 'ContentEntryId'>;
-export type ContentVersionId = Brand<string, 'ContentVersionId'>;
-export type ContentTypeId = Brand<string, 'ContentTypeId'>;
+// Content IDs
+export type PageId = Brand<string, 'PageId'>;
+export type PostId = Brand<string, 'PostId'>;
+export type NewsId = Brand<string, 'NewsId'>;
+export type DocumentId = Brand<string, 'DocumentId'>; // Links draft/published versions
+
+// Navigation & Utility IDs
+export type MenuId = Brand<string, 'MenuId'>;
+export type MenuItemId = Brand<string, 'MenuItemId'>;
+export type LinkCollectionId = Brand<string, 'LinkCollectionId'>;
+export type LinkId = Brand<string, 'LinkId'>;
+export type CommentId = Brand<string, 'CommentId'>;
+
+// System IDs
 export type PrincipalId = Brand<string, 'PrincipalId'>;
 export type RoleId = Brand<string, 'RoleId'>;
 export type Locale = Brand<string, 'Locale'>;
 
+// Legacy IDs (deprecated - kept for backward compatibility)
+/** @deprecated Use PageId or PostId instead */
+export type ContentEntryId = Brand<string, 'ContentEntryId'>;
+/** @deprecated Use dedicated version types */
+export type ContentVersionId = Brand<string, 'ContentVersionId'>;
+/** @deprecated Content types are now explicit models */
+export type ContentTypeId = Brand<string, 'ContentTypeId'>;
+
 // Factory functions to create branded IDs
-export const ContentEntryId = (id: string): ContentEntryId => id as ContentEntryId;
-export const ContentVersionId = (id: string): ContentVersionId => id as ContentVersionId;
-export const ContentTypeId = (id: string): ContentTypeId => id as ContentTypeId;
+export const PageId = (id: string): PageId => id as PageId;
+export const PostId = (id: string): PostId => id as PostId;
+export const NewsId = (id: string): NewsId => id as NewsId;
+export const DocumentId = (id: string): DocumentId => id as DocumentId;
+export const MenuId = (id: string): MenuId => id as MenuId;
+export const MenuItemId = (id: string): MenuItemId => id as MenuItemId;
+export const LinkCollectionId = (id: string): LinkCollectionId => id as LinkCollectionId;
+export const LinkId = (id: string): LinkId => id as LinkId;
+export const CommentId = (id: string): CommentId => id as CommentId;
 export const PrincipalId = (id: string): PrincipalId => id as PrincipalId;
 export const RoleId = (id: string): RoleId => id as RoleId;
 export const Locale = (code: string): Locale => code as Locale;
+
+// Legacy factory functions (deprecated)
+/** @deprecated Use PageId or PostId instead */
+export const ContentEntryId = (id: string): ContentEntryId => id as ContentEntryId;
+/** @deprecated Use dedicated version types */
+export const ContentVersionId = (id: string): ContentVersionId => id as ContentVersionId;
+/** @deprecated Content types are now explicit models */
+export const ContentTypeId = (id: string): ContentTypeId => id as ContentTypeId;
 
 // ============================================================================
 // RESULT TYPE

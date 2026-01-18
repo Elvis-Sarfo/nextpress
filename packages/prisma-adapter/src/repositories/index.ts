@@ -1,6 +1,14 @@
-export * from './schema-repository.js';
-export * from './content-entry-repository.js';
-export * from './content-version-repository.js';
-export * from './content-lock-repository.js';
+// Content type repositories
+export * from './page-repository.js';
+export * from './post-repository.js';
+export * from './news-repository.js';
+
+// Navigation repositories
+export * from './menu-repository.js';
+export * from './link-repository.js';
+
+// Comment repository
+export * from './comment-repository.js';
+
+// System repositories
 export * from './role-repository.js';
-export * from './slug-redirect-repository.js';

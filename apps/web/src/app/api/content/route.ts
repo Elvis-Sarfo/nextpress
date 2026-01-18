@@ -1,162 +1,131 @@
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  getContentTypes,
-  getContentEntries,
-  getContentType,
-  contentEntryRepository,
-  contentVersionRepository,
-  requirePrincipal,
-  localeEngine,
-} from '@/lib/cms';
-import {
-  ContentTypeId,
-  ContentEntryId,
-  ContentVersionId,
-  Locale,
-} from '@cms/kernel';
-import { randomUUID } from 'crypto';
+import { getPages, getPosts, getNews, getLocalizedField } from '@/lib/cms';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
-  const typeId = searchParams.get('typeId');
+  const type = searchParams.get('type'); // 'page', 'post', 'news', or null for all
   const limit = parseInt(searchParams.get('limit') ?? '20', 10);
   const offset = parseInt(searchParams.get('offset') ?? '0', 10);
+  const status = searchParams.get('status') as 'DRAFT' | 'PUBLISHED' | null;
 
   try {
-    if (typeId) {
-      // Get entries for specific type
-      const result = await getContentEntries(typeId, { limit, offset });
+    if (type === 'page') {
+      const result = await getPages({ limit, offset, status: status ?? undefined });
       return NextResponse.json({
-        entries: result.entries.map(({ entry, version }) => ({
-          id: entry.id,
-          typeId: entry.typeId,
-          createdBy: entry.createdBy,
-          createdAt: entry.createdAt,
-          defaultLocale: entry.defaultLocale,
-          version: {
-            id: version.id,
-            version: version.version,
-            status: version.status,
-            data: version.data,
-          },
+        type: 'page',
+        items: result.pages.map((p) => ({
+          id: p.id,
+          documentId: p.documentId,
+          status: p.status,
+          title: getLocalizedField(p, 'en')?.title ?? 'Untitled',
+          slug: getLocalizedField(p, 'en')?.slug ?? '',
+          createdAt: p.createdAt,
+          publishedAt: p.publishedAt,
         })),
         total: result.total,
         limit,
         offset,
       });
-    } else {
-      // Get all content types with their entries
-      const types = await getContentTypes();
-      const allEntries = [];
+    }
 
-      for (const type of types) {
-        const result = await getContentEntries(type.id, { limit: 10 });
-        for (const { entry, version } of result.entries) {
-          allEntries.push({
-            id: entry.id,
-            typeId: entry.typeId,
-            typeName: type.name,
-            createdBy: entry.createdBy,
-            createdAt: entry.createdAt,
-            status: version.status,
-          });
-        }
-      }
-
+    if (type === 'post') {
+      const result = await getPosts({ limit, offset, status: status ?? undefined });
       return NextResponse.json({
-        entries: allEntries.slice(offset, offset + limit),
-        total: allEntries.length,
+        type: 'post',
+        items: result.posts.map((p) => ({
+          id: p.id,
+          documentId: p.documentId,
+          status: p.status,
+          title: getLocalizedField(p, 'en')?.title ?? 'Untitled',
+          slug: getLocalizedField(p, 'en')?.slug ?? '',
+          createdAt: p.createdAt,
+          publishedAt: p.publishedAt,
+        })),
+        total: result.total,
         limit,
         offset,
       });
     }
+
+    if (type === 'news') {
+      const result = await getNews({ limit, offset, status: status ?? undefined });
+      return NextResponse.json({
+        type: 'news',
+        items: result.news.map((n) => ({
+          id: n.id,
+          documentId: n.documentId,
+          status: n.status,
+          title: getLocalizedField(n, 'en')?.title ?? 'Untitled',
+          slug: getLocalizedField(n, 'en')?.slug ?? '',
+          category: n.category,
+          createdAt: n.createdAt,
+          publishedAt: n.publishedAt,
+        })),
+        total: result.total,
+        limit,
+        offset,
+      });
+    }
+
+    // Get all content types
+    const [pagesResult, postsResult, newsResult] = await Promise.all([
+      getPages({ limit: 10, status: status ?? undefined }),
+      getPosts({ limit: 10, status: status ?? undefined }),
+      getNews({ limit: 10, status: status ?? undefined }),
+    ]);
+
+    const allItems = [
+      ...pagesResult.pages.map((p) => ({
+        type: 'page' as const,
+        id: p.id,
+        documentId: p.documentId,
+        status: p.status,
+        title: getLocalizedField(p, 'en')?.title ?? 'Untitled',
+        slug: getLocalizedField(p, 'en')?.slug ?? '',
+        createdAt: p.createdAt,
+        publishedAt: p.publishedAt,
+      })),
+      ...postsResult.posts.map((p) => ({
+        type: 'post' as const,
+        id: p.id,
+        documentId: p.documentId,
+        status: p.status,
+        title: getLocalizedField(p, 'en')?.title ?? 'Untitled',
+        slug: getLocalizedField(p, 'en')?.slug ?? '',
+        createdAt: p.createdAt,
+        publishedAt: p.publishedAt,
+      })),
+      ...newsResult.news.map((n) => ({
+        type: 'news' as const,
+        id: n.id,
+        documentId: n.documentId,
+        status: n.status,
+        title: getLocalizedField(n, 'en')?.title ?? 'Untitled',
+        slug: getLocalizedField(n, 'en')?.slug ?? '',
+        createdAt: n.createdAt,
+        publishedAt: n.publishedAt,
+      })),
+    ];
+
+    // Sort by createdAt desc
+    allItems.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+    return NextResponse.json({
+      items: allItems.slice(offset, offset + limit),
+      total: pagesResult.total + postsResult.total + newsResult.total,
+      limit,
+      offset,
+    });
   } catch (error) {
     console.error('Failed to fetch content:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch content' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch content' }, { status: 500 });
   }
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const { typeId: typeIdStr, data, locale } = body;
-
-    if (!typeIdStr || !data) {
-      return NextResponse.json(
-        { error: 'Missing required fields: typeId, data' },
-        { status: 400 }
-      );
-    }
-
-    // Get the current principal (user)
-    const principal = await requirePrincipal();
-
-    // Validate content type exists
-    const schema = await getContentType(typeIdStr);
-    if (!schema) {
-      return NextResponse.json(
-        { error: `Content type ${typeIdStr} not found` },
-        { status: 404 }
-      );
-    }
-
-    // Create the entry
-    const entryId = ContentEntryId(randomUUID());
-    const versionId = ContentVersionId(randomUUID());
-    const defaultLocale = Locale(locale ?? localeEngine.getDefaultLocale());
-
-    const entry = {
-      id: entryId,
-      typeId: ContentTypeId(typeIdStr),
-      createdBy: principal.id,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      defaultLocale,
-      deletedAt: undefined,
-    };
-
-    await contentEntryRepository.save(entry);
-
-    // Create initial draft version
-    const version = {
-      id: versionId,
-      entryId,
-      version: 1,
-      status: 'DRAFT' as const,
-      data: {
-        locales: {
-          [defaultLocale]: data,
-        },
-      },
-      createdBy: principal.id,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      publishedAt: undefined,
-      scheduledAt: undefined,
-    };
-
-    await contentVersionRepository.save(version);
-
-    return NextResponse.json(
-      {
-        id: entryId,
-        typeId: typeIdStr,
-        version: {
-          id: versionId,
-          version: 1,
-          status: 'DRAFT',
-        },
-      },
-      { status: 201 }
-    );
-  } catch (error) {
-    console.error('Failed to create content:', error);
-    return NextResponse.json(
-      { error: 'Failed to create content' },
-      { status: 500 }
-    );
-  }
+// POST endpoint for creating content - to be implemented
+export async function POST() {
+  return NextResponse.json(
+    { error: 'Not implemented. Use /api/pages, /api/posts, or /api/news endpoints.' },
+    { status: 501 }
+  );
 }

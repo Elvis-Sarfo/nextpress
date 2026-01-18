@@ -93,54 +93,179 @@ exports.Prisma.TransactionIsolationLevel = makeStrictEnum({
   Serializable: 'Serializable'
 });
 
-exports.Prisma.ContentTypeScalarFieldEnum = {
+exports.Prisma.PageScalarFieldEnum = {
+  id: 'id',
+  documentId: 'documentId',
+  status: 'status',
+  parentId: 'parentId',
+  order: 'order',
+  template: 'template',
+  metadata: 'metadata',
+  publishedAt: 'publishedAt',
+  scheduledAt: 'scheduledAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  createdBy: 'createdBy'
+};
+
+exports.Prisma.PageLocaleScalarFieldEnum = {
+  id: 'id',
+  pageId: 'pageId',
+  locale: 'locale',
+  title: 'title',
+  slug: 'slug',
+  content: 'content',
+  excerpt: 'excerpt'
+};
+
+exports.Prisma.PageVersionScalarFieldEnum = {
+  id: 'id',
+  documentId: 'documentId',
+  version: 'version',
+  data: 'data',
+  createdAt: 'createdAt',
+  createdBy: 'createdBy'
+};
+
+exports.Prisma.PostScalarFieldEnum = {
+  id: 'id',
+  documentId: 'documentId',
+  status: 'status',
+  featuredImage: 'featuredImage',
+  metadata: 'metadata',
+  publishedAt: 'publishedAt',
+  scheduledAt: 'scheduledAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  createdBy: 'createdBy'
+};
+
+exports.Prisma.PostLocaleScalarFieldEnum = {
+  id: 'id',
+  postId: 'postId',
+  locale: 'locale',
+  title: 'title',
+  slug: 'slug',
+  content: 'content',
+  excerpt: 'excerpt'
+};
+
+exports.Prisma.PostVersionScalarFieldEnum = {
+  id: 'id',
+  documentId: 'documentId',
+  version: 'version',
+  data: 'data',
+  createdAt: 'createdAt',
+  createdBy: 'createdBy'
+};
+
+exports.Prisma.NewsScalarFieldEnum = {
+  id: 'id',
+  documentId: 'documentId',
+  status: 'status',
+  category: 'category',
+  featuredImage: 'featuredImage',
+  metadata: 'metadata',
+  publishedAt: 'publishedAt',
+  scheduledAt: 'scheduledAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  createdBy: 'createdBy'
+};
+
+exports.Prisma.NewsLocaleScalarFieldEnum = {
+  id: 'id',
+  newsId: 'newsId',
+  locale: 'locale',
+  title: 'title',
+  slug: 'slug',
+  content: 'content',
+  excerpt: 'excerpt'
+};
+
+exports.Prisma.NewsVersionScalarFieldEnum = {
+  id: 'id',
+  documentId: 'documentId',
+  version: 'version',
+  data: 'data',
+  createdAt: 'createdAt',
+  createdBy: 'createdBy'
+};
+
+exports.Prisma.MenuScalarFieldEnum = {
   id: 'id',
   name: 'name',
   displayName: 'displayName',
-  description: 'description',
-  version: 'version',
-  schema: 'schema',
-  localization: 'localization',
-  seo: 'seo',
+  location: 'location',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  createdBy: 'createdBy'
+};
+
+exports.Prisma.MenuItemScalarFieldEnum = {
+  id: 'id',
+  menuId: 'menuId',
+  parentId: 'parentId',
+  order: 'order',
+  label: 'label',
+  url: 'url',
+  pageId: 'pageId',
+  postId: 'postId',
+  newsId: 'newsId',
+  target: 'target',
+  cssClass: 'cssClass',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
 
-exports.Prisma.ContentEntryScalarFieldEnum = {
+exports.Prisma.LinkCollectionScalarFieldEnum = {
   id: 'id',
-  typeId: 'typeId',
-  defaultLocale: 'defaultLocale',
+  name: 'name',
+  displayName: 'displayName',
+  description: 'description',
   createdAt: 'createdAt',
-  createdBy: 'createdBy',
-  deletedAt: 'deletedAt'
+  updatedAt: 'updatedAt',
+  createdBy: 'createdBy'
 };
 
-exports.Prisma.ContentVersionScalarFieldEnum = {
+exports.Prisma.LinkScalarFieldEnum = {
   id: 'id',
-  entryId: 'entryId',
-  version: 'version',
+  collectionId: 'collectionId',
+  order: 'order',
+  title: 'title',
+  description: 'description',
+  url: 'url',
+  imageUrl: 'imageUrl',
+  target: 'target',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.CommentScalarFieldEnum = {
+  id: 'id',
+  pageId: 'pageId',
+  postId: 'postId',
+  newsId: 'newsId',
+  parentId: 'parentId',
+  authorName: 'authorName',
+  authorEmail: 'authorEmail',
+  authorUrl: 'authorUrl',
+  authorIp: 'authorIp',
+  content: 'content',
   status: 'status',
-  data: 'data',
+  moderatedBy: 'moderatedBy',
+  moderatedAt: 'moderatedAt',
+  userAgent: 'userAgent',
   createdAt: 'createdAt',
-  createdBy: 'createdBy',
-  publishedAt: 'publishedAt',
-  scheduledAt: 'scheduledAt'
-};
-
-exports.Prisma.ContentLockScalarFieldEnum = {
-  id: 'id',
-  entryId: 'entryId',
-  lockedBy: 'lockedBy',
-  lockedAt: 'lockedAt',
-  expiresAt: 'expiresAt'
+  updatedAt: 'updatedAt'
 };
 
 exports.Prisma.SlugRedirectScalarFieldEnum = {
   id: 'id',
-  contentTypeId: 'contentTypeId',
+  contentType: 'contentType',
   locale: 'locale',
   fromSlug: 'fromSlug',
-  toEntryId: 'toEntryId',
+  toDocumentId: 'toDocumentId',
   createdAt: 'createdAt'
 };
 
@@ -165,6 +290,11 @@ exports.Prisma.SortOrder = {
   desc: 'desc'
 };
 
+exports.Prisma.NullableJsonNullValueInput = {
+  DbNull: Prisma.DbNull,
+  JsonNull: Prisma.JsonNull
+};
+
 exports.Prisma.JsonNullValueInput = {
   JsonNull: Prisma.JsonNull
 };
@@ -187,10 +317,20 @@ exports.Prisma.NullsOrder = {
 
 
 exports.Prisma.ModelName = {
-  ContentType: 'ContentType',
-  ContentEntry: 'ContentEntry',
-  ContentVersion: 'ContentVersion',
-  ContentLock: 'ContentLock',
+  Page: 'Page',
+  PageLocale: 'PageLocale',
+  PageVersion: 'PageVersion',
+  Post: 'Post',
+  PostLocale: 'PostLocale',
+  PostVersion: 'PostVersion',
+  News: 'News',
+  NewsLocale: 'NewsLocale',
+  NewsVersion: 'NewsVersion',
+  Menu: 'Menu',
+  MenuItem: 'MenuItem',
+  LinkCollection: 'LinkCollection',
+  Link: 'Link',
+  Comment: 'Comment',
   SlugRedirect: 'SlugRedirect',
   Role: 'Role',
   UserRole: 'UserRole'
@@ -203,10 +343,10 @@ const config = {
   "clientVersion": "7.2.0",
   "engineVersion": "0c8ef2ce45c83248ab3df073180d5eda9e8be7a3",
   "activeProvider": "postgresql",
-  "inlineSchema": "generator client {\n  provider = \"prisma-client-js\"\n  output   = \"../prisma-client\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n}\n\n// ============================================================================\n// CONTENT TYPE SCHEMA\n// ============================================================================\n\nmodel ContentType {\n  id           String   @id @default(uuid())\n  name         String   @unique @db.VarChar(100)\n  displayName  String   @db.VarChar(255)\n  description  String?  @db.Text\n  version      Int      @default(1)\n  schema       Json // FieldDefinition[]\n  localization Json // LocalizationPolicy\n  seo          Json // SEOPolicy\n  createdAt    DateTime @default(now())\n  updatedAt    DateTime @updatedAt\n\n  entries   ContentEntry[]\n  redirects SlugRedirect[]\n\n  @@map(\"content_type\")\n}\n\n// ============================================================================\n// CONTENT ENTRY\n// ============================================================================\n\nmodel ContentEntry {\n  id            String    @id @default(uuid())\n  typeId        String\n  defaultLocale String    @default(\"en\") @db.VarChar(10)\n  createdAt     DateTime  @default(now())\n  createdBy     String    @db.VarChar(255)\n  deletedAt     DateTime?\n\n  type      ContentType      @relation(fields: [typeId], references: [id])\n  versions  ContentVersion[]\n  lock      ContentLock?\n  redirects SlugRedirect[]\n\n  @@index([typeId])\n  @@index([createdBy])\n  @@index([createdAt(sort: Desc)])\n  @@map(\"content_entry\")\n}\n\n// ============================================================================\n// CONTENT VERSION\n// ============================================================================\n\nmodel ContentVersion {\n  id          String    @id @default(uuid())\n  entryId     String\n  version     Int\n  status      String    @db.VarChar(20) // DRAFT, PUBLISHED, SCHEDULED, ARCHIVED\n  data        Json // VersionData\n  createdAt   DateTime  @default(now())\n  createdBy   String    @db.VarChar(255)\n  publishedAt DateTime?\n  scheduledAt DateTime?\n\n  entry ContentEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)\n\n  @@unique([entryId, version])\n  @@index([entryId, status])\n  @@index([status, scheduledAt])\n  @@map(\"content_version\")\n}\n\n// ============================================================================\n// CONTENT LOCK\n// ============================================================================\n\nmodel ContentLock {\n  id        String   @id @default(uuid())\n  entryId   String   @unique\n  lockedBy  String   @db.VarChar(255)\n  lockedAt  DateTime @default(now())\n  expiresAt DateTime\n\n  entry ContentEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)\n\n  @@index([expiresAt])\n  @@map(\"content_lock\")\n}\n\n// ============================================================================\n// SLUG REDIRECT\n// ============================================================================\n\nmodel SlugRedirect {\n  id            String   @id @default(uuid())\n  contentTypeId String\n  locale        String   @db.VarChar(10)\n  fromSlug      String   @db.VarChar(255)\n  toEntryId     String\n  createdAt     DateTime @default(now())\n\n  contentType ContentType  @relation(fields: [contentTypeId], references: [id])\n  toEntry     ContentEntry @relation(fields: [toEntryId], references: [id], onDelete: Cascade)\n\n  @@unique([contentTypeId, locale, fromSlug])\n  @@index([toEntryId])\n  @@map(\"slug_redirect\")\n}\n\n// ============================================================================\n// RBAC - ROLES\n// ============================================================================\n\nmodel Role {\n  id          String   @id @default(uuid())\n  name        String   @unique @db.VarChar(100)\n  displayName String   @db.VarChar(255)\n  permissions Json // Permission[]\n  createdAt   DateTime @default(now())\n  updatedAt   DateTime @updatedAt\n\n  users UserRole[]\n\n  @@map(\"role\")\n}\n\n// ============================================================================\n// RBAC - USER ROLE ASSIGNMENT\n// ============================================================================\n\nmodel UserRole {\n  userId     String   @db.VarChar(255)\n  roleId     String\n  assignedAt DateTime @default(now())\n  assignedBy String   @db.VarChar(255)\n\n  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)\n\n  @@id([userId, roleId])\n  @@index([userId])\n  @@index([roleId])\n  @@map(\"user_role\")\n}\n"
+  "inlineSchema": "generator client {\n  provider = \"prisma-client-js\"\n  output   = \"../prisma-client\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n}\n\n// ============================================================================\n// PAGE - Hierarchical content (like WordPress pages)\n// ============================================================================\n\nmodel Page {\n  id          String    @id @default(uuid())\n  documentId  String // Links draft/published versions\n  status      String    @db.VarChar(20) // DRAFT, PUBLISHED, SCHEDULED, ARCHIVED\n  parentId    String? // Hierarchy\n  order       Int       @default(0)\n  template    String?   @db.VarChar(100)\n  metadata    Json? // Custom fields, SEO, etc.\n  publishedAt DateTime?\n  scheduledAt DateTime?\n  createdAt   DateTime  @default(now())\n  updatedAt   DateTime  @updatedAt\n  createdBy   String    @db.VarChar(255)\n\n  parent    Page?        @relation(\"PageHierarchy\", fields: [parentId], references: [id])\n  children  Page[]       @relation(\"PageHierarchy\")\n  locales   PageLocale[]\n  comments  Comment[]\n  menuItems MenuItem[]\n  // Note: versions are queried via documentId, not a direct relation\n\n  @@unique([documentId, status])\n  @@index([status])\n  @@index([parentId])\n  @@index([documentId])\n  @@map(\"page\")\n}\n\nmodel PageLocale {\n  id      String  @id @default(uuid())\n  pageId  String\n  locale  String  @db.VarChar(10)\n  title   String  @db.VarChar(500)\n  slug    String  @db.VarChar(255)\n  content String  @db.Text\n  excerpt String? @db.Text\n\n  page Page @relation(fields: [pageId], references: [id], onDelete: Cascade)\n\n  @@unique([pageId, locale])\n  @@unique([locale, slug])\n  @@index([locale])\n  @@map(\"page_locale\")\n}\n\nmodel PageVersion {\n  id         String   @id @default(uuid())\n  documentId String\n  version    Int\n  data       Json // Full snapshot\n  createdAt  DateTime @default(now())\n  createdBy  String   @db.VarChar(255)\n\n  @@unique([documentId, version])\n  @@index([documentId])\n  @@map(\"page_version\")\n}\n\n// ============================================================================\n// POST - Blog posts (like WordPress posts)\n// ============================================================================\n\nmodel Post {\n  id            String    @id @default(uuid())\n  documentId    String\n  status        String    @db.VarChar(20)\n  featuredImage String?   @db.VarChar(500)\n  metadata      Json?\n  publishedAt   DateTime?\n  scheduledAt   DateTime?\n  createdAt     DateTime  @default(now())\n  updatedAt     DateTime  @updatedAt\n  createdBy     String    @db.VarChar(255)\n\n  locales  PostLocale[]\n  comments Comment[]\n  // Note: versions are queried via documentId, not a direct relation\n\n  @@unique([documentId, status])\n  @@index([status])\n  @@index([documentId])\n  @@index([publishedAt(sort: Desc)])\n  @@map(\"post\")\n}\n\nmodel PostLocale {\n  id      String  @id @default(uuid())\n  postId  String\n  locale  String  @db.VarChar(10)\n  title   String  @db.VarChar(500)\n  slug    String  @db.VarChar(255)\n  content String  @db.Text\n  excerpt String? @db.Text\n\n  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)\n\n  @@unique([postId, locale])\n  @@unique([locale, slug])\n  @@index([locale])\n  @@map(\"post_locale\")\n}\n\nmodel PostVersion {\n  id         String   @id @default(uuid())\n  documentId String\n  version    Int\n  data       Json\n  createdAt  DateTime @default(now())\n  createdBy  String   @db.VarChar(255)\n\n  @@unique([documentId, version])\n  @@index([documentId])\n  @@map(\"post_version\")\n}\n\n// ============================================================================\n// NEWS - News articles (date-focused content)\n// ============================================================================\n\nmodel News {\n  id            String    @id @default(uuid())\n  documentId    String\n  status        String    @db.VarChar(20)\n  category      String?   @db.VarChar(100)\n  featuredImage String?   @db.VarChar(500)\n  metadata      Json?\n  publishedAt   DateTime?\n  scheduledAt   DateTime?\n  createdAt     DateTime  @default(now())\n  updatedAt     DateTime  @updatedAt\n  createdBy     String    @db.VarChar(255)\n\n  locales  NewsLocale[]\n  comments Comment[]\n  // Note: versions are queried via documentId, not a direct relation\n\n  @@unique([documentId, status])\n  @@index([status])\n  @@index([documentId])\n  @@index([category])\n  @@index([publishedAt(sort: Desc)])\n  @@map(\"news\")\n}\n\nmodel NewsLocale {\n  id      String  @id @default(uuid())\n  newsId  String\n  locale  String  @db.VarChar(10)\n  title   String  @db.VarChar(500)\n  slug    String  @db.VarChar(255)\n  content String  @db.Text\n  excerpt String? @db.Text\n\n  news News @relation(fields: [newsId], references: [id], onDelete: Cascade)\n\n  @@unique([newsId, locale])\n  @@unique([locale, slug])\n  @@index([locale])\n  @@map(\"news_locale\")\n}\n\nmodel NewsVersion {\n  id         String   @id @default(uuid())\n  documentId String\n  version    Int\n  data       Json\n  createdAt  DateTime @default(now())\n  createdBy  String   @db.VarChar(255)\n\n  @@unique([documentId, version])\n  @@index([documentId])\n  @@map(\"news_version\")\n}\n\n// ============================================================================\n// MENU & MENU ITEMS\n// ============================================================================\n\nmodel Menu {\n  id          String   @id @default(uuid())\n  name        String   @unique @db.VarChar(100)\n  displayName String   @db.VarChar(255)\n  location    String?  @db.VarChar(100) // header, footer, sidebar\n  createdAt   DateTime @default(now())\n  updatedAt   DateTime @updatedAt\n  createdBy   String   @db.VarChar(255)\n\n  items MenuItem[]\n\n  @@map(\"menu\")\n}\n\nmodel MenuItem {\n  id        String   @id @default(uuid())\n  menuId    String\n  parentId  String?\n  order     Int      @default(0)\n  label     Json // { \"en\": \"About\", \"fr\": \"À propos\" }\n  url       String?  @db.VarChar(500)\n  pageId    String? // Link to Page\n  postId    String? // Link to Post\n  newsId    String? // Link to News\n  target    String   @default(\"_self\") @db.VarChar(20)\n  cssClass  String?  @db.VarChar(100)\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  menu     Menu       @relation(fields: [menuId], references: [id], onDelete: Cascade)\n  parent   MenuItem?  @relation(\"MenuItemHierarchy\", fields: [parentId], references: [id])\n  children MenuItem[] @relation(\"MenuItemHierarchy\")\n  page     Page?      @relation(fields: [pageId], references: [id], onDelete: SetNull)\n\n  @@index([menuId])\n  @@index([parentId])\n  @@index([menuId, order])\n  @@map(\"menu_item\")\n}\n\n// ============================================================================\n// LINK COLLECTIONS\n// ============================================================================\n\nmodel LinkCollection {\n  id          String   @id @default(uuid())\n  name        String   @unique @db.VarChar(100)\n  displayName String   @db.VarChar(255)\n  description String?  @db.Text\n  createdAt   DateTime @default(now())\n  updatedAt   DateTime @updatedAt\n  createdBy   String   @db.VarChar(255)\n\n  links Link[]\n\n  @@map(\"link_collection\")\n}\n\nmodel Link {\n  id           String   @id @default(uuid())\n  collectionId String\n  order        Int      @default(0)\n  title        Json // Localized\n  description  Json? // Localized\n  url          String   @db.VarChar(500)\n  imageUrl     String?  @db.VarChar(500)\n  target       String   @default(\"_self\") @db.VarChar(20)\n  createdAt    DateTime @default(now())\n  updatedAt    DateTime @updatedAt\n\n  collection LinkCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)\n\n  @@index([collectionId])\n  @@index([collectionId, order])\n  @@map(\"link\")\n}\n\n// ============================================================================\n// COMMENTS (polymorphic - can attach to Page, Post, or News)\n// ============================================================================\n\nmodel Comment {\n  id          String    @id @default(uuid())\n  // Polymorphic reference\n  pageId      String?\n  postId      String?\n  newsId      String?\n  // Threading\n  parentId    String?\n  // Author info\n  authorName  String    @db.VarChar(255)\n  authorEmail String    @db.VarChar(255)\n  authorUrl   String?   @db.VarChar(500)\n  authorIp    String?   @db.VarChar(45)\n  // Content\n  content     String    @db.Text\n  status      String    @default(\"pending\") @db.VarChar(20)\n  // Moderation\n  moderatedBy String?   @db.VarChar(255)\n  moderatedAt DateTime?\n  userAgent   String?   @db.VarChar(500)\n  createdAt   DateTime  @default(now())\n  updatedAt   DateTime  @updatedAt\n\n  page    Page?     @relation(fields: [pageId], references: [id], onDelete: Cascade)\n  post    Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)\n  news    News?     @relation(fields: [newsId], references: [id], onDelete: Cascade)\n  parent  Comment?  @relation(\"CommentReplies\", fields: [parentId], references: [id])\n  replies Comment[] @relation(\"CommentReplies\")\n\n  @@index([pageId])\n  @@index([postId])\n  @@index([newsId])\n  @@index([parentId])\n  @@index([status])\n  @@index([createdAt(sort: Desc)])\n  @@map(\"comment\")\n}\n\n// ============================================================================\n// SLUG REDIRECTS (for URL preservation when slugs change)\n// ============================================================================\n\nmodel SlugRedirect {\n  id           String   @id @default(uuid())\n  contentType  String   @db.VarChar(20) // 'page', 'post', 'news'\n  locale       String   @db.VarChar(10)\n  fromSlug     String   @db.VarChar(255)\n  toDocumentId String // documentId of target\n  createdAt    DateTime @default(now())\n\n  @@unique([contentType, locale, fromSlug])\n  @@index([toDocumentId])\n  @@map(\"slug_redirect\")\n}\n\n// ============================================================================\n// RBAC - ROLES\n// ============================================================================\n\nmodel Role {\n  id          String   @id @default(uuid())\n  name        String   @unique @db.VarChar(100)\n  displayName String   @db.VarChar(255)\n  permissions Json\n  createdAt   DateTime @default(now())\n  updatedAt   DateTime @updatedAt\n\n  users UserRole[]\n\n  @@map(\"role\")\n}\n\n// ============================================================================\n// RBAC - USER ROLE ASSIGNMENT\n// ============================================================================\n\nmodel UserRole {\n  userId     String   @db.VarChar(255)\n  roleId     String\n  assignedAt DateTime @default(now())\n  assignedBy String   @db.VarChar(255)\n\n  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)\n\n  @@id([userId, roleId])\n  @@index([userId])\n  @@index([roleId])\n  @@map(\"user_role\")\n}\n"
 }
 
-config.runtimeDataModel = JSON.parse("{\"models\":{\"ContentType\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"displayName\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"description\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"version\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"schema\",\"kind\":\"scalar\",\"type\":\"Json\"},{\"name\":\"localization\",\"kind\":\"scalar\",\"type\":\"Json\"},{\"name\":\"seo\",\"kind\":\"scalar\",\"type\":\"Json\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"entries\",\"kind\":\"object\",\"type\":\"ContentEntry\",\"relationName\":\"ContentEntryToContentType\"},{\"name\":\"redirects\",\"kind\":\"object\",\"type\":\"SlugRedirect\",\"relationName\":\"ContentTypeToSlugRedirect\"}],\"dbName\":\"content_type\"},\"ContentEntry\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"typeId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"defaultLocale\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"createdBy\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"deletedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"type\",\"kind\":\"object\",\"type\":\"ContentType\",\"relationName\":\"ContentEntryToContentType\"},{\"name\":\"versions\",\"kind\":\"object\",\"type\":\"ContentVersion\",\"relationName\":\"ContentEntryToContentVersion\"},{\"name\":\"lock\",\"kind\":\"object\",\"type\":\"ContentLock\",\"relationName\":\"ContentEntryToContentLock\"},{\"name\":\"redirects\",\"kind\":\"object\",\"type\":\"SlugRedirect\",\"relationName\":\"ContentEntryToSlugRedirect\"}],\"dbName\":\"content_entry\"},\"ContentVersion\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"entryId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"version\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"status\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"data\",\"kind\":\"scalar\",\"type\":\"Json\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"createdBy\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"publishedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"scheduledAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"entry\",\"kind\":\"object\",\"type\":\"ContentEntry\",\"relationName\":\"ContentEntryToContentVersion\"}],\"dbName\":\"content_version\"},\"ContentLock\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"entryId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"lockedBy\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"lockedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"expiresAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"entry\",\"kind\":\"object\",\"type\":\"ContentEntry\",\"relationName\":\"ContentEntryToContentLock\"}],\"dbName\":\"content_lock\"},\"SlugRedirect\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"contentTypeId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"locale\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"fromSlug\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"toEntryId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"contentType\",\"kind\":\"object\",\"type\":\"ContentType\",\"relationName\":\"ContentTypeToSlugRedirect\"},{\"name\":\"toEntry\",\"kind\":\"object\",\"type\":\"ContentEntry\",\"relationName\":\"ContentEntryToSlugRedirect\"}],\"dbName\":\"slug_redirect\"},\"Role\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"displayName\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"permissions\",\"kind\":\"scalar\",\"type\":\"Json\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"users\",\"kind\":\"object\",\"type\":\"UserRole\",\"relationName\":\"RoleToUserRole\"}],\"dbName\":\"role\"},\"UserRole\":{\"fields\":[{\"name\":\"userId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"roleId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"assignedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"assignedBy\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"role\",\"kind\":\"object\",\"type\":\"Role\",\"relationName\":\"RoleToUserRole\"}],\"dbName\":\"user_role\"}},\"enums\":{},\"types\":{}}")
+config.runtimeDataModel = JSON.parse("{\"models\":{\"Page\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"documentId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"status\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"parentId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"order\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"template\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"metadata\",\"kind\":\"scalar\",\"type\":\"Json\"},{\"name\":\"publishedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"scheduledAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"createdBy\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"parent\",\"kind\":\"object\",\"type\":\"Page\",\"relationName\":\"PageHierarchy\"},{\"name\":\"children\",\"kind\":\"object\",\"type\":\"Page\",\"relationName\":\"PageHierarchy\"},{\"name\":\"locales\",\"kind\":\"object\",\"type\":\"PageLocale\",\"relationName\":\"PageToPageLocale\"},{\"name\":\"comments\",\"kind\":\"object\",\"type\":\"Comment\",\"relationName\":\"CommentToPage\"},{\"name\":\"menuItems\",\"kind\":\"object\",\"type\":\"MenuItem\",\"relationName\":\"MenuItemToPage\"}],\"dbName\":\"page\"},\"PageLocale\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"pageId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"locale\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"title\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"slug\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"content\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"excerpt\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"page\",\"kind\":\"object\",\"type\":\"Page\",\"relationName\":\"PageToPageLocale\"}],\"dbName\":\"page_locale\"},\"PageVersion\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"documentId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"version\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"data\",\"kind\":\"scalar\",\"type\":\"Json\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"createdBy\",\"kind\":\"scalar\",\"type\":\"String\"}],\"dbName\":\"page_version\"},\"Post\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"documentId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"status\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"featuredImage\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"metadata\",\"kind\":\"scalar\",\"type\":\"Json\"},{\"name\":\"publishedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"scheduledAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"createdBy\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"locales\",\"kind\":\"object\",\"type\":\"PostLocale\",\"relationName\":\"PostToPostLocale\"},{\"name\":\"comments\",\"kind\":\"object\",\"type\":\"Comment\",\"relationName\":\"CommentToPost\"}],\"dbName\":\"post\"},\"PostLocale\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"postId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"locale\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"title\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"slug\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"content\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"excerpt\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"post\",\"kind\":\"object\",\"type\":\"Post\",\"relationName\":\"PostToPostLocale\"}],\"dbName\":\"post_locale\"},\"PostVersion\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"documentId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"version\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"data\",\"kind\":\"scalar\",\"type\":\"Json\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"createdBy\",\"kind\":\"scalar\",\"type\":\"String\"}],\"dbName\":\"post_version\"},\"News\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"documentId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"status\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"category\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"featuredImage\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"metadata\",\"kind\":\"scalar\",\"type\":\"Json\"},{\"name\":\"publishedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"scheduledAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"createdBy\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"locales\",\"kind\":\"object\",\"type\":\"NewsLocale\",\"relationName\":\"NewsToNewsLocale\"},{\"name\":\"comments\",\"kind\":\"object\",\"type\":\"Comment\",\"relationName\":\"CommentToNews\"}],\"dbName\":\"news\"},\"NewsLocale\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"newsId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"locale\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"title\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"slug\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"content\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"excerpt\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"news\",\"kind\":\"object\",\"type\":\"News\",\"relationName\":\"NewsToNewsLocale\"}],\"dbName\":\"news_locale\"},\"NewsVersion\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"documentId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"version\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"data\",\"kind\":\"scalar\",\"type\":\"Json\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"createdBy\",\"kind\":\"scalar\",\"type\":\"String\"}],\"dbName\":\"news_version\"},\"Menu\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"displayName\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"location\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"createdBy\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"items\",\"kind\":\"object\",\"type\":\"MenuItem\",\"relationName\":\"MenuToMenuItem\"}],\"dbName\":\"menu\"},\"MenuItem\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"menuId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"parentId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"order\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"label\",\"kind\":\"scalar\",\"type\":\"Json\"},{\"name\":\"url\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"pageId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"postId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"newsId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"target\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"cssClass\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"menu\",\"kind\":\"object\",\"type\":\"Menu\",\"relationName\":\"MenuToMenuItem\"},{\"name\":\"parent\",\"kind\":\"object\",\"type\":\"MenuItem\",\"relationName\":\"MenuItemHierarchy\"},{\"name\":\"children\",\"kind\":\"object\",\"type\":\"MenuItem\",\"relationName\":\"MenuItemHierarchy\"},{\"name\":\"page\",\"kind\":\"object\",\"type\":\"Page\",\"relationName\":\"MenuItemToPage\"}],\"dbName\":\"menu_item\"},\"LinkCollection\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"displayName\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"description\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"createdBy\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"links\",\"kind\":\"object\",\"type\":\"Link\",\"relationName\":\"LinkToLinkCollection\"}],\"dbName\":\"link_collection\"},\"Link\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"collectionId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"order\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"title\",\"kind\":\"scalar\",\"type\":\"Json\"},{\"name\":\"description\",\"kind\":\"scalar\",\"type\":\"Json\"},{\"name\":\"url\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"imageUrl\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"target\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"collection\",\"kind\":\"object\",\"type\":\"LinkCollection\",\"relationName\":\"LinkToLinkCollection\"}],\"dbName\":\"link\"},\"Comment\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"pageId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"postId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"newsId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"parentId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"authorName\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"authorEmail\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"authorUrl\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"authorIp\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"content\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"status\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"moderatedBy\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"moderatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"userAgent\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"page\",\"kind\":\"object\",\"type\":\"Page\",\"relationName\":\"CommentToPage\"},{\"name\":\"post\",\"kind\":\"object\",\"type\":\"Post\",\"relationName\":\"CommentToPost\"},{\"name\":\"news\",\"kind\":\"object\",\"type\":\"News\",\"relationName\":\"CommentToNews\"},{\"name\":\"parent\",\"kind\":\"object\",\"type\":\"Comment\",\"relationName\":\"CommentReplies\"},{\"name\":\"replies\",\"kind\":\"object\",\"type\":\"Comment\",\"relationName\":\"CommentReplies\"}],\"dbName\":\"comment\"},\"SlugRedirect\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"contentType\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"locale\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"fromSlug\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"toDocumentId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":\"slug_redirect\"},\"Role\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"displayName\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"permissions\",\"kind\":\"scalar\",\"type\":\"Json\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"users\",\"kind\":\"object\",\"type\":\"UserRole\",\"relationName\":\"RoleToUserRole\"}],\"dbName\":\"role\"},\"UserRole\":{\"fields\":[{\"name\":\"userId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"roleId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"assignedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"assignedBy\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"role\",\"kind\":\"object\",\"type\":\"Role\",\"relationName\":\"RoleToUserRole\"}],\"dbName\":\"user_role\"}},\"enums\":{},\"types\":{}}")
 defineDmmfProperty(exports.Prisma, config.runtimeDataModel)
 config.compilerWasm = {
       getRuntime: async () => require('./query_compiler_bg.js'),

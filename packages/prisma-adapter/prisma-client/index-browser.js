@@ -120,54 +120,179 @@ exports.Prisma.TransactionIsolationLevel = makeStrictEnum({
   Serializable: 'Serializable'
 });
 
-exports.Prisma.ContentTypeScalarFieldEnum = {
+exports.Prisma.PageScalarFieldEnum = {
+  id: 'id',
+  documentId: 'documentId',
+  status: 'status',
+  parentId: 'parentId',
+  order: 'order',
+  template: 'template',
+  metadata: 'metadata',
+  publishedAt: 'publishedAt',
+  scheduledAt: 'scheduledAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  createdBy: 'createdBy'
+};
+
+exports.Prisma.PageLocaleScalarFieldEnum = {
+  id: 'id',
+  pageId: 'pageId',
+  locale: 'locale',
+  title: 'title',
+  slug: 'slug',
+  content: 'content',
+  excerpt: 'excerpt'
+};
+
+exports.Prisma.PageVersionScalarFieldEnum = {
+  id: 'id',
+  documentId: 'documentId',
+  version: 'version',
+  data: 'data',
+  createdAt: 'createdAt',
+  createdBy: 'createdBy'
+};
+
+exports.Prisma.PostScalarFieldEnum = {
+  id: 'id',
+  documentId: 'documentId',
+  status: 'status',
+  featuredImage: 'featuredImage',
+  metadata: 'metadata',
+  publishedAt: 'publishedAt',
+  scheduledAt: 'scheduledAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  createdBy: 'createdBy'
+};
+
+exports.Prisma.PostLocaleScalarFieldEnum = {
+  id: 'id',
+  postId: 'postId',
+  locale: 'locale',
+  title: 'title',
+  slug: 'slug',
+  content: 'content',
+  excerpt: 'excerpt'
+};
+
+exports.Prisma.PostVersionScalarFieldEnum = {
+  id: 'id',
+  documentId: 'documentId',
+  version: 'version',
+  data: 'data',
+  createdAt: 'createdAt',
+  createdBy: 'createdBy'
+};
+
+exports.Prisma.NewsScalarFieldEnum = {
+  id: 'id',
+  documentId: 'documentId',
+  status: 'status',
+  category: 'category',
+  featuredImage: 'featuredImage',
+  metadata: 'metadata',
+  publishedAt: 'publishedAt',
+  scheduledAt: 'scheduledAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  createdBy: 'createdBy'
+};
+
+exports.Prisma.NewsLocaleScalarFieldEnum = {
+  id: 'id',
+  newsId: 'newsId',
+  locale: 'locale',
+  title: 'title',
+  slug: 'slug',
+  content: 'content',
+  excerpt: 'excerpt'
+};
+
+exports.Prisma.NewsVersionScalarFieldEnum = {
+  id: 'id',
+  documentId: 'documentId',
+  version: 'version',
+  data: 'data',
+  createdAt: 'createdAt',
+  createdBy: 'createdBy'
+};
+
+exports.Prisma.MenuScalarFieldEnum = {
   id: 'id',
   name: 'name',
   displayName: 'displayName',
-  description: 'description',
-  version: 'version',
-  schema: 'schema',
-  localization: 'localization',
-  seo: 'seo',
+  location: 'location',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  createdBy: 'createdBy'
+};
+
+exports.Prisma.MenuItemScalarFieldEnum = {
+  id: 'id',
+  menuId: 'menuId',
+  parentId: 'parentId',
+  order: 'order',
+  label: 'label',
+  url: 'url',
+  pageId: 'pageId',
+  postId: 'postId',
+  newsId: 'newsId',
+  target: 'target',
+  cssClass: 'cssClass',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
 
-exports.Prisma.ContentEntryScalarFieldEnum = {
+exports.Prisma.LinkCollectionScalarFieldEnum = {
   id: 'id',
-  typeId: 'typeId',
-  defaultLocale: 'defaultLocale',
+  name: 'name',
+  displayName: 'displayName',
+  description: 'description',
   createdAt: 'createdAt',
-  createdBy: 'createdBy',
-  deletedAt: 'deletedAt'
+  updatedAt: 'updatedAt',
+  createdBy: 'createdBy'
 };
 
-exports.Prisma.ContentVersionScalarFieldEnum = {
+exports.Prisma.LinkScalarFieldEnum = {
   id: 'id',
-  entryId: 'entryId',
-  version: 'version',
+  collectionId: 'collectionId',
+  order: 'order',
+  title: 'title',
+  description: 'description',
+  url: 'url',
+  imageUrl: 'imageUrl',
+  target: 'target',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.CommentScalarFieldEnum = {
+  id: 'id',
+  pageId: 'pageId',
+  postId: 'postId',
+  newsId: 'newsId',
+  parentId: 'parentId',
+  authorName: 'authorName',
+  authorEmail: 'authorEmail',
+  authorUrl: 'authorUrl',
+  authorIp: 'authorIp',
+  content: 'content',
   status: 'status',
-  data: 'data',
+  moderatedBy: 'moderatedBy',
+  moderatedAt: 'moderatedAt',
+  userAgent: 'userAgent',
   createdAt: 'createdAt',
-  createdBy: 'createdBy',
-  publishedAt: 'publishedAt',
-  scheduledAt: 'scheduledAt'
-};
-
-exports.Prisma.ContentLockScalarFieldEnum = {
-  id: 'id',
-  entryId: 'entryId',
-  lockedBy: 'lockedBy',
-  lockedAt: 'lockedAt',
-  expiresAt: 'expiresAt'
+  updatedAt: 'updatedAt'
 };
 
 exports.Prisma.SlugRedirectScalarFieldEnum = {
   id: 'id',
-  contentTypeId: 'contentTypeId',
+  contentType: 'contentType',
   locale: 'locale',
   fromSlug: 'fromSlug',
-  toEntryId: 'toEntryId',
+  toDocumentId: 'toDocumentId',
   createdAt: 'createdAt'
 };
 
@@ -192,6 +317,11 @@ exports.Prisma.SortOrder = {
   desc: 'desc'
 };
 
+exports.Prisma.NullableJsonNullValueInput = {
+  DbNull: Prisma.DbNull,
+  JsonNull: Prisma.JsonNull
+};
+
 exports.Prisma.JsonNullValueInput = {
   JsonNull: Prisma.JsonNull
 };
@@ -214,10 +344,20 @@ exports.Prisma.NullsOrder = {
 
 
 exports.Prisma.ModelName = {
-  ContentType: 'ContentType',
-  ContentEntry: 'ContentEntry',
-  ContentVersion: 'ContentVersion',
-  ContentLock: 'ContentLock',
+  Page: 'Page',
+  PageLocale: 'PageLocale',
+  PageVersion: 'PageVersion',
+  Post: 'Post',
+  PostLocale: 'PostLocale',
+  PostVersion: 'PostVersion',
+  News: 'News',
+  NewsLocale: 'NewsLocale',
+  NewsVersion: 'NewsVersion',
+  Menu: 'Menu',
+  MenuItem: 'MenuItem',
+  LinkCollection: 'LinkCollection',
+  Link: 'Link',
+  Comment: 'Comment',
   SlugRedirect: 'SlugRedirect',
   Role: 'Role',
   UserRole: 'UserRole'

@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getContentEntry, localeEngine } from '@/lib/cms';
+import { getPage, getPost, getNewsItem, getLocalizedField, localeEngine } from '@/lib/cms';
 import { draftMode } from 'next/headers';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
-  const contentIdStr = searchParams.get('id');
+  const id = searchParams.get('id');
+  const type = searchParams.get('type'); // 'page', 'post', 'news'
   const locale = searchParams.get('locale') ?? localeEngine.getDefaultLocale();
   const secret = searchParams.get('secret');
 
@@ -13,24 +14,44 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid preview secret' }, { status: 401 });
   }
 
-  if (!contentIdStr) {
+  if (!id) {
     return NextResponse.json({ error: 'Missing content ID' }, { status: 400 });
   }
 
   try {
-    const result = await getContentEntry(contentIdStr);
+    let slug: string | undefined;
 
-    if (!result) {
-      return NextResponse.json({ error: 'Content not found' }, { status: 404 });
+    if (type === 'page') {
+      const page = await getPage(id);
+      if (page) {
+        slug = getLocalizedField(page, locale)?.slug;
+      }
+    } else if (type === 'post') {
+      const post = await getPost(id);
+      if (post) {
+        slug = getLocalizedField(post, locale)?.slug;
+      }
+    } else if (type === 'news') {
+      const news = await getNewsItem(id);
+      if (news) {
+        slug = getLocalizedField(news, locale)?.slug;
+      }
+    } else {
+      // Try all types
+      const [page, post, news] = await Promise.all([
+        getPage(id),
+        getPost(id),
+        getNewsItem(id),
+      ]);
+
+      if (page) slug = getLocalizedField(page, locale)?.slug;
+      else if (post) slug = getLocalizedField(post, locale)?.slug;
+      else if (news) slug = getLocalizedField(news, locale)?.slug;
     }
 
-    const { entry, version } = result;
-
-    // Get the slug from version data
-    const versionData = version.data as {
-      locales?: Record<string, { slug?: string }>;
-    };
-    const slug = versionData?.locales?.[locale]?.slug ?? entry.id;
+    if (!slug) {
+      return NextResponse.json({ error: 'Content not found' }, { status: 404 });
+    }
 
     // Enable draft mode
     const draft = await draftMode();
@@ -44,7 +65,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   // Disable draft mode
   const draft = await draftMode();
   draft.disable();

@@ -1,6 +1,14 @@
-export * from './schema-mapper.js';
-export * from './content-mapper.js';
-export * from './version-mapper.js';
-export * from './lock-mapper.js';
+// Content type mappers
+export * from './page-mapper.js';
+export * from './post-mapper.js';
+export * from './news-mapper.js';
+
+// Navigation mappers
+export * from './menu-mapper.js';
+export * from './link-mapper.js';
+
+// Comment mapper
+export * from './comment-mapper.js';
+
+// System mappers
 export * from './role-mapper.js';
-export * from './redirect-mapper.js';

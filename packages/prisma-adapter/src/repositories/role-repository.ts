@@ -1,4 +1,4 @@
-import type { PrismaClient, Role as PrismaRole, UserRole } from '../../prisma-client/index.js';
+import type { PrismaClient, Role as PrismaRole, UserRole } from '@prisma/client';
 import {
   type RoleId,
   type PrincipalId,
