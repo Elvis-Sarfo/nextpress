@@ -19,6 +19,7 @@ import {
   Plus,
   Users,
   Package,
+  Image
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
@@ -38,6 +39,11 @@ const navItems: NavItem[] = [
     icon: LayoutDashboard,
   },
   {
+    label: 'Media',
+    href: '/admin/media',
+    icon: Image,
+  },
+  {
     label: 'Pages',
     href: '/admin/pages',
     icon: FileText,
@@ -53,6 +59,8 @@ const navItems: NavItem[] = [
     children: [
       { label: 'All Posts', href: '/admin/posts' },
       { label: 'Add New', href: '/admin/posts/new' },
+      { label: 'Categories', href: '/admin/posts/categories' },
+      { label: 'Tags', href: '/admin/posts/tags' },
     ],
   },
   {
@@ -65,9 +73,18 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    label: 'Menus',
-    href: '/admin/menus',
+    label: 'Appearance',
+    href: '/admin/appearance',
     icon: Menu,
+    children: [
+      { label: 'Themes', href: '/admin/appearance/themes' },
+      { label: 'Patterns', href: '/admin/appearance/patterns' },
+      { label: 'Customize', href: '/admin/appearance/customize' },
+      { label: 'Widgets', href: '/admin/appearance/widgets' },
+      { label: 'Menus', href: '/admin/appearance/menus' },
+      { label: 'Additional CSS', href: '/admin/appearance/css' },
+      { label: 'Theme File Editor', href: '/admin/appearance/editor' },
+    ],
   },
   {
     label: 'Links',
