@@ -1,4 +1,4 @@
-import type { ContentEntry as PrismaEntry } from '@prisma/client';
+import type { ContentEntry as PrismaEntry } from '../../prisma-client/index.js';
 import {
   ContentEntryId,
   ContentTypeId,

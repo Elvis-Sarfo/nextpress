@@ -17,9 +17,9 @@ model ContentType {
   displayName  String   @db.VarChar(255)
   description  String?  @db.Text
   version      Int      @default(1)
-  schema       Json     // FieldDefinition[]
-  localization Json     // LocalizationPolicy
-  seo          Json     // SEOPolicy
+  schema       Json // FieldDefinition[]
+  localization Json // LocalizationPolicy
+  seo          Json // SEOPolicy
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -61,7 +61,7 @@ model ContentVersion {
   entryId     String
   version     Int
   status      String    @db.VarChar(20) // DRAFT, PUBLISHED, SCHEDULED, ARCHIVED
-  data        Json      // VersionData
+  data        Json // VersionData
   createdAt   DateTime  @default(now())
   createdBy   String    @db.VarChar(255)
   publishedAt DateTime?
@@ -120,7 +120,7 @@ model Role {
   id          String   @id @default(uuid())
   name        String   @unique @db.VarChar(100)
   displayName String   @db.VarChar(255)
-  permissions Json     // Permission[]
+  permissions Json // Permission[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

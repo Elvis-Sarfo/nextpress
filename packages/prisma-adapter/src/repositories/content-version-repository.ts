@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient, ContentVersion as PrismaVersion } from '../../prisma-client/index.js';
 import {
   type ContentVersionId,
   type ContentEntryId,
@@ -27,7 +27,7 @@ export class PrismaContentVersionRepository implements ContentVersionRepository 
       orderBy: { version: 'desc' },
     });
 
-    return records.map((r) => versionMapper.toDomain(r));
+    return records.map((r: PrismaVersion) => versionMapper.toDomain(r));
   }
 
   async findByEntryAndStatus(
@@ -70,7 +70,7 @@ export class PrismaContentVersionRepository implements ContentVersionRepository 
       },
     });
 
-    return records.map((r) => versionMapper.toDomain(r));
+    return records.map((r: PrismaVersion) => versionMapper.toDomain(r));
   }
 
   async findPublishedBySlug(

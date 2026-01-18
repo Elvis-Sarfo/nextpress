@@ -1,4 +1,5 @@
-import type { ContentVersion as PrismaVersion } from '@prisma/client';
+import type { ContentVersion as PrismaVersion } from '../../prisma-client/index.js';
+
 import {
   ContentVersionId,
   ContentEntryId,

@@ -1,4 +1,4 @@
-import type { ContentType as PrismaContentType } from '@prisma/client';
+import type { ContentType as PrismaContentType } from '../../prisma-client/index.js';
 import {
   ContentTypeId,
   Locale,

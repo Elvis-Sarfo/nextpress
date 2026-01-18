@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient, SlugRedirect as PrismaRedirect } from '../../prisma-client/index.js';
 import {
   type ContentTypeId,
   type ContentEntryId,
@@ -35,7 +35,7 @@ export class PrismaSlugRedirectRepository implements SlugRedirectRepository {
       orderBy: { createdAt: 'desc' },
     });
 
-    return records.map((r) => redirectMapper.toDomain(r));
+    return records.map((r: PrismaRedirect) => redirectMapper.toDomain(r));
   }
 
   async save(redirect: SlugRedirect): Promise<void> {

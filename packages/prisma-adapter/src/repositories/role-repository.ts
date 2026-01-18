@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient, Role as PrismaRole, UserRole } from '../../prisma-client/index.js';
 import {
   type RoleId,
   type PrincipalId,
@@ -31,7 +31,7 @@ export class PrismaRoleRepository implements RoleRepository {
       orderBy: { name: 'asc' },
     });
 
-    return records.map((r) => roleMapper.toDomain(r));
+    return records.map((r: PrismaRole) => roleMapper.toDomain(r));
   }
 
   async findByUser(userId: PrincipalId): Promise<Role[]> {
@@ -40,7 +40,7 @@ export class PrismaRoleRepository implements RoleRepository {
       include: { role: true },
     });
 
-    return userRoles.map((ur) => roleMapper.toDomain(ur.role));
+    return userRoles.map((ur: UserRole & { role: PrismaRole }) => roleMapper.toDomain(ur.role));
   }
 
   async save(role: Role): Promise<void> {

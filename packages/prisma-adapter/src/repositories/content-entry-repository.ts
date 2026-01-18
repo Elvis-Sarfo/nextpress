@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient, ContentEntry as PrismaEntry } from '../../prisma-client/index.js';
 import {
   type ContentEntryId,
   type ContentTypeId,
@@ -33,7 +33,7 @@ export class PrismaContentEntryRepository implements ContentEntryRepository {
       take: options?.limit ?? 20,
     });
 
-    return records.map((r) => contentMapper.toDomain(r));
+    return records.map((r: PrismaEntry) => contentMapper.toDomain(r));
   }
 
   async countByType(typeId: ContentTypeId): Promise<number> {

@@ -1,4 +1,4 @@
-import type { SlugRedirect as PrismaRedirect } from '@prisma/client';
+import type { SlugRedirect as PrismaRedirect } from '../../prisma-client/index.js';
 import {
   ContentTypeId,
   ContentEntryId,

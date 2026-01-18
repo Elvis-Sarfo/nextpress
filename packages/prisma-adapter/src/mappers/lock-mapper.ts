@@ -1,4 +1,4 @@
-import type { ContentLock as PrismaLock } from '@prisma/client';
+import type { ContentLock as PrismaLock } from '../../prisma-client/index.js';
 import {
   ContentEntryId,
   PrincipalId,

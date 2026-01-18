@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient, ContentType } from '../../prisma-client/index.js';
 import {
   type ContentTypeId,
   type ContentTypeSchema,
@@ -30,7 +30,7 @@ export class PrismaSchemaRepository implements SchemaRepository {
       orderBy: { name: 'asc' },
     });
 
-    return records.map((r) => schemaMapper.toDomain(r));
+    return records.map((r: ContentType) => schemaMapper.toDomain(r));
   }
 
   async save(schema: ContentTypeSchema): Promise<void> {
