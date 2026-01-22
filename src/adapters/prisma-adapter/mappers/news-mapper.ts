@@ -2,7 +2,7 @@ import type {
   News as PrismaNews,
   NewsLocale as PrismaNewsLocale,
   NewsVersion as PrismaNewsVersion,
-} from '@prisma/client';
+} from '@/adapters/prisma-adapter/prisma-client';
 import {
   NewsId,
   DocumentId,
@@ -13,7 +13,7 @@ import {
   type NewsVersion,
   type NewsWithLocales,
   type ContentStatus,
-} from '@cms/kernel';
+} from '@/kernel';
 
 type PrismaNewsWithLocales = PrismaNews & { locales: PrismaNewsLocale[] };
 

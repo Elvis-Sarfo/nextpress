@@ -1,4 +1,4 @@
-import type { Comment as PrismaComment } from '@prisma/client';
+import type { Comment as PrismaComment } from '@/adapters/prisma-adapter/prisma-client';
 import {
   CommentId,
   PageId,
@@ -9,7 +9,7 @@ import {
   type CommentStatus,
   type CommentWithReplies,
   buildCommentTree,
-} from '@cms/kernel';
+} from '@/kernel';
 
 /**
  * Maps between Prisma Comment and kernel Comment.

@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@/adapters/prisma-adapter/prisma-client';
 import {
   type PostId,
   type DocumentId,
@@ -11,7 +11,7 @@ import {
   type PostVersionRepository,
   type PostListOptions,
   type ContentStatus,
-} from '@cms/kernel';
+} from '@/kernel';
 import { postMapper } from '../mappers/post-mapper.js';
 
 export class PrismaPostRepository implements PostRepository {

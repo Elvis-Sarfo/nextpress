@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@/adapters/prisma-adapter/prisma-client';
 import {
   type CommentId,
   type PageId,
@@ -10,7 +10,7 @@ import {
   type CommentRepository,
   type CommentListOptions,
   type CommentStatus,
-} from '@cms/kernel';
+} from '@/kernel';
 import { commentMapper } from '../mappers/comment-mapper.js';
 
 export class PrismaCommentRepository implements CommentRepository {

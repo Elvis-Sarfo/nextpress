@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@/adapters/prisma-adapter/prisma-client';
 import {
   type NewsId,
   type DocumentId,
@@ -11,7 +11,7 @@ import {
   type NewsVersionRepository,
   type NewsListOptions,
   type ContentStatus,
-} from '@cms/kernel';
+} from '@/kernel';
 import { newsMapper } from '../mappers/news-mapper.js';
 
 export class PrismaNewsRepository implements NewsRepository {

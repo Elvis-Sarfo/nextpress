@@ -1,9 +1,9 @@
-import type { Role as PrismaRole } from '@prisma/client';
+import type { Role as PrismaRole } from '@/adapters/prisma-adapter/prisma-client';
 import {
   RoleId,
   type Role,
   type Permission,
-} from '@cms/kernel';
+} from '@/kernel';
 
 /**
  * Maps between Prisma Role and kernel Role.

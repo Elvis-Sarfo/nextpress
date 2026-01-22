@@ -1,10 +1,10 @@
-import type { PrismaClient, Role as PrismaRole, UserRole } from '@prisma/client';
+import type { PrismaClient, Role as PrismaRole, UserRole } from '@/adapters/prisma-adapter/prisma-client';
 import {
   type RoleId,
   type PrincipalId,
   type Role,
   type RoleRepository,
-} from '@cms/kernel';
+} from '@/kernel';
 import { roleMapper } from '../mappers/role-mapper.js';
 
 export class PrismaRoleRepository implements RoleRepository {

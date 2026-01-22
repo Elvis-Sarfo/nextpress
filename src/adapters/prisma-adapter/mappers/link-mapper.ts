@@ -1,7 +1,7 @@
 import type {
   LinkCollection as PrismaLinkCollection,
   Link as PrismaLink,
-} from '@prisma/client';
+} from '@/adapters/prisma-adapter/prisma-client';
 import {
   LinkCollectionId,
   LinkId,
@@ -9,7 +9,7 @@ import {
   type LinkCollection,
   type Link,
   type LinkCollectionWithLinks,
-} from '@cms/kernel';
+} from '@/kernel';
 
 type PrismaLinkCollectionWithLinks = PrismaLinkCollection & { links: PrismaLink[] };
 

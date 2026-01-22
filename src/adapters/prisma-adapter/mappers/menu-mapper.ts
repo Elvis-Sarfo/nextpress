@@ -1,7 +1,7 @@
 import type {
   Menu as PrismaMenu,
   MenuItem as PrismaMenuItem,
-} from '@prisma/client';
+} from '@/adapters/prisma-adapter/prisma-client';
 import {
   MenuId,
   MenuItemId,
@@ -13,7 +13,7 @@ import {
   type MenuItem,
   type MenuWithItems,
   type MenuItemWithChildren,
-} from '@cms/kernel';
+} from '@/kernel';
 
 type PrismaMenuWithItems = PrismaMenu & { items: PrismaMenuItem[] };
 

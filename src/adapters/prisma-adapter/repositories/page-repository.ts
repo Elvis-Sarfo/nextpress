@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@/adapters/prisma-adapter/prisma-client';
 import {
   type PageId,
   type DocumentId,
@@ -11,7 +11,7 @@ import {
   type PageVersionRepository,
   type PageListOptions,
   type ContentStatus,
-} from '@cms/kernel';
+} from '@/kernel';
 import { pageMapper } from '../mappers/page-mapper.js';
 
 export class PrismaPageRepository implements PageRepository {

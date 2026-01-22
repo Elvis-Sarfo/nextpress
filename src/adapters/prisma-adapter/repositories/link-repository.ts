@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@/adapters/prisma-adapter/prisma-client';
 import {
   type LinkCollectionId,
   type LinkId,
@@ -7,7 +7,7 @@ import {
   type LinkCollectionWithLinks,
   type LinkCollectionRepository,
   type LinkRepository,
-} from '@cms/kernel';
+} from '@/kernel';
 import { linkMapper } from '../mappers/link-mapper.js';
 
 export class PrismaLinkCollectionRepository implements LinkCollectionRepository {

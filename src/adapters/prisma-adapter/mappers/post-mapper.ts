@@ -2,7 +2,7 @@ import type {
   Post as PrismaPost,
   PostLocale as PrismaPostLocale,
   PostVersion as PrismaPostVersion,
-} from '@prisma/client';
+} from '@/adapters/prisma-adapter/prisma-client';
 import {
   PostId,
   DocumentId,
@@ -13,7 +13,7 @@ import {
   type PostVersion,
   type PostWithLocales,
   type ContentStatus,
-} from '@cms/kernel';
+} from '@/kernel';
 
 type PrismaPostWithLocales = PrismaPost & { locales: PrismaPostLocale[] };
 

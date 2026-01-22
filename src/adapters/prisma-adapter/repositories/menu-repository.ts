@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@/adapters/prisma-adapter/prisma-client';
 import {
   type MenuId,
   type MenuItemId,
@@ -7,7 +7,7 @@ import {
   type MenuWithItems,
   type MenuRepository,
   type MenuItemRepository,
-} from '@cms/kernel';
+} from '@/kernel';
 import { menuMapper } from '../mappers/menu-mapper.js';
 
 export class PrismaMenuRepository implements MenuRepository {

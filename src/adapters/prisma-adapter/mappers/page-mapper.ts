@@ -2,7 +2,7 @@ import type {
   Page as PrismaPage,
   PageLocale as PrismaPageLocale,
   PageVersion as PrismaPageVersion,
-} from '@prisma/client';
+} from '@/adapters/prisma-adapter/prisma-client';
 import {
   PageId,
   DocumentId,
@@ -13,7 +13,7 @@ import {
   type PageVersion,
   type PageWithLocales,
   type ContentStatus,
-} from '@cms/kernel';
+} from '@/kernel';
 
 type PrismaPageWithLocales = PrismaPage & { locales: PrismaPageLocale[] };
 
