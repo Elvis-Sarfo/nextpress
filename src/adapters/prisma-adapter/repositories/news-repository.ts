@@ -12,7 +12,7 @@ import {
   type NewsListOptions,
   type ContentStatus,
 } from '@/kernel';
-import { newsMapper } from '../mappers/news-mapper.js';
+import { newsMapper } from '../mappers/news-mapper';
 
 export class PrismaNewsRepository implements NewsRepository {
   constructor(private prisma: PrismaClient) {}

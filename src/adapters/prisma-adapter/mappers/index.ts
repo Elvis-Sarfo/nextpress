@@ -1,14 +1,14 @@
 // Content type mappers
-export * from './page-mapper.js';
-export * from './post-mapper.js';
-export * from './news-mapper.js';
+export * from './page-mapper';
+export * from './post-mapper';
+export * from './news-mapper';
 
 // Navigation mappers
-export * from './menu-mapper.js';
-export * from './link-mapper.js';
+export * from './menu-mapper';
+export * from './link-mapper';
 
 // Comment mapper
-export * from './comment-mapper.js';
+export * from './comment-mapper';
 
 // System mappers
-export * from './role-mapper.js';
+export * from './role-mapper';

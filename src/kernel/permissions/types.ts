@@ -1,4 +1,4 @@
-import type { PrincipalId, RoleId, ContentTypeId, ContentEntryId } from '../core/types.js';
+import type { PrincipalId, RoleId, ContentTypeId, ContentEntryId } from '../core/types';
 
 // ============================================================================
 // ACTIONS

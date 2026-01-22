@@ -3,8 +3,8 @@ import type {
   DocumentId,
   PrincipalId,
   Locale,
-} from '../core/types.js';
-import type { ContentStatus } from '../page/types.js';
+} from '../core/types';
+import type { ContentStatus } from '../page/types';
 
 // ============================================================================
 // POST

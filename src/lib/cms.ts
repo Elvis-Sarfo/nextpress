@@ -15,7 +15,7 @@ import {
   type ContentStatus,
   type CommentStatus,
   type CommentWithReplies,
-} from '../kernel/src';
+} from '@/kernel';
 
 import {
   prisma,
@@ -31,7 +31,7 @@ import {
   PrismaLinkRepository,
   PrismaCommentRepository,
   PrismaRoleRepository,
-} from '@cms/prisma-adapter';
+} from '@/adapters/prisma-adapter';
 
 import { revalidatePath } from 'next/cache';
 

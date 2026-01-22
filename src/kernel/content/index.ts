@@ -1,2 +1,2 @@
-export * from './types.js';
-export * from './version-manager.js';
+export * from './types';
+export * from './version-manager';

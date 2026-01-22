@@ -12,7 +12,7 @@ import {
   type PageListOptions,
   type ContentStatus,
 } from '@/kernel';
-import { pageMapper } from '../mappers/page-mapper.js';
+import { pageMapper } from '../mappers/page-mapper';
 
 export class PrismaPageRepository implements PageRepository {
   constructor(private prisma: PrismaClient) {}

@@ -30,12 +30,8 @@ export type PrincipalId = Brand<string, 'PrincipalId'>;
 export type RoleId = Brand<string, 'RoleId'>;
 export type Locale = Brand<string, 'Locale'>;
 
-// Legacy IDs (deprecated - kept for backward compatibility)
-/** @deprecated Use PageId or PostId instead */
 export type ContentEntryId = Brand<string, 'ContentEntryId'>;
-/** @deprecated Use dedicated version types */
 export type ContentVersionId = Brand<string, 'ContentVersionId'>;
-/** @deprecated Content types are now explicit models */
 export type ContentTypeId = Brand<string, 'ContentTypeId'>;
 
 // Factory functions to create branded IDs

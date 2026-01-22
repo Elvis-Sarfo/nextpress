@@ -12,7 +12,7 @@ import {
   type PostListOptions,
   type ContentStatus,
 } from '@/kernel';
-import { postMapper } from '../mappers/post-mapper.js';
+import { postMapper } from '../mappers/post-mapper';
 
 export class PrismaPostRepository implements PostRepository {
   constructor(private prisma: PrismaClient) {}

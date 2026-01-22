@@ -8,7 +8,7 @@ import {
   localeEngine,
 } from '@/lib/cms';
 import { ArrowLeft } from 'lucide-react';
-import type { PageWithLocales, PostWithLocales, NewsWithLocales } from '../../../../kernel/src';
+import type { PageWithLocales, PostWithLocales, NewsWithLocales } from '@/kernel';
 
 interface Props {
   params: Promise<{ locale: string; slug: string }>;

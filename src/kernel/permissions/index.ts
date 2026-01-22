@@ -1,2 +1,2 @@
-export * from './types.js';
-export * from './rbac-engine.js';
+export * from './types';
+export * from './rbac-engine';

@@ -1,7 +1,7 @@
-import { Result, Ok, Err, DomainError } from '../core/types.js';
+import { Result, Ok, Err, DomainError } from '../core/types';
 import type {
   Principal, Permission, Action, ResourceType, PermissionContext
-} from './types.js';
+} from './types';
 
 /**
  * Role-Based Access Control engine.
@@ -132,8 +132,8 @@ export class RBACEngine {
 // PREDEFINED ROLES
 // ============================================================================
 
-import { RoleId } from '../core/types.js';
-import type { Role } from './types.js';
+import { RoleId } from '../core/types';
+import type { Role } from './types';
 
 export const ADMIN_ROLE: Role = {
   id: RoleId('role-admin'),

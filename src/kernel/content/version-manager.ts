@@ -1,10 +1,10 @@
 import {
   Result, Ok, Err, DomainError,
   ContentEntryId, ContentVersionId, PrincipalId
-} from '../core/types.js';
+} from '../core/types';
 import type {
   ContentVersion, ContentVersionRepository, VersionData, VersionStatus
-} from './types.js';
+} from './types';
 
 /**
  * Manages content version lifecycle with copy-on-write semantics.

@@ -1,4 +1,4 @@
-import type { CmsEvent, CmsEventType, EventHandler } from './types.js';
+import type { CmsEvent, CmsEventType, EventHandler } from './types';
 
 /**
  * Synchronous event bus for internal CMS events.

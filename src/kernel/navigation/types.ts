@@ -8,7 +8,7 @@ import type {
   NewsId,
   PrincipalId,
   Locale,
-} from '../core/types.js';
+} from '../core/types';
 
 // ============================================================================
 // MENU

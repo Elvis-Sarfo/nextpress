@@ -1,10 +1,10 @@
 import {
   Result, Ok, Err, DomainError, ContentTypeId, Locale
-} from '../core/types.js';
+} from '../core/types';
 import type {
   ContentTypeSchema, SchemaRepository, FieldDefinition
-} from './types.js';
-import { SchemaValidator } from './validator.js';
+} from './types';
+import { SchemaValidator } from './validator';
 
 /**
  * Schema engine manages content type schemas.

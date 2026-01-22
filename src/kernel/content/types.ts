@@ -1,6 +1,6 @@
 import type {
   ContentEntryId, ContentVersionId, ContentTypeId, PrincipalId, Locale
-} from '../core/types.js';
+} from '../core/types';
 
 // ============================================================================
 // VERSION STATUS

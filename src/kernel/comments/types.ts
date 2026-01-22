@@ -4,7 +4,7 @@ import type {
   PostId,
   NewsId,
   PrincipalId,
-} from '../core/types.js';
+} from '../core/types';
 
 // ============================================================================
 // COMMENT STATUS

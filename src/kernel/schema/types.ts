@@ -1,4 +1,4 @@
-import type { ContentTypeId, RoleId, Locale } from '../core/types.js';
+import type { ContentTypeId, RoleId, Locale } from '../core/types';
 
 // ============================================================================
 // FIELD TYPES

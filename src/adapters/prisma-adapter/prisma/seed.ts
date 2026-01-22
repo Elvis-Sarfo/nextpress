@@ -1,4 +1,4 @@
-import { PrismaClient } from '../prisma-client/index.js';
+import { PrismaClient } from '../prisma-client/index';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
 import dotenv from 'dotenv';
@@ -98,7 +98,7 @@ async function main() {
             title: 'Welcome to NextPress',
             slug: 'home',
             content:
-              '<h1>Welcome to NextPress</h1><p>A modern headless CMS built with Next.js and TypeScript.</p><h2>Key Features</h2><ul><li>Full TypeScript support with branded types</li><li>Multi-locale content management</li><li>Version control and content workflows</li><li>Role-based access control</li></ul>',
+              '<h1>Welcome to NextPress</h1><p>A modern headless CMS built with Next and TypeScript.</p><h2>Key Features</h2><ul><li>Full TypeScript support with branded types</li><li>Multi-locale content management</li><li>Version control and content workflows</li><li>Role-based access control</li></ul>',
             excerpt: 'A modern headless CMS for developers',
           },
           {
@@ -106,7 +106,7 @@ async function main() {
             title: 'Bienvenue sur NextPress',
             slug: 'accueil',
             content:
-              '<h1>Bienvenue sur NextPress</h1><p>Un CMS headless moderne construit avec Next.js et TypeScript.</p>',
+              '<h1>Bienvenue sur NextPress</h1><p>Un CMS headless moderne construit avec Next et TypeScript.</p>',
             excerpt: 'Un CMS headless moderne pour les développeurs',
           },
         ],
@@ -130,7 +130,7 @@ async function main() {
             title: 'About Us',
             slug: 'about',
             content:
-              '<h1>About NextPress</h1><p>NextPress is a powerful, developer-friendly content management system.</p><h2>Our Mission</h2><p>To provide developers with a CMS that respects their intelligence and offers complete type safety.</p><h2>Technology Stack</h2><ul><li>Next.js 14 with App Router</li><li>TypeScript with branded types</li><li>Prisma ORM</li><li>PostgreSQL</li></ul>',
+              '<h1>About NextPress</h1><p>NextPress is a powerful, developer-friendly content management system.</p><h2>Our Mission</h2><p>To provide developers with a CMS that respects their intelligence and offers complete type safety.</p><h2>Technology Stack</h2><ul><li>Next 14 with App Router</li><li>TypeScript with branded types</li><li>Prisma ORM</li><li>PostgreSQL</li></ul>',
             excerpt: 'Learn about NextPress and our mission',
           },
         ],

@@ -1,3 +1,3 @@
-export * from './types.js';
-export * from './validator.js';
-export * from './schema-engine.js';
+export * from './types';
+export * from './validator';
+export * from './schema-engine';

@@ -1,4 +1,4 @@
-import type { ContentEntryId, ContentVersionId, ContentTypeId, PrincipalId, Locale } from '../core/types.js';
+import type { ContentEntryId, ContentVersionId, ContentTypeId, PrincipalId, Locale } from '../core/types';
 
 // ============================================================================
 // EVENT TYPES

@@ -8,7 +8,7 @@ import {
   type MenuRepository,
   type MenuItemRepository,
 } from '@/kernel';
-import { menuMapper } from '../mappers/menu-mapper.js';
+import { menuMapper } from '../mappers/menu-mapper';
 
 export class PrismaMenuRepository implements MenuRepository {
   constructor(private prisma: PrismaClient) {}

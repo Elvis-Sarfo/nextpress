@@ -5,7 +5,7 @@ import {
   type Role,
   type RoleRepository,
 } from '@/kernel';
-import { roleMapper } from '../mappers/role-mapper.js';
+import { roleMapper } from '../mappers/role-mapper';
 
 export class PrismaRoleRepository implements RoleRepository {
   constructor(private prisma: PrismaClient) {}

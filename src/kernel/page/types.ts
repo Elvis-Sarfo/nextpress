@@ -3,7 +3,7 @@ import type {
   DocumentId,
   PrincipalId,
   Locale,
-} from '../core/types.js';
+} from '../core/types';
 
 // ============================================================================
 // STATUS

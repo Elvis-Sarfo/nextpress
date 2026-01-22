@@ -1,9 +1,9 @@
 import {
   Result, Ok, Err, DomainError, ValidationError, Locale
-} from '../core/types.js';
+} from '../core/types';
 import type {
   ContentTypeSchema, FieldDefinition, FieldType
-} from './types.js';
+} from './types';
 
 /**
  * Validates content data against a schema.

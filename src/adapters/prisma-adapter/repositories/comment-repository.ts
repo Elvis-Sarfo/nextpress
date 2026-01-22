@@ -11,7 +11,7 @@ import {
   type CommentListOptions,
   type CommentStatus,
 } from '@/kernel';
-import { commentMapper } from '../mappers/comment-mapper.js';
+import { commentMapper } from '../mappers/comment-mapper';
 
 export class PrismaCommentRepository implements CommentRepository {
   constructor(private prisma: PrismaClient) {}

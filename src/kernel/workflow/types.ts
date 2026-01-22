@@ -1,4 +1,4 @@
-import type { VersionStatus } from '../content/types.js';
+import type { VersionStatus } from '../content/types';
 
 export type WorkflowCommand =
   | 'SAVE_DRAFT'

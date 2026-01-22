@@ -1,7 +1,7 @@
 import {
   Result, Ok, Err, DomainError, ContentEntryId, PrincipalId
-} from '../core/types.js';
-import type { ContentLock, ContentLockRepository } from '../content/types.js';
+} from '../core/types';
+import type { ContentLock, ContentLockRepository } from '../content/types';
 
 const DEFAULT_LOCK_DURATION_MINUTES = 30;
 

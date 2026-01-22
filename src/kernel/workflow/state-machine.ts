@@ -1,6 +1,6 @@
-import { Result, Ok, Err, DomainError } from '../core/types.js';
-import type { VersionStatus } from '../content/types.js';
-import type { WorkflowCommand, StateTransition } from './types.js';
+import { Result, Ok, Err, DomainError } from '../core/types';
+import type { VersionStatus } from '../content/types';
+import type { WorkflowCommand, StateTransition } from './types';
 
 /**
  * Valid state transitions:

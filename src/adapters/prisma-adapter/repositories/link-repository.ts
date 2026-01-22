@@ -8,7 +8,7 @@ import {
   type LinkCollectionRepository,
   type LinkRepository,
 } from '@/kernel';
-import { linkMapper } from '../mappers/link-mapper.js';
+import { linkMapper } from '../mappers/link-mapper';
 
 export class PrismaLinkCollectionRepository implements LinkCollectionRepository {
   constructor(private prisma: PrismaClient) {}

@@ -1,26 +1,26 @@
 // Core types and utilities
-export * from './core/index.js';
+export * from './core';
 
 // Events
-export * from './events/index.js';
+export * from './events';
 
 // Content types
-export * from './page/index.js';
-export * from './post/index.js';
-export * from './news/index.js';
+export * from './page';
+export * from './post';
+export * from './news';
 
 // Navigation
-export * from './navigation/index.js';
+export * from './navigation';
 
 // Comments
-export * from './comments/index.js';
+export * from './comments';
 
 // Permissions
-export * from './permissions/index.js';
+export * from './permissions';
 
 // Workflow
-export * from './workflow/index.js';
+export * from './workflow';
 
 // Legacy (to be removed after migration)
-export * from './schema/index.js';
-export * from './content/index.js';
+export * from './schema';
+export * from './content';
