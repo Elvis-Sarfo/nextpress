@@ -27,8 +27,6 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
-    "@cms/kernel": "workspace:*",
-    "@cms/prisma-adapter": "workspace:*",
     "next": "^16.1.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

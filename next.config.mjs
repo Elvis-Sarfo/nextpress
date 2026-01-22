@@ -1,6 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ['@cms/kernel', '@cms/prisma-adapter'],
   experimental: {
     serverActions: {
       bodySizeLimit: '2mb',
