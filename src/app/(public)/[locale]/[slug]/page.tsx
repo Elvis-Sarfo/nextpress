@@ -10,7 +10,7 @@ import {
 import { ArrowLeft } from 'lucide-react';
 import type { PageWithLocales, PostWithLocales, NewsWithLocales } from '@/kernel';
 
-interface Props {
+interface PageProps {
   params: Promise<{ locale: string; slug: string }>;
 }
 
@@ -34,7 +34,7 @@ async function findContent(locale: string, slug: string): Promise<ContentItem | 
   return null;
 }
 
-export default async function ContentPage({ params }: Props) {
+export default async function ContentPage({ params }: PageProps) {
   const { locale, slug } = await params;
 
   // Validate locale
@@ -114,7 +114,7 @@ export default async function ContentPage({ params }: Props) {
   );
 }
 
-export async function generateMetadata({ params }: Props) {
+export async function generateMetadata({ params }: PageProps) {
   const { locale, slug } = await params;
 
   const content = await findContent(locale, slug);

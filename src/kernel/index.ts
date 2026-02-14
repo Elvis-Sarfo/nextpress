@@ -22,5 +22,5 @@ export * from './permissions';
 export * from './workflow';
 
 // Legacy (to be removed after migration)
-export * from './schema';
+export * from './content-schema';
 export * from './content';

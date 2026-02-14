@@ -1,11 +1,19 @@
-import React from "react";
+import RootPage from "@/components/admin/RootPage";
 
-const AdminCatchAllPage = () => {
+interface PageProps {
+  params: Promise<{ locale: string; segment: string }>;
+}
+
+const AdminCatchAllPage = async ({ params }: PageProps) => {
+
+    const { segment } = await params;
+
+    // Log the params for debugging
+    console.log("Params:", segment);
+
     return (
-        <div className="p-8">
-            <h1 className="text-2xl font-bold mb-4">Admin Page</h1>
-            <p>Select an admin section from the navigation.</p>
-        </div>
+        // <RootPage config={params} segment={Array.isArray(segment) ? segment.join('/') : segment || ''} />
+        <h2>Admin Catch-All Page</h2>
     );
 };
 
