@@ -1,4 +1,4 @@
-import type { VersionStatus } from '../content/types';
+import type { ContentStatus } from '../content/types';
 
 export type WorkflowCommand =
   | 'SAVE_DRAFT'
@@ -9,7 +9,7 @@ export type WorkflowCommand =
   | 'ARCHIVE';
 
 export interface StateTransition {
-  from: VersionStatus;
+  from: ContentStatus;
   command: WorkflowCommand;
-  to: VersionStatus;
+  to: ContentStatus;
 }

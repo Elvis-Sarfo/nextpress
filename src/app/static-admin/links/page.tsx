@@ -1,6 +1,18 @@
 import Link from 'next/link';
-import { getLinkCollections, linkCollectionRepository, linkRepository } from '@/lib/cms';
+import { getLinkCollections, getLinksByCollection } from '@/lib/cms';
 import { Plus, Link2, ExternalLink } from 'lucide-react';
+
+function readLocalized(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (!value || typeof value !== 'object') return '';
+
+  const localized = value as Record<string, unknown>;
+  const english = localized.en;
+  if (typeof english === 'string') return english;
+
+  const firstValue = Object.values(localized).find((entry) => typeof entry === 'string');
+  return typeof firstValue === 'string' ? firstValue : '';
+}
 
 export default async function LinksListPage() {
   // Get all collections
@@ -9,7 +21,7 @@ export default async function LinksListPage() {
   // Get links for each collection
   const collectionsWithLinks = await Promise.all(
     collections.map(async (collection) => {
-      const links = await linkRepository.findByCollection(collection.id);
+      const links = await getLinksByCollection(collection.id);
       return { ...collection, links };
     })
   );
@@ -78,10 +90,7 @@ export default async function LinksListPage() {
                     {collection.links
                       .sort((a, b) => a.order - b.order)
                       .map((link) => {
-                        const title =
-                          typeof link.title === 'object' && link.title !== null
-                            ? (link.title as Record<string, string>).en ?? Object.values(link.title)[0]
-                            : String(link.title);
+                        const title = readLocalized(link.title);
 
                         return (
                           <li

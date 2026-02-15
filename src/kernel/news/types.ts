@@ -4,7 +4,10 @@ import type {
   PrincipalId,
   Locale,
 } from '../core/types';
-import type { ContentStatus } from '../page/types';
+import type { ContentStatus } from '../content/types';
+
+// Re-export for convenience
+export type { ContentStatus };
 
 // ============================================================================
 // NEWS

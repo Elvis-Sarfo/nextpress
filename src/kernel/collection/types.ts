@@ -31,6 +31,11 @@ export type IndexSchema = {
   type?: 'btree' | 'hash' | 'gin' | 'gist'
 }
 
+type AuthSchema = {
+  ownerField?: string
+  permissions?: Record<string, string[]>
+}
+
 
 type ModelSchema = {
   name: string

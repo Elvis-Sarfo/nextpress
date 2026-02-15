@@ -1,118 +1,59 @@
-import {
-  RBACEngine,
-  EventBus,
-  Locale,
-  PrincipalId,
-  DocumentId,
-  PageId,
-  PostId,
-  NewsId,
-  type Principal,
-  type PageWithLocales,
-  type PostWithLocales,
-  type NewsWithLocales,
-  type MenuWithItems,
-  type ContentStatus,
-  type CommentStatus,
-  type CommentWithReplies,
-} from '@/kernel';
+import { prisma } from '@/adapters/prisma-adapter';
+import type { Prisma } from '@prisma/client';
+import { ContentStatus } from '@/kernel/content/types';
+import { CommentStatus } from '@/kernel/comments/types';
 
-import {
-  prisma,
-  PrismaPageRepository,
-  PrismaPageVersionRepository,
-  PrismaPostRepository,
-  PrismaPostVersionRepository,
-  PrismaNewsRepository,
-  PrismaNewsVersionRepository,
-  PrismaMenuRepository,
-  PrismaMenuItemRepository,
-  PrismaLinkCollectionRepository,
-  PrismaLinkRepository,
-  PrismaCommentRepository,
-  PrismaRoleRepository,
-} from '@/adapters/prisma-adapter';
+// Re-export from kernel for backwards compatibility
+export type { ContentStatus };
+export type { CommentStatus };
 
-import { revalidatePath } from 'next/cache';
+// Also re-export buildCommentTree from kernel
+export { buildCommentTree } from '@/kernel/comments/types';
 
-// ============================================================================
-// EVENT BUS
-// ============================================================================
+export type PageWithLocales = Prisma.PageGetPayload<{ include: { locales: true } }>;
+export type PostWithLocales = Prisma.PostGetPayload<{ include: { locales: true } }>;
+export type NewsWithLocales = Prisma.NewsGetPayload<{ include: { locales: true } }>;
+export type MenuWithItems = Prisma.MenuGetPayload<{ include: { items: true } }>;
+export type LinkCollection = Prisma.LinkCollectionGetPayload<Record<string, never>>;
+export type Link = Prisma.LinkGetPayload<Record<string, never>>;
+export type Role = Prisma.RoleGetPayload<Record<string, never>>;
+export type Comment = Prisma.CommentGetPayload<Record<string, never>>;
 
-export const eventBus = new EventBus();
+// CommentWithReplies for Prisma compatibility
+export type CommentWithReplies = Comment & {
+  replies: CommentWithReplies[];
+};
 
-// Cache invalidation on publish
-eventBus.on('CONTENT_PUBLISHED', async () => {
-  revalidatePath(`/en`);
-  revalidatePath(`/sitemap.xml`);
-});
+// Local alias for use within this file
+type LocalCommentWithReplies = Comment & {
+  replies: CommentWithReplies[];
+};
 
-eventBus.on('CONTENT_UNPUBLISHED', async () => {
-  revalidatePath(`/en`);
-});
+// Helper function using kernel's generic buildCommentTree
+function buildLocalCommentTree(comments: Comment[]): LocalCommentWithReplies[] {
+  return buildCommentTree(comments) as LocalCommentWithReplies[];
+}
 
-eventBus.on('CONTENT_DELETED', async () => {
-  revalidatePath(`/en`);
-});
+export interface Principal {
+  id: string;
+  roles: Role[];
+}
 
-// ============================================================================
-// REPOSITORIES
-// ============================================================================
-
-// Page repositories
-export const pageRepository = new PrismaPageRepository(prisma);
-export const pageVersionRepository = new PrismaPageVersionRepository(prisma);
-
-// Post repositories
-export const postRepository = new PrismaPostRepository(prisma);
-export const postVersionRepository = new PrismaPostVersionRepository(prisma);
-
-// News repositories
-export const newsRepository = new PrismaNewsRepository(prisma);
-export const newsVersionRepository = new PrismaNewsVersionRepository(prisma);
-
-// Navigation repositories
-export const menuRepository = new PrismaMenuRepository(prisma);
-export const menuItemRepository = new PrismaMenuItemRepository(prisma);
-export const linkCollectionRepository = new PrismaLinkCollectionRepository(prisma);
-export const linkRepository = new PrismaLinkRepository(prisma);
-
-// Comment repository
-export const commentRepository = new PrismaCommentRepository(prisma);
-
-// Role repository
-export const roleRepository = new PrismaRoleRepository(prisma);
-
-// ============================================================================
-// ENGINES
-// ============================================================================
-
-export const rbacEngine = new RBACEngine();
-
-// ============================================================================
-// LOCALE ENGINE
-// ============================================================================
-
-const DEFAULT_LOCALE = Locale('en');
-const SUPPORTED_LOCALES = [Locale('en'), Locale('fr'), Locale('de'), Locale('es')];
+const DEFAULT_LOCALE = 'en';
+const SUPPORTED_LOCALES = ['en', 'fr', 'de', 'es'] as const;
 
 export const localeEngine = {
   getDefaultLocale: () => DEFAULT_LOCALE,
-  getSupportedLocales: () => SUPPORTED_LOCALES,
-  isSupported: (locale: string) => SUPPORTED_LOCALES.includes(Locale(locale)),
+  getSupportedLocales: () => [...SUPPORTED_LOCALES],
+  isSupported: (locale: string) => SUPPORTED_LOCALES.includes(locale as (typeof SUPPORTED_LOCALES)[number]),
   getFallbackLocale: () => DEFAULT_LOCALE,
 };
 
-// ============================================================================
-// PRINCIPAL (AUTH PLACEHOLDER)
-// ============================================================================
-
 export async function getCurrentPrincipal(): Promise<Principal | null> {
-  // TODO: Integrate with next-auth session
-  const demoRoles = await roleRepository.findAll();
+  const roles = await prisma.role.findMany();
   return {
-    id: PrincipalId('demo-user'),
-    roles: demoRoles,
+    id: 'demo-user',
+    roles,
   };
 }
 
@@ -124,117 +65,161 @@ export async function requirePrincipal(): Promise<Principal> {
   return principal;
 }
 
-// ============================================================================
-// PAGE OPERATIONS
-// ============================================================================
-
 export async function getPages(options?: {
   limit?: number;
   offset?: number;
   status?: ContentStatus;
   parentId?: string | null;
 }): Promise<{ pages: PageWithLocales[]; total: number }> {
-  const parentId = options?.parentId !== undefined
-    ? (options.parentId === null ? null : PageId(options.parentId))
-    : undefined;
+  const where: Prisma.PageWhereInput = {
+    ...(options?.status ? { status: options.status } : {}),
+    ...(options?.parentId !== undefined ? { parentId: options.parentId } : {}),
+  };
 
-  const pages = await pageRepository.findMany({
-    limit: options?.limit ?? 20,
-    offset: options?.offset ?? 0,
-    status: options?.status,
-    parentId,
-  });
-
-  const total = await pageRepository.count({
-    status: options?.status,
-    parentId,
-  });
+  const [pages, total] = await Promise.all([
+    prisma.page.findMany({
+      where,
+      include: { locales: true },
+      take: options?.limit ?? 20,
+      skip: options?.offset ?? 0,
+      orderBy: { createdAt: 'desc' },
+    }),
+    prisma.page.count({ where }),
+  ]);
 
   return { pages, total };
 }
 
 export async function getPage(id: string): Promise<PageWithLocales | null> {
-  return pageRepository.findById(id as any);
+  return prisma.page.findUnique({
+    where: { id },
+    include: { locales: true },
+  });
 }
 
 export async function getPageByDocumentId(
   documentId: string,
   status?: ContentStatus
 ): Promise<PageWithLocales | null> {
-  return pageRepository.findByDocumentId(DocumentId(documentId), status);
+  return prisma.page.findFirst({
+    where: {
+      documentId,
+      ...(status ? { status } : {}),
+    },
+    include: { locales: true },
+  });
 }
 
 export async function getPublishedPage(
   locale: string,
   slug: string
 ): Promise<PageWithLocales | null> {
-  return pageRepository.findBySlug(Locale(locale), slug, 'PUBLISHED');
+  return prisma.page.findFirst({
+    where: {
+      status: 'PUBLISHED',
+      locales: {
+        some: {
+          locale,
+          slug,
+        },
+      },
+    },
+    include: { locales: true },
+  });
 }
 
 export async function getPageChildren(
   parentId: string,
   options?: { status?: ContentStatus }
 ): Promise<PageWithLocales[]> {
-  return pageRepository.findChildren(parentId as any, options);
+  return prisma.page.findMany({
+    where: {
+      parentId,
+      ...(options?.status ? { status: options.status } : {}),
+    },
+    include: { locales: true },
+    orderBy: { order: 'asc' },
+  });
 }
-
-// ============================================================================
-// POST OPERATIONS
-// ============================================================================
 
 export async function getPosts(options?: {
   limit?: number;
   offset?: number;
   status?: ContentStatus;
 }): Promise<{ posts: PostWithLocales[]; total: number }> {
-  const posts = await postRepository.findMany({
-    limit: options?.limit ?? 20,
-    offset: options?.offset ?? 0,
-    status: options?.status,
-  });
+  const where: Prisma.PostWhereInput = options?.status ? { status: options.status } : {};
 
-  const total = await postRepository.count({ status: options?.status });
+  const [posts, total] = await Promise.all([
+    prisma.post.findMany({
+      where,
+      include: { locales: true },
+      take: options?.limit ?? 20,
+      skip: options?.offset ?? 0,
+      orderBy: { createdAt: 'desc' },
+    }),
+    prisma.post.count({ where }),
+  ]);
 
   return { posts, total };
 }
 
 export async function getPost(id: string): Promise<PostWithLocales | null> {
-  return postRepository.findById(id as any);
+  return prisma.post.findUnique({
+    where: { id },
+    include: { locales: true },
+  });
 }
 
 export async function getPostByDocumentId(
   documentId: string,
   status?: ContentStatus
 ): Promise<PostWithLocales | null> {
-  return postRepository.findByDocumentId(DocumentId(documentId), status);
+  return prisma.post.findFirst({
+    where: {
+      documentId,
+      ...(status ? { status } : {}),
+    },
+    include: { locales: true },
+  });
 }
 
 export async function getPublishedPost(
   locale: string,
   slug: string
 ): Promise<PostWithLocales | null> {
-  return postRepository.findBySlug(Locale(locale), slug, 'PUBLISHED');
+  return prisma.post.findFirst({
+    where: {
+      status: 'PUBLISHED',
+      locales: {
+        some: {
+          locale,
+          slug,
+        },
+      },
+    },
+    include: { locales: true },
+  });
 }
 
 export async function getPublishedPosts(
   locale: string,
   options?: { limit?: number; offset?: number }
 ): Promise<PostWithLocales[]> {
-  const posts = await postRepository.findMany({
-    limit: options?.limit ?? 20,
-    offset: options?.offset ?? 0,
-    status: 'PUBLISHED',
+  return prisma.post.findMany({
+    where: {
+      status: 'PUBLISHED',
+      locales: {
+        some: {
+          locale,
+        },
+      },
+    },
+    include: { locales: true },
+    take: options?.limit ?? 20,
+    skip: options?.offset ?? 0,
+    orderBy: { publishedAt: 'desc' },
   });
-
-  // Filter to only posts that have the requested locale
-  return posts.filter((post) =>
-    post.locales.some((l) => l.locale === locale)
-  );
 }
-
-// ============================================================================
-// NEWS OPERATIONS
-// ============================================================================
 
 export async function getNews(options?: {
   limit?: number;
@@ -242,129 +227,219 @@ export async function getNews(options?: {
   status?: ContentStatus;
   category?: string;
 }): Promise<{ news: NewsWithLocales[]; total: number }> {
-  const news = await newsRepository.findMany({
-    limit: options?.limit ?? 20,
-    offset: options?.offset ?? 0,
-    status: options?.status,
-    category: options?.category,
-  });
+  const where: Prisma.NewsWhereInput = {
+    ...(options?.status ? { status: options.status } : {}),
+    ...(options?.category ? { category: options.category } : {}),
+  };
 
-  const total = await newsRepository.count({
-    status: options?.status,
-    category: options?.category,
-  });
+  const [news, total] = await Promise.all([
+    prisma.news.findMany({
+      where,
+      include: { locales: true },
+      take: options?.limit ?? 20,
+      skip: options?.offset ?? 0,
+      orderBy: { createdAt: 'desc' },
+    }),
+    prisma.news.count({ where }),
+  ]);
 
   return { news, total };
 }
 
 export async function getNewsItem(id: string): Promise<NewsWithLocales | null> {
-  return newsRepository.findById(id as any);
+  return prisma.news.findUnique({
+    where: { id },
+    include: { locales: true },
+  });
 }
 
 export async function getNewsByDocumentId(
   documentId: string,
   status?: ContentStatus
 ): Promise<NewsWithLocales | null> {
-  return newsRepository.findByDocumentId(DocumentId(documentId), status);
+  return prisma.news.findFirst({
+    where: {
+      documentId,
+      ...(status ? { status } : {}),
+    },
+    include: { locales: true },
+  });
 }
 
 export async function getPublishedNewsItem(
   locale: string,
   slug: string
 ): Promise<NewsWithLocales | null> {
-  return newsRepository.findBySlug(Locale(locale), slug, 'PUBLISHED');
+  return prisma.news.findFirst({
+    where: {
+      status: 'PUBLISHED',
+      locales: {
+        some: {
+          locale,
+          slug,
+        },
+      },
+    },
+    include: { locales: true },
+  });
 }
 
 export async function getNewsByCategory(
   category: string,
   options?: { limit?: number; offset?: number }
 ): Promise<NewsWithLocales[]> {
-  return newsRepository.findByCategory(category, {
-    ...options,
-    status: 'PUBLISHED',
+  return prisma.news.findMany({
+    where: {
+      category,
+      status: 'PUBLISHED',
+    },
+    include: { locales: true },
+    take: options?.limit ?? 20,
+    skip: options?.offset ?? 0,
+    orderBy: { publishedAt: 'desc' },
   });
 }
 
-// ============================================================================
-// MENU OPERATIONS
-// ============================================================================
-
-export async function getMenus(): Promise<ReturnType<typeof menuRepository.findAll>> {
-  return menuRepository.findAll();
+export async function getMenus(): Promise<MenuWithItems[]> {
+  return prisma.menu.findMany({
+    include: { items: true },
+    orderBy: { createdAt: 'desc' },
+  });
 }
 
 export async function getMenu(id: string): Promise<MenuWithItems | null> {
-  return menuRepository.findById(id as any);
+  return prisma.menu.findUnique({
+    where: { id },
+    include: { items: true },
+  });
 }
 
 export async function getMenuByName(name: string): Promise<MenuWithItems | null> {
-  return menuRepository.findByName(name);
+  return prisma.menu.findUnique({
+    where: { name },
+    include: { items: true },
+  });
 }
 
 export async function getMenuByLocation(location: string): Promise<MenuWithItems[]> {
-  return menuRepository.findByLocation(location);
+  return prisma.menu.findMany({
+    where: { location },
+    include: { items: true },
+    orderBy: { createdAt: 'desc' },
+  });
 }
 
-// ============================================================================
-// LINK COLLECTION OPERATIONS
-// ============================================================================
-
-export async function getLinkCollections(): Promise<
-  ReturnType<typeof linkCollectionRepository.findAll>
-> {
-  return linkCollectionRepository.findAll();
+export async function getMenuItems(menuId: string) {
+  return prisma.menuItem.findMany({
+    where: { menuId },
+    orderBy: { order: 'asc' },
+  });
 }
 
-export async function getLinkCollection(
-  id: string
-): Promise<ReturnType<typeof linkCollectionRepository.findById>> {
-  return linkCollectionRepository.findById(id as any);
+export async function getLinkCollections(): Promise<LinkCollection[]> {
+  return prisma.linkCollection.findMany({
+    orderBy: { createdAt: 'desc' },
+  });
 }
 
-export async function getLinkCollectionByName(
-  name: string
-): Promise<ReturnType<typeof linkCollectionRepository.findByName>> {
-  return linkCollectionRepository.findByName(name);
+export async function getLinkCollection(id: string) {
+  return prisma.linkCollection.findUnique({
+    where: { id },
+  });
 }
 
-// ============================================================================
-// COMMENT OPERATIONS
-// ============================================================================
+export async function getLinkCollectionByName(name: string) {
+  return prisma.linkCollection.findUnique({
+    where: { name },
+  });
+}
+
+export async function getLinksByCollection(collectionId: string): Promise<Link[]> {
+  return prisma.link.findMany({
+    where: { collectionId },
+    orderBy: { order: 'asc' },
+  });
+}
+
+// buildCommentTree is now imported from @/kernel/comments/types
+
+export async function getCommentsByStatus(
+  status: CommentStatus,
+  options?: { limit?: number; offset?: number }
+): Promise<Comment[]> {
+  return prisma.comment.findMany({
+    where: { status },
+    take: options?.limit,
+    skip: options?.offset,
+    orderBy: { createdAt: 'desc' },
+  });
+}
 
 export async function getPageComments(
   pageId: string,
   options?: { status?: CommentStatus; limit?: number; offset?: number }
 ): Promise<CommentWithReplies[]> {
-  return commentRepository.findByPage(PageId(pageId), options);
+  const comments = await prisma.comment.findMany({
+    where: {
+      pageId,
+      ...(options?.status ? { status: options.status } : {}),
+    },
+    take: options?.limit,
+    skip: options?.offset,
+    orderBy: { createdAt: 'desc' },
+  });
+
+  return buildLocalCommentTree(comments);
 }
 
 export async function getPostComments(
   postId: string,
   options?: { status?: CommentStatus; limit?: number; offset?: number }
 ): Promise<CommentWithReplies[]> {
-  return commentRepository.findByPost(PostId(postId), options);
+  const comments = await prisma.comment.findMany({
+    where: {
+      postId,
+      ...(options?.status ? { status: options.status } : {}),
+    },
+    take: options?.limit,
+    skip: options?.offset,
+    orderBy: { createdAt: 'desc' },
+  });
+
+  return buildLocalCommentTree(comments);
 }
 
 export async function getNewsComments(
   newsId: string,
   options?: { status?: CommentStatus; limit?: number; offset?: number }
 ): Promise<CommentWithReplies[]> {
-  return commentRepository.findByNews(NewsId(newsId), options);
+  const comments = await prisma.comment.findMany({
+    where: {
+      newsId,
+      ...(options?.status ? { status: options.status } : {}),
+    },
+    take: options?.limit,
+    skip: options?.offset,
+    orderBy: { createdAt: 'desc' },
+  });
+
+  return buildLocalCommentTree(comments);
 }
 
-export async function getPendingComments(
-  options?: { limit?: number; offset?: number }
-) {
-  return commentRepository.findPending(options);
+export async function getPendingComments(options?: { limit?: number; offset?: number }) {
+  return prisma.comment.findMany({
+    where: { status: 'pending' },
+    take: options?.limit,
+    skip: options?.offset,
+    orderBy: { createdAt: 'desc' },
+  });
 }
 
 export async function getPendingCommentCount(): Promise<number> {
-  return commentRepository.countPending();
+  return prisma.comment.count({
+    where: { status: 'pending' },
+  });
 }
-
-// ============================================================================
-// HELPER: GET LOCALIZED CONTENT
-// ============================================================================
 
 export function getLocalizedField<T extends { locales: Array<{ locale: string }> }>(
   content: T,
@@ -374,6 +449,5 @@ export function getLocalizedField<T extends { locales: Array<{ locale: string }>
   const localeData = content.locales.find((l) => l.locale === locale);
   if (localeData) return localeData;
 
-  // Fallback to default locale
   return content.locales.find((l) => l.locale === fallbackLocale);
 }

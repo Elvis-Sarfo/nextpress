@@ -91,9 +91,15 @@ export interface CommentRepository {
 // HELPER: Build comment tree
 // ============================================================================
 
-export function buildCommentTree(comments: Comment[]): CommentWithReplies[] {
-  const commentMap = new Map<string, CommentWithReplies>();
-  const roots: CommentWithReplies[] = [];
+/**
+ * Builds a tree structure from flat comment list.
+ * Uses generic type for flexibility (works with both branded and plain IDs).
+ */
+export function buildCommentTree<T extends { id: string; parentId: string | null }>(
+  comments: T[]
+): (T & { replies: T[] })[] {
+  const commentMap = new Map<string, T & { replies: T[] }>();
+  const roots: (T & { replies: T[] })[] = [];
 
   // First pass: create all nodes
   for (const comment of comments) {
@@ -104,7 +110,7 @@ export function buildCommentTree(comments: Comment[]): CommentWithReplies[] {
   for (const comment of comments) {
     const node = commentMap.get(comment.id)!;
     if (comment.parentId) {
-      const parent = commentMap.get(comment.parentId as string);
+      const parent = commentMap.get(comment.parentId);
       if (parent) {
         parent.replies.push(node);
       } else {

@@ -1,5 +1,5 @@
 import { Result, Ok, Err, DomainError } from '../core/types';
-import type { VersionStatus } from '../content/types';
+import type { ContentStatus } from '../content/types';
 import type { WorkflowCommand, StateTransition } from './types';
 
 /**
@@ -26,14 +26,14 @@ export class WorkflowStateMachine {
   /**
    * Check if a transition is valid.
    */
-  canTransition(from: VersionStatus, command: WorkflowCommand): boolean {
+  canTransition(from: ContentStatus, command: WorkflowCommand): boolean {
     return TRANSITIONS.some(t => t.from === from && t.command === command);
   }
 
   /**
    * Get the target status for a transition.
    */
-  getTargetStatus(from: VersionStatus, command: WorkflowCommand): VersionStatus | null {
+  getTargetStatus(from: ContentStatus, command: WorkflowCommand): ContentStatus | null {
     const transition = TRANSITIONS.find(t => t.from === from && t.command === command);
     return transition?.to ?? null;
   }
@@ -41,7 +41,7 @@ export class WorkflowStateMachine {
   /**
    * Validate a transition.
    */
-  validateTransition(from: VersionStatus, command: WorkflowCommand): Result<VersionStatus> {
+  validateTransition(from: ContentStatus, command: WorkflowCommand): Result<ContentStatus> {
     const target = this.getTargetStatus(from, command);
 
     if (!target) {
@@ -58,7 +58,7 @@ export class WorkflowStateMachine {
   /**
    * Get available commands for a status.
    */
-  getAvailableCommands(status: VersionStatus): WorkflowCommand[] {
+  getAvailableCommands(status: ContentStatus): WorkflowCommand[] {
     return TRANSITIONS
       .filter(t => t.from === status)
       .map(t => t.command);

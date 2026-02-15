@@ -1,8 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
-import { pageRepository, getLocalizedField } from '@/lib/cms';
-import { PageId } from '../../../../kernel/src';
+import { getPage, getLocalizedField } from '@/lib/cms';
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -10,7 +9,7 @@ type Props = {
 
 export default async function EditPagePage({ params }: Props) {
   const { id } = await params;
-  const page = await pageRepository.findById(PageId(id));
+  const page = await getPage(id);
 
   if (!page) {
     notFound();

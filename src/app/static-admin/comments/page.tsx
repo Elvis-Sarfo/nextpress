@@ -1,14 +1,14 @@
 import Link from 'next/link';
-import { commentRepository } from '@/lib/cms';
+import { getCommentsByStatus } from '@/lib/cms';
 import { MessageSquare, Check, X, Clock } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils';
 
 export default async function CommentsListPage() {
   // Get comments grouped by status
   const [pendingComments, approvedComments, spamComments] = await Promise.all([
-    commentRepository.findAll({ status: 'pending', limit: 50 }),
-    commentRepository.findAll({ status: 'approved', limit: 50 }),
-    commentRepository.findAll({ status: 'spam', limit: 50 }),
+    getCommentsByStatus('pending', { limit: 50 }),
+    getCommentsByStatus('approved', { limit: 50 }),
+    getCommentsByStatus('spam', { limit: 50 }),
   ]);
 
   const allComments = [

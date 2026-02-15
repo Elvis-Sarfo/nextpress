@@ -6,9 +6,11 @@ import {
   getPublishedNewsItem,
   getLocalizedField,
   localeEngine,
+  type PageWithLocales,
+  type PostWithLocales,
+  type NewsWithLocales,
 } from '@/lib/cms';
 import { ArrowLeft } from 'lucide-react';
-import type { PageWithLocales, PostWithLocales, NewsWithLocales } from '@/kernel';
 
 interface PageProps {
   params: Promise<{ locale: string; slug: string }>;

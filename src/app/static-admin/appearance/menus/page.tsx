@@ -1,15 +1,27 @@
 import Link from 'next/link';
-import { menuRepository, menuItemRepository } from '@/lib/cms';
+import { getMenus, getMenuItems } from '@/lib/cms';
 import { Plus, Menu, GripVertical } from 'lucide-react';
+
+function readLocalized(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (!value || typeof value !== 'object') return '';
+
+  const localized = value as Record<string, unknown>;
+  const english = localized.en;
+  if (typeof english === 'string') return english;
+
+  const firstValue = Object.values(localized).find((entry) => typeof entry === 'string');
+  return typeof firstValue === 'string' ? firstValue : '';
+}
 
 export default async function MenusListPage() {
   // Get all menus
-  const menus = await menuRepository.findAll();
+  const menus = await getMenus();
 
   // Get items for each menu
   const menusWithItems = await Promise.all(
     menus.map(async (menu) => {
-      const items = await menuItemRepository.findByMenu(menu.id);
+      const items = await getMenuItems(menu.id);
       return { ...menu, items };
     })
   );
@@ -75,10 +87,7 @@ export default async function MenusListPage() {
                       .filter((item) => !item.parentId)
                       .sort((a, b) => a.order - b.order)
                       .map((item) => {
-                        const label =
-                          typeof item.label === 'object' && item.label !== null
-                            ? (item.label as Record<string, string>).en ?? Object.values(item.label)[0]
-                            : String(item.label);
+                        const label = readLocalized(item.label);
 
                         return (
                           <li

@@ -1,8 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
-import { postRepository, getLocalizedField } from '@/lib/cms';
-import { PostId } from '../../../../kernel/src';
+import { getPost, getLocalizedField } from '@/lib/cms';
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -10,7 +9,7 @@ type Props = {
 
 export default async function EditPostPage({ params }: Props) {
   const { id } = await params;
-  const post = await postRepository.findById(PostId(id));
+  const post = await getPost(id);
 
   if (!post) {
     notFound();

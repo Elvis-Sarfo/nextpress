@@ -4,12 +4,10 @@ import type {
   PrincipalId,
   Locale,
 } from '../core/types';
+import type { ContentStatus } from '../content/types';
 
-// ============================================================================
-// STATUS
-// ============================================================================
-
-export type ContentStatus = 'DRAFT' | 'PUBLISHED' | 'SCHEDULED' | 'ARCHIVED';
+// Re-export for convenience
+export type { ContentStatus };
 
 // ============================================================================
 // PAGE

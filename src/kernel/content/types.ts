@@ -1,12 +1,70 @@
 import type {
-  ContentEntryId, ContentVersionId, ContentTypeId, PrincipalId, Locale
+  ContentEntryId, ContentVersionId, ContentTypeId, PrincipalId, Locale, DocumentId
 } from '../core/types';
 
 // ============================================================================
-// VERSION STATUS
+// VERSION STATUS (Unified - used across all content types)
 // ============================================================================
 
-export type VersionStatus = 'DRAFT' | 'PUBLISHED' | 'SCHEDULED' | 'ARCHIVED';
+/**
+ * Unified content status used across all content types (Page, Post, News).
+ * This replaces the duplicate ContentStatus in page/types.ts.
+ */
+export type ContentStatus = 'DRAFT' | 'PUBLISHED' | 'SCHEDULED' | 'ARCHIVED';
+
+/**
+ * @deprecated Use ContentStatus instead. Kept for backwards compatibility.
+ */
+export type VersionStatus = ContentStatus;
+
+// ============================================================================
+// BASE CONTENT INTERFACES
+// ============================================================================
+
+/**
+ * Base interface for all content types.
+ */
+export interface BaseContent<IdType extends string, IdBrand extends { __brand: string }> {
+  id: IdType & IdBrand;
+  documentId: DocumentId;
+  status: ContentStatus;
+  featuredImage: string | null;
+  metadata: Record<string, unknown> | null;
+  publishedAt: Date | null;
+  scheduledAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  createdBy: PrincipalId;
+}
+
+/**
+ * Base interface for localized content data.
+ */
+export interface BaseLocale<IdType extends string, ParentIdType extends string> {
+  id: IdType;
+  parentId: ParentIdType;
+  locale: Locale;
+  title: string;
+  slug: string;
+  content: string;
+  excerpt: string | null;
+}
+
+/**
+ * Base interface for content versions.
+ */
+export interface BaseVersionData<ContentType> {
+  content: Omit<ContentType, 'id' | 'createdAt' | 'updatedAt'>;
+  locales: Record<string, Record<string, unknown>>;
+}
+
+export interface BaseVersion<IdType extends string> {
+  id: IdType;
+  documentId: DocumentId;
+  version: number;
+  createdAt: Date;
+  createdBy: PrincipalId;
+}
 
 // ============================================================================
 // CONTENT ENTRY
@@ -36,7 +94,7 @@ export interface ContentVersion {
   id: ContentVersionId;
   entryId: ContentEntryId;
   version: number;
-  status: VersionStatus;
+  status: ContentStatus;
   data: VersionData;
   createdAt: Date;
   createdBy: PrincipalId;
@@ -71,7 +129,7 @@ export interface ContentEntryRepository {
 export interface ContentVersionRepository {
   findById(id: ContentVersionId): Promise<ContentVersion | null>;
   findByEntry(entryId: ContentEntryId): Promise<ContentVersion[]>;
-  findByEntryAndStatus(entryId: ContentEntryId, status: VersionStatus): Promise<ContentVersion | null>;
+  findByEntryAndStatus(entryId: ContentEntryId, status: ContentStatus): Promise<ContentVersion | null>;
   findByEntryAndVersion(entryId: ContentEntryId, version: number): Promise<ContentVersion | null>;
   findLatestByEntry(entryId: ContentEntryId): Promise<ContentVersion | null>;
   findScheduledBefore(date: Date): Promise<ContentVersion[]>;
@@ -117,7 +175,7 @@ export interface ListOptions {
   orderBy?: 'createdAt' | 'updatedAt';
   orderDirection?: 'asc' | 'desc';
   createdBy?: PrincipalId;
-  status?: VersionStatus;
+  status?: ContentStatus;
 }
 
 export interface ListResult<T> {

@@ -3,7 +3,7 @@ import {
   ContentEntryId, ContentVersionId, PrincipalId
 } from '../core/types';
 import type {
-  ContentVersion, ContentVersionRepository, VersionData, VersionStatus
+  ContentVersion, ContentVersionRepository, VersionData, ContentStatus
 } from './types';
 
 /**
@@ -87,7 +87,7 @@ export class VersionManager {
    */
   async transitionStatus(
     version: ContentVersion,
-    newStatus: VersionStatus,
+    newStatus: ContentStatus,
     options?: { publishedAt?: Date; scheduledAt?: Date }
   ): Promise<Result<ContentVersion>> {
     const updated: ContentVersion = {

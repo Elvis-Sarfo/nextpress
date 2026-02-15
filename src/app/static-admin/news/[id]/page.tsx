@@ -1,8 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
-import { newsRepository, getLocalizedField } from '@/lib/cms';
-import { NewsId } from '../../../../kernel/src';
+import { getNewsItem, getLocalizedField } from '@/lib/cms';
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -10,7 +9,7 @@ type Props = {
 
 export default async function EditNewsPage({ params }: Props) {
   const { id } = await params;
-  const news = await newsRepository.findById(NewsId(id));
+  const news = await getNewsItem(id);
 
   if (!news) {
     notFound();
