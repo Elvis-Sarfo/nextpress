@@ -39,9 +39,11 @@ export type CollectionSlug =
 /** Base field configuration */
 export interface BaseField {
   name: string;
+  type: string;
   required?: boolean;
   localized?: boolean;
   default?: unknown;
+  defaultValue?: unknown;
   admin?: FieldAdminConfig;
   hooks?: FieldHooks;
   validate?: FieldValidator;
@@ -54,6 +56,7 @@ export interface CollectionTextField extends BaseField {
   minLength?: number;
   maxLength?: number;
   pattern?: string;
+  defaultValue?: string;
   admin?: FieldAdminConfig & {
     placeholder?: string;
     description?: string;
@@ -65,6 +68,7 @@ export interface CollectionTextField extends BaseField {
 export interface CollectionTextareaField extends BaseField {
   type: 'textarea';
   rows?: number;
+  defaultValue?: string;
   admin?: FieldAdminConfig & {
     placeholder?: string;
     description?: string;
@@ -77,6 +81,7 @@ export interface CollectionNumberField extends BaseField {
   min?: number;
   max?: number;
   step?: number;
+  defaultValue?: number;
   admin?: FieldAdminConfig & {
     placeholder?: string;
     description?: string;
@@ -86,6 +91,7 @@ export interface CollectionNumberField extends BaseField {
 /** Email field */
 export interface EmailField extends BaseField {
   type: 'email';
+  defaultValue?: string;
   admin?: FieldAdminConfig & {
     placeholder?: string;
     description?: string;
@@ -95,6 +101,7 @@ export interface EmailField extends BaseField {
 /** Checkbox/Toggle field */
 export interface CheckboxField extends BaseField {
   type: 'checkbox';
+  defaultValue?: boolean;
   admin?: FieldAdminConfig & {
     description?: string;
   };
@@ -103,6 +110,7 @@ export interface CheckboxField extends BaseField {
 /** Date field */
 export interface DateField extends BaseField {
   type: 'date';
+  defaultValue?: string | Date;
   admin?: FieldAdminConfig & {
     placeholder?: string;
     description?: string;
@@ -112,6 +120,7 @@ export interface DateField extends BaseField {
 /** JSON field */
 export interface JSONField extends BaseField {
   type: 'json';
+  defaultValue?: Record<string, unknown> | unknown[];
   admin?: FieldAdminConfig & {
     description?: string;
   };
@@ -122,6 +131,7 @@ export interface SelectField extends BaseField {
   type: 'select';
   options: SelectOption[];
   hasMany?: boolean;
+  defaultValue?: string | string[];
   admin?: FieldAdminConfig & {
     isClearable?: boolean;
     description?: string;
@@ -137,6 +147,7 @@ export interface SelectOption {
 export interface UploadField extends BaseField {
   type: 'upload';
   relationTo: CollectionSlug;
+  defaultValue?: string;
   admin?: FieldAdminConfig & {
     description?: string;
   };
@@ -147,6 +158,7 @@ export interface RelationshipField extends BaseField {
   type: 'relationship';
   relationTo: CollectionSlug | CollectionSlug[];
   hasMany?: boolean;
+  defaultValue?: string | string[];
   admin?: FieldAdminConfig & {
     description?: string;
     condition?: FieldCondition;
@@ -160,6 +172,7 @@ export interface ArrayField extends BaseField {
   fields: Field[];
   minRows?: number;
   maxRows?: number;
+  defaultValue?: unknown[];
   admin?: FieldAdminConfig & {
     description?: string;
   };
@@ -169,6 +182,7 @@ export interface ArrayField extends BaseField {
 export interface GroupField extends BaseField {
   type: 'group';
   fields: Field[];
+  defaultValue?: Record<string, unknown>;
   admin?: FieldAdminConfig & {
     description?: string;
   };
@@ -177,6 +191,7 @@ export interface GroupField extends BaseField {
 /** Rich text field */
 export interface CollectionRichTextField extends BaseField {
   type: 'richText';
+  defaultValue?: unknown;
   admin?: FieldAdminConfig & {
     description?: string;
   };
