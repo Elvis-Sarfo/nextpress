@@ -1,14 +1,14 @@
 import { prisma } from '@/adapters/prisma-adapter';
 import type { Prisma } from '@prisma/client';
-import { ContentStatus } from '@/kernel/content/types';
-import { CommentStatus } from '@/kernel/comments/types';
+import { ContentStatus } from '@/core/content/types';
+import { CommentStatus } from '@/core/comments/types';
 
 // Re-export from kernel for backwards compatibility
 export type { ContentStatus };
 export type { CommentStatus };
 
 // Also re-export buildCommentTree from kernel
-export { buildCommentTree } from '@/kernel/comments/types';
+export { buildCommentTree } from '@/core/comments/types';
 
 export type PageWithLocales = Prisma.PageGetPayload<{ include: { locales: true } }>;
 export type PostWithLocales = Prisma.PostGetPayload<{ include: { locales: true } }>;

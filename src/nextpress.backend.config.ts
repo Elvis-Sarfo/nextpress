@@ -3,12 +3,12 @@ import { fileURLToPath } from 'url'
 
 import { Users } from './collections/Users'
 import { Media } from './collections/Media'
-import { Products } from './collections/Products'
+import { Products } from './collections/Roles'
 import { Categories } from './collections/Categories'
 import { HeroSlides } from './collections/HeroSlides'
 import { Countries } from './collections/Countries'
-import { Pages } from './collections/Pages'
-import { WebsiteConfig } from './collections/WebsiteConfig'
+import { Pages } from './collections/Permissions'
+import { WebsiteConfig } from './collections/Settings'
 import { ContentBlocks } from './collections/ContentBlocks'
 
 const filename = fileURLToPath(import.meta.url)
