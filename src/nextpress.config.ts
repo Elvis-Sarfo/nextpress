@@ -1,5 +1,6 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
+import type { NextPressConfig } from './core/types'
 
 // System collections
 import { Users } from './collections/Users'
@@ -16,7 +17,7 @@ import { Settings } from './collections/Settings'
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
-export default {
+const config = {
   // Collections to register
   collections: [
     // System collections (no localization)
@@ -77,5 +78,13 @@ export default {
     // - "hash" - Run when collection config changes (more precise)
     // - "always" - Run every time (useful for debugging)
     configChangeDetectionStrategy: 'once',
+    // State backend:
+    // - "memory" - In-memory, HMR-safe within the running process
+    // - "file" - Persisted to JSON file across process restarts
+    stateBackend: 'memory',
+    // Used when stateBackend is "file"
+    stateFilePath: '.next/cache/nextpress-state.json',
   },
-}
+} satisfies NextPressConfig
+
+export default config

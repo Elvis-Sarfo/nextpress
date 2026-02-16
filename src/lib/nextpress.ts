@@ -7,6 +7,11 @@
 import nextpressConfig from '../nextpress.config';
 import { Collections } from '../core/collection';
 import { generatePrismaSchema } from '../core/schema-engine';
+import type {
+  NextPressSchemaConfig,
+  NextPressSchemaStateBackend,
+  NextPressSchemaStrategy,
+} from '../core/types/nextpress-config.types';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
@@ -15,11 +20,90 @@ import * as crypto from 'crypto';
 // STATE TRACKING
 // ============================================================================
 
-// Track initialization state
-let initialized = false;
+type NextPressRuntimeState = {
+  initialized: boolean;
+  lastConfigHash: string;
+};
 
-// Track config hash for change detection
-let lastConfigHash = '';
+type SchemaRuntimeConfig = {
+  strategy: NextPressSchemaStrategy;
+  stateBackend: NextPressSchemaStateBackend;
+  stateFilePath: string;
+};
+
+declare global {
+  // eslint-disable-next-line no-var
+  var __NEXTPRESS_RUNTIME_STATE__: NextPressRuntimeState | undefined;
+}
+
+function getRuntimeState(): NextPressRuntimeState {
+  if (!globalThis.__NEXTPRESS_RUNTIME_STATE__) {
+    globalThis.__NEXTPRESS_RUNTIME_STATE__ = {
+      initialized: false,
+      lastConfigHash: '',
+    };
+  }
+
+  return globalThis.__NEXTPRESS_RUNTIME_STATE__;
+}
+
+function getSchemaRuntimeConfig(): SchemaRuntimeConfig {
+  const schemaConfig: NextPressSchemaConfig | undefined = nextpressConfig.schema;
+
+  return {
+    strategy: schemaConfig?.configChangeDetectionStrategy || schemaConfig?.strategy || 'once',
+    stateBackend: schemaConfig?.stateBackend || 'memory',
+    stateFilePath: schemaConfig?.stateFilePath || '.next/cache/nextpress-state.json',
+  };
+}
+
+function getStateFilePath(): string {
+  const { stateFilePath } = getSchemaRuntimeConfig();
+  return path.resolve(process.cwd(), stateFilePath);
+}
+
+function readFileState(): NextPressRuntimeState {
+  const statePath = getStateFilePath();
+  if (!fs.existsSync(statePath)) {
+    return { initialized: false, lastConfigHash: '' };
+  }
+
+  try {
+    const state = JSON.parse(fs.readFileSync(statePath, 'utf8')) as Partial<NextPressRuntimeState>;
+    return {
+      initialized: !!state.initialized,
+      lastConfigHash: typeof state.lastConfigHash === 'string' ? state.lastConfigHash : '',
+    };
+  } catch {
+    return { initialized: false, lastConfigHash: '' };
+  }
+}
+
+function writeFileState(state: NextPressRuntimeState): void {
+  const statePath = getStateFilePath();
+  const dir = path.dirname(statePath);
+
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+
+  fs.writeFileSync(statePath, JSON.stringify(state, null, 2), 'utf8');
+}
+
+function getState(): NextPressRuntimeState {
+  const { stateBackend } = getSchemaRuntimeConfig();
+  return stateBackend === 'file' ? readFileState() : getRuntimeState();
+}
+
+function setState(state: NextPressRuntimeState): void {
+  const { stateBackend } = getSchemaRuntimeConfig();
+  if (stateBackend === 'file') {
+    writeFileState(state);
+    return;
+  }
+
+  globalThis.__NEXTPRESS_RUNTIME_STATE__ = state;
+}
 
 // ============================================================================
 // HASH GENERATION
@@ -57,7 +141,8 @@ function generateConfigHash(): string {
  * Check if initialization should run based on the configured configChangeDetectionStrategy
  */
 function shouldInitialize(): boolean {
-  const configChangeDetectionStrategy = nextpressConfig.schema?.configChangeDetectionStrategy || 'once';
+  const state = getState();
+  const { strategy: configChangeDetectionStrategy } = getSchemaRuntimeConfig();
   
   switch (configChangeDetectionStrategy) {
     case 'always':
@@ -67,21 +152,27 @@ function shouldInitialize(): boolean {
     case 'hash':
       // Run when config hash changes
       const currentHash = generateConfigHash();
-      if (currentHash === lastConfigHash) {
+      if (currentHash === state.lastConfigHash) {
         console.log('[NextPress] Collections unchanged, skipping init');
         return false;
       }
-      lastConfigHash = currentHash;
+      setState({
+        ...state,
+        lastConfigHash: currentHash,
+      });
       return true;
       
     case 'once':
     default:
       // Run once per server start (default)
-      if (initialized) {
+      if (state.initialized) {
         console.log('[NextPress] Already initialized, skipping');
         return false;
       }
-      initialized = true;
+      setState({
+        ...state,
+        initialized: true,
+      });
       return true;
   }
 }
@@ -119,11 +210,12 @@ export function initializeNextPress(): void {
  */
 export function generateSchema(): void {
   const collections = nextpressConfig.collections;
+  const dbProvider = nextpressConfig.db?.provider;
   
   console.log(`[NextPress] Generating Prisma schema for ${collections.length} collections...`);
   
   const schema = generatePrismaSchema(collections, {
-    provider: (nextpressConfig.db?.provider as 'postgresql' | 'mysql' | 'sqlite') || 'postgresql',
+    provider: dbProvider === 'postgres' ? 'postgresql' : (dbProvider || 'postgresql'),
     localization: true,
     versioning: true,
   });
@@ -137,8 +229,17 @@ export function generateSchema(): void {
     fs.mkdirSync(dir, { recursive: true });
   }
   
-  fs.writeFileSync(outputPath, schema);
-  
+  // Avoid touching the file when schema content is unchanged, which prevents dev watch loops.
+  if (fs.existsSync(outputPath)) {
+    const currentSchema = fs.readFileSync(outputPath, 'utf8');
+    if (currentSchema === schema) {
+      console.log('[NextPress] Schema unchanged, skipping write');
+      return;
+    }
+  }
+
+  fs.writeFileSync(outputPath, schema, 'utf8');
+
   console.log(`[NextPress] ✅ Schema generated: ${outputPath}`);
 }
 
