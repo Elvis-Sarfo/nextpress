@@ -287,8 +287,8 @@ export function CollectionEdit({ collection, documentId, initialData }: Collecti
         <div className="space-y-6">
           {/* Status */}
           <div className="rounded-lg border bg-card p-4 space-y-4">
-            <h3 className="font-semibold">Status</h3>
-            <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+            <label htmlFor="status" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Status</label>
+            <select id="status" name='status' className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
               <option value="draft">Draft</option>
               <option value="published">Published</option>
             </select>

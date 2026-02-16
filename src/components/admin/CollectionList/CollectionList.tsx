@@ -85,6 +85,7 @@ export function CollectionList({ collection }: CollectionListProps) {
                   <input 
                     type="checkbox" 
                     className="rounded border-gray-300"
+                    aria-label="Select all items"
                     onChange={(e) => {
                       if (e.target.checked) {
                         // Select all
