@@ -6,6 +6,7 @@ export const Settings: CollectionConfig<'settings'> = {
     useAsTitle: 'siteName',
     defaultColumns: ['siteName', 'updatedAt'],
     description: 'Global website configuration including logo, header, footer, and contact information',
+    group: { key: 'system', label: 'System', order: 4 },
   },
   access: {
     read: () => true, // Public access for reading

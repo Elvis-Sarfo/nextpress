@@ -6,8 +6,17 @@
 import type { CollectionConfig } from '@/core/collection/types';
 
 // ============================================================================
-// COLLECTION METADATA
+// TYPES
 // ============================================================================
+
+export interface CollectionGroup {
+  /** Group key (used as identifier) */
+  key: string;
+  /** Display label for the group */
+  label: string;
+  /** Sort order (lower numbers appear first) */
+  order: number;
+}
 
 export interface CollectionMeta {
   slug: string;
@@ -18,7 +27,8 @@ export interface CollectionMeta {
   admin: {
     useAsTitle?: string;
     defaultColumns?: string[];
-    group?: string | Record<string, string>;
+    /** Group can be a string (group key) or an object with key, label, and order */
+    group?: string | { key: string; label: string; order?: number };
     hidden?: boolean;
   };
   fields: {
@@ -29,8 +39,46 @@ export interface CollectionMeta {
   }[];
 }
 
+// Default groups configuration
+const defaultGroups: CollectionGroup[] = [
+  { key: 'user-management', label: 'User Management', order: 1 },
+  { key: 'content', label: 'Content', order: 2 },
+  { key: 'media', label: 'Media', order: 3 },
+  { key: 'system', label: 'System', order: 4 },
+];
+
+// Get group by key
+function getGroupInfo(groupKey: string | undefined): CollectionGroup {
+  if (!groupKey) {
+    return { key: 'content', label: 'Content', order: 2 };
+  }
+  
+  const found = defaultGroups.find(g => g.key === groupKey.toLowerCase());
+  if (found) {
+    return found;
+  }
+  
+  // If group not found in defaults, create one with high order
+  return { key: groupKey, label: groupKey, order: 99 };
+}
+
 // Extract metadata from a collection config
 function extractMeta(config: CollectionConfig): CollectionMeta {
+  const group = config.admin?.group;
+  
+  let typedGroup: CollectionMeta['admin']['group'];
+  if (typeof group === 'object' && group !== null) {
+    typedGroup = {
+      key: String(group.key || ''),
+      label: String(group.label || ''),
+      order: typeof group.order === 'number' ? group.order : undefined,
+    };
+  } else if (typeof group === 'string') {
+    typedGroup = group;
+  } else {
+    typedGroup = undefined;
+  }
+  
   return {
     slug: config.slug,
     labels: {
@@ -40,7 +88,7 @@ function extractMeta(config: CollectionConfig): CollectionMeta {
     admin: {
       useAsTitle: config.admin?.useAsTitle,
       defaultColumns: config.admin?.defaultColumns,
-      group: config.admin?.group,
+      group: typedGroup,
       hidden: typeof config.admin?.hidden === 'function' ? false : config.admin?.hidden,
     },
     fields: config.fields.map((f) => ({
@@ -85,22 +133,79 @@ export function getCollection(slug: string): CollectionMeta | undefined {
   return collectionsMeta.find((c) => c.slug === slug);
 }
 
-// Get grouped collections
-export function getGroupedCollections(): Map<string, CollectionMeta[]> {
-  const groups = new Map<string, CollectionMeta[]>();
+// Get grouped collections with ordering
+export function getGroupedCollections(): CollectionGroup[] {
+  const groupMap = new Map<string, CollectionMeta[]>();
   
   for (const collection of collectionsMeta) {
-    const group = typeof collection.admin.group === 'string' 
-      ? collection.admin.group 
-      : 'Content';
+    let groupKey: string;
+    let groupLabel: string;
+    let groupOrder: number;
     
-    if (!groups.has(group)) {
-      groups.set(group, []);
+    if (typeof collection.admin.group === 'object' && collection.admin.group !== null) {
+      groupKey = collection.admin.group.key;
+      groupLabel = collection.admin.group.label || groupKey;
+      groupOrder = collection.admin.group.order ?? 99;
+    } else if (typeof collection.admin.group === 'string') {
+      const groupInfo = getGroupInfo(collection.admin.group);
+      groupKey = groupInfo.key;
+      groupLabel = groupInfo.label;
+      groupOrder = groupInfo.order;
+    } else {
+      // No group specified - use default
+      const groupInfo = getGroupInfo(undefined);
+      groupKey = groupInfo.key;
+      groupLabel = groupInfo.label;
+      groupOrder = groupInfo.order;
     }
-    groups.get(group)!.push(collection);
+    
+    if (!groupMap.has(groupKey)) {
+      groupMap.set(groupKey, []);
+    }
+    groupMap.get(groupKey)!.push(collection);
   }
   
-  return groups;
+  // Convert to array with order info
+  const result: CollectionGroup[] = [];
+  
+  // Add groups that exist in the map
+  for (const [key, _collections] of groupMap) {
+    const groupInfo = getGroupInfo(key);
+    result.push({
+      key,
+      label: groupInfo.label,
+      order: groupInfo.order,
+    });
+  }
+  
+  // Sort by order
+  result.sort((a, b) => a.order - b.order);
+  
+  return result;
+}
+
+// Get collections grouped by their group key
+export function getCollectionsByGroup(): Map<string, CollectionMeta[]> {
+  const groupMap = new Map<string, CollectionMeta[]>();
+  
+  for (const collection of collectionsMeta) {
+    let groupKey: string;
+    
+    if (typeof collection.admin.group === 'object' && collection.admin.group !== null) {
+      groupKey = collection.admin.group.key;
+    } else if (typeof collection.admin.group === 'string') {
+      groupKey = collection.admin.group.toLowerCase();
+    } else {
+      groupKey = 'content';
+    }
+    
+    if (!groupMap.has(groupKey)) {
+      groupMap.set(groupKey, []);
+    }
+    groupMap.get(groupKey)!.push(collection);
+  }
+  
+  return groupMap;
 }
 
 // Get collection slugs

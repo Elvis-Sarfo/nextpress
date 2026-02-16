@@ -23,7 +23,7 @@ export const Roles: CollectionConfig<'roles'> = {
   admin: {
     useAsTitle: 'displayName',
     defaultColumns: ['name', 'displayName', 'createdAt'],
-    group: 'System',
+    group: { key: 'user-management', label: 'User Management', order: 1 },
   },
   
   // Access control

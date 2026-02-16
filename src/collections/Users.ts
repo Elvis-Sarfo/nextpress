@@ -34,7 +34,7 @@ export const Users: CollectionConfig<'users'> = {
   admin: {
     useAsTitle: 'email',
     defaultColumns: ['email', 'role', 'createdAt'],
-    group: 'System',
+    group: { key: 'user-management', label: 'User Management', order: 1 },
   },
   
   // Access control

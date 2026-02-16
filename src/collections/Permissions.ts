@@ -26,7 +26,7 @@ export const Permissions: CollectionConfig<'permissions'> = {
   admin: {
     useAsTitle: 'name',
     defaultColumns: ['name', 'resource', 'action', 'scope'],
-    group: 'System',
+    group: { key: 'user-management', label: 'User Management', order: 1 },
   },
   
   // Access control - only admins can manage

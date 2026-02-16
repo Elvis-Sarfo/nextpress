@@ -24,7 +24,11 @@ export function getCollectionIcon(slug: string): string {
 export function getCollectionGroup(admin?: CollectionConfig['admin']): string {
   if (!admin?.group) return 'Content';
   if (typeof admin.group === 'string') return admin.group;
-  // Handle localized groups
+  // Handle new group object format with key, label, order
+  if (typeof admin.group === 'object' && 'key' in admin.group) {
+    return admin.group.label || admin.group.key || 'Content';
+  }
+  // Handle localized groups (legacy)
   return admin.group['en'] || 'Content';
 }
 

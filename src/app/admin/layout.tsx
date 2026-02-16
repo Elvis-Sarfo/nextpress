@@ -22,7 +22,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { collectionsMeta, getGroupedCollections } from '@/lib/collections-data';
+import { getGroupedCollections, getCollectionsByGroup } from '@/lib/collections-data';
 import { ThemeSwitcher } from '@/components/admin/ThemeSwitcher';
 import { ThemeProviderClient } from '@/components/providers/ThemeProviderClient';
 
@@ -42,6 +42,8 @@ type NavItem = {
   href: string;
   icon: React.ElementType;
   children?: { label: string; href: string }[];
+  /** If true, this is a group header, not a link */
+  isGroupHeader?: boolean;
 };
 
 function getCollectionIcon(slug: string): React.ElementType {
@@ -58,14 +60,24 @@ function buildNavItems(): NavItem[] {
   ];
 
   // Get grouped collections
-  const grouped = getGroupedCollections();
+  const groups = getGroupedCollections();
+  const collectionsByGroup = getCollectionsByGroup();
   
-  // Add collections grouped by their admin group
-  for (const [group, collections] of grouped) {
+  // Add groups with their collections
+  for (const group of groups) {
+    const collections = collectionsByGroup.get(group.key);
+    if (!collections || collections.length === 0) continue;
+    
+    // Add group header
+    items.push({
+      label: group.label,
+      href: '#',
+      icon: Database,
+      isGroupHeader: true,
+    });
+    
+    // Add collections under this group
     for (const collection of collections) {
-      // Skip settings - it's added manually at the end
-      if (collection.slug === 'settings') continue;
-      
       const Icon = getCollectionIcon(collection.slug);
       items.push({
         label: collection.labels.plural,
@@ -79,22 +91,21 @@ function buildNavItems(): NavItem[] {
     }
   }
 
-  // Add settings at the end (only if not already in collections)
-  const hasSettings = grouped.get('Content')?.some(c => c.slug === 'settings') || 
-                      grouped.get('System')?.some(c => c.slug === 'settings');
-  if (!hasSettings) {
-    items.push({
-      label: 'Settings',
-      href: '/admin/settings',
-      icon: Settings,
-    });
-  }
-
   return items;
 }
 
 function NavLink({ item }: { item: NavItem }) {
   const pathname = usePathname();
+  
+  // Group headers are not clickable
+  if (item.isGroupHeader) {
+    return (
+      <li className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        {item.label}
+      </li>
+    );
+  }
+  
   const [isOpen, setIsOpen] = useState(
     item.children?.some((child) => pathname.startsWith(child.href)) ?? false
   );
@@ -170,13 +181,13 @@ function AdminBar() {
           <Menu className="w-5 h-5" /> NextPress
         </Link>
         <Link href="/" className="flex items-center gap-2 text-sm hover:text-blue-200">
-          <Home className="w-4 h-4" /> View Site
+          <Home className="w-4 w-4" /> View Site
         </Link>
         <Link href="/admin/media/new" className="flex items-center gap-2 text-sm hover:text-blue-200">
-          <Plus className="w-4 h-4" /> New
+          <Plus className="w-4 w-4" /> New
         </Link>
         <Link href="/admin/users" className="flex items-center gap-2 text-sm hover:text-blue-200">
-          <Users className="w-4 h-4" /> Users
+          <Users className="w-4 w-4" /> Users
         </Link>
       </div>
       <div className="flex items-center gap-2">
@@ -188,7 +199,7 @@ function AdminBar() {
           <Settings className="w-5 h-5" />
         </Button>
         <div className="flex items-center gap-2 bg-gray-800 px-3 py-1 rounded text-sm">
-          <User className="w-4 h-4" />
+          <User className="w-4 w-4" />
           <span>Howdy, admin</span>
         </div>
       </div>
@@ -201,8 +212,8 @@ function Sidebar({ navItems }: { navItems: NavItem[] }) {
     <aside className="w-64 border-r border-border bg-secondary/30 flex flex-col">
       <nav className="flex-1 px-3 py-4 overflow-y-auto">
         <ul className="space-y-1">
-          {navItems.map((item) => (
-            <NavLink key={item.href} item={item} />
+          {navItems.map((item, index) => (
+            <NavLink key={item.isGroupHeader ? `group-${item.label}` : item.href} item={item} />
           ))}
         </ul>
       </nav>

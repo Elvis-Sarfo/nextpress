@@ -373,8 +373,8 @@ export interface CollectionAdmin {
   description?: string;
   /** Hide from admin sidebar */
   hidden?: boolean | ((user: CollectionUser) => boolean);
-  /** Navigation group */
-  group?: string | Record<string, string>;
+  /** Navigation group - can be a string (group key) or object with key, label, and order */
+  group?: string | { key: string; label: string; order?: number };
   /** Pagination defaults */
   pagination?: {
     defaultLimit?: number;

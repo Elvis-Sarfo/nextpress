@@ -106,9 +106,9 @@ export function CollectionList({ collection }: CollectionListProps) {
                   </th>
                 ))}
                 <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">
- </th>
-                               Actions
-                </tr>
+                  Actions
+                </th>
+              </tr>
             </thead>
             <tbody>
               {/* Empty state - would be replaced with actual data */}
