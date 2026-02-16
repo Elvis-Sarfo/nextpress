@@ -12,7 +12,6 @@ import {
   User,
   Home,
   Plus,
-  Package,
   Database,
   FileText,
   Image,
@@ -23,7 +22,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { collectionsMeta, getGroupedCollections, type CollectionMeta } from '@/lib/collections-data';
+import { collectionsMeta, getGroupedCollections } from '@/lib/collections-data';
+import { ThemeSwitcher } from '@/components/admin/ThemeSwitcher';
+import { ThemeProviderClient } from '@/components/providers/ThemeProviderClient';
 
 // Icon mapping for collections
 const collectionIcons: Record<string, React.ElementType> = {
@@ -62,6 +63,9 @@ function buildNavItems(): NavItem[] {
   // Add collections grouped by their admin group
   for (const [group, collections] of grouped) {
     for (const collection of collections) {
+      // Skip settings - it's added manually at the end
+      if (collection.slug === 'settings') continue;
+      
       const Icon = getCollectionIcon(collection.slug);
       items.push({
         label: collection.labels.plural,
@@ -75,12 +79,16 @@ function buildNavItems(): NavItem[] {
     }
   }
 
-  // Add settings at the end
-  items.push({
-    label: 'Settings',
-    href: '/admin/settings',
-    icon: Settings,
-  });
+  // Add settings at the end (only if not already in collections)
+  const hasSettings = grouped.get('Content')?.some(c => c.slug === 'settings') || 
+                      grouped.get('System')?.some(c => c.slug === 'settings');
+  if (!hasSettings) {
+    items.push({
+      label: 'Settings',
+      href: '/admin/settings',
+      icon: Settings,
+    });
+  }
 
   return items;
 }
@@ -154,6 +162,62 @@ function NavLink({ item }: { item: NavItem }) {
   );
 }
 
+function AdminBar() {
+  return (
+    <div className="w-full bg-gray-900 text-white flex items-center justify-between px-6 py-2 shadow-sm">
+      <div className="flex items-center gap-6">
+        <Link href="/admin" className="flex items-center gap-2 font-bold text-lg hover:text-blue-200">
+          <Menu className="w-5 h-5" /> NextPress
+        </Link>
+        <Link href="/" className="flex items-center gap-2 text-sm hover:text-blue-200">
+          <Home className="w-4 h-4" /> View Site
+        </Link>
+        <Link href="/admin/media/new" className="flex items-center gap-2 text-sm hover:text-blue-200">
+          <Plus className="w-4 h-4" /> New
+        </Link>
+        <Link href="/admin/users" className="flex items-center gap-2 text-sm hover:text-blue-200">
+          <Users className="w-4 h-4" /> Users
+        </Link>
+      </div>
+      <div className="flex items-center gap-2">
+        <ThemeSwitcher />
+        <Button variant="ghost" size="icon">
+          <Bell className="w-5 h-5" />
+        </Button>
+        <Button variant="ghost" size="icon">
+          <Settings className="w-5 h-5" />
+        </Button>
+        <div className="flex items-center gap-2 bg-gray-800 px-3 py-1 rounded text-sm">
+          <User className="w-4 h-4" />
+          <span>Howdy, admin</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Sidebar({ navItems }: { navItems: NavItem[] }) {
+  return (
+    <aside className="w-64 border-r border-border bg-secondary/30 flex flex-col">
+      <nav className="flex-1 px-3 py-4 overflow-y-auto">
+        <ul className="space-y-1">
+          {navItems.map((item) => (
+            <NavLink key={item.href} item={item} />
+          ))}
+        </ul>
+      </nav>
+      <div className="p-4 border-t border-border">
+        <Link
+          href="/"
+          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          View Site
+        </Link>
+      </div>
+    </aside>
+  );
+}
+
 export default function AdminLayout({
   children,
 }: {
@@ -162,62 +226,16 @@ export default function AdminLayout({
   const navItems = buildNavItems();
 
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* Top admin bar (WordPress/Payload style) */}
-      <div className="w-full bg-gray-900 text-white flex items-center justify-between px-6 py-2 shadow-sm">
-        <div className="flex items-center gap-6">
-          <Link href="/admin" className="flex items-center gap-2 font-bold text-lg hover:text-blue-200">
-            <Menu className="w-5 h-5" /> NextPress
-          </Link>
-          <Link href="/" className="flex items-center gap-2 text-sm hover:text-blue-200">
-            <Home className="w-4 h-4" /> View Site
-          </Link>
-          <Link href="/admin/media/new" className="flex items-center gap-2 text-sm hover:text-blue-200">
-            <Plus className="w-4 h-4" /> New
-          </Link>
-          <Link href="/admin/users" className="flex items-center gap-2 text-sm hover:text-blue-200">
-            <Users className="w-4 h-4" /> Users
-          </Link>
-        </div>
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon">
-            <Bell className="w-5 h-5" />
-          </Button>
-          <Button variant="ghost" size="icon">
-            <Settings className="w-5 h-5" />
-          </Button>
-          <div className="flex items-center gap-2 bg-gray-800 px-3 py-1 rounded text-sm">
-            <User className="w-4 h-4" />
-            <span>Howdy, admin</span>
-          </div>
+    <ThemeProviderClient>
+      <div className="flex flex-col min-h-screen">
+        <AdminBar />
+        <div className="flex min-h-screen">
+          <Sidebar navItems={navItems} />
+          <main className="flex-1 overflow-y-auto">
+            <div className="p-8">{children}</div>
+          </main>
         </div>
       </div>
-
-      <div className="flex min-h-screen">
-        {/* Sidebar - Dynamic based on collections */}
-        <aside className="w-64 border-r border-border bg-secondary/30 flex flex-col">
-          <nav className="flex-1 px-3 py-4 overflow-y-auto">
-            <ul className="space-y-1">
-              {navItems.map((item) => (
-                <NavLink key={item.href} item={item} />
-              ))}
-            </ul>
-          </nav>
-          <div className="p-4 border-t border-border">
-            <Link
-              href="/"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              View Site
-            </Link>
-          </div>
-        </aside>
-
-        {/* Main content */}
-        <main className="flex-1 overflow-y-auto">
-          <div className="p-8">{children}</div>
-        </main>
-      </div>
-    </div>
+    </ThemeProviderClient>
   );
 }
