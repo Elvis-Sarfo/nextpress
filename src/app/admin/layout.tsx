@@ -4,12 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
-  FileText,
-  BookOpen,
-  Newspaper,
   Menu,
-  Link2,
-  MessageSquare,
   Settings,
   ChevronDown,
   ChevronRight,
@@ -17,13 +12,29 @@ import {
   User,
   Home,
   Plus,
-  Users,
   Package,
-  Image
+  Database,
+  FileText,
+  Image,
+  Users,
+  Shield,
+  Key,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { collectionsMeta, getGroupedCollections, type CollectionMeta } from '@/lib/collections-data';
+
+// Icon mapping for collections
+const collectionIcons: Record<string, React.ElementType> = {
+  users: Users,
+  roles: Shield,
+  permissions: Key,
+  media: Image,
+  pages: FileText,
+  settings: Settings,
+  default: Database,
+};
 
 type NavItem = {
   label: string;
@@ -32,76 +43,47 @@ type NavItem = {
   children?: { label: string; href: string }[];
 };
 
-const navItems: NavItem[] = [
-  {
-    label: 'Dashboard',
-    href: '/admin/dashboard',
-    icon: LayoutDashboard,
-  },
-  {
-    label: 'Media',
-    href: '/admin/media',
-    icon: Image,
-  },
-  {
-    label: 'Pages',
-    href: '/admin/pages',
-    icon: FileText,
-    children: [
-      { label: 'All Pages', href: '/admin/pages' },
-      { label: 'Add New', href: '/admin/pages/new' },
-    ],
-  },
-  {
-    label: 'Posts',
-    href: '/admin/posts',
-    icon: BookOpen,
-    children: [
-      { label: 'All Posts', href: '/admin/posts' },
-      { label: 'Add New', href: '/admin/posts/new' },
-      { label: 'Categories', href: '/admin/posts/categories' },
-      { label: 'Tags', href: '/admin/posts/tags' },
-    ],
-  },
-  {
-    label: 'News',
-    href: '/admin/news',
-    icon: Newspaper,
-    children: [
-      { label: 'All News', href: '/admin/news' },
-      { label: 'Add New', href: '/admin/news/new' },
-    ],
-  },
-  {
-    label: 'Appearance',
-    href: '/admin/appearance',
-    icon: Menu,
-    children: [
-      { label: 'Themes', href: '/admin/appearance/themes' },
-      { label: 'Patterns', href: '/admin/appearance/patterns' },
-      { label: 'Customize', href: '/admin/appearance/customize' },
-      { label: 'Widgets', href: '/admin/appearance/widgets' },
-      { label: 'Menus', href: '/admin/appearance/menus' },
-      { label: 'Additional CSS', href: '/admin/appearance/css' },
-      { label: 'Theme File Editor', href: '/admin/appearance/editor' },
-    ],
-  },
-  {
-    label: 'Links',
-    href: '/admin/links',
-    icon: Link2,
-  },
-  {
-    label: 'Comments',
-    href: '/admin/comments',
-    icon: MessageSquare,
-  },
-  {
+function getCollectionIcon(slug: string): React.ElementType {
+  return collectionIcons[slug] || collectionIcons.default;
+}
+
+function buildNavItems(): NavItem[] {
+  const items: NavItem[] = [
+    {
+      label: 'Dashboard',
+      href: '/admin',
+      icon: LayoutDashboard,
+    },
+  ];
+
+  // Get grouped collections
+  const grouped = getGroupedCollections();
+  
+  // Add collections grouped by their admin group
+  for (const [group, collections] of grouped) {
+    for (const collection of collections) {
+      const Icon = getCollectionIcon(collection.slug);
+      items.push({
+        label: collection.labels.plural,
+        href: `/admin/${collection.slug}`,
+        icon: Icon,
+        children: [
+          { label: `All ${collection.labels.plural}`, href: `/admin/${collection.slug}` },
+          { label: `Add New`, href: `/admin/${collection.slug}/new` },
+        ],
+      });
+    }
+  }
+
+  // Add settings at the end
+  items.push({
     label: 'Settings',
     href: '/admin/settings',
     icon: Settings,
-  },
-];
+  });
+
+  return items;
+}
 
 function NavLink({ item }: { item: NavItem }) {
   const pathname = usePathname();
@@ -177,9 +159,11 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const navItems = buildNavItems();
+
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Top admin bar (WordPress style) */}
+      {/* Top admin bar (WordPress/Payload style) */}
       <div className="w-full bg-gray-900 text-white flex items-center justify-between px-6 py-2 shadow-sm">
         <div className="flex items-center gap-6">
           <Link href="/admin" className="flex items-center gap-2 font-bold text-lg hover:text-blue-200">
@@ -188,16 +172,12 @@ export default function AdminLayout({
           <Link href="/" className="flex items-center gap-2 text-sm hover:text-blue-200">
             <Home className="w-4 h-4" /> View Site
           </Link>
-          <Link href="/admin/content/new" className="flex items-center gap-2 text-sm hover:text-blue-200">
+          <Link href="/admin/media/new" className="flex items-center gap-2 text-sm hover:text-blue-200">
             <Plus className="w-4 h-4" /> New
-          </Link>
-          <Link href="/admin/plugins" className="flex items-center gap-2 text-sm hover:text-blue-200">
-            <Package className="w-4 h-4" /> Plugins
           </Link>
           <Link href="/admin/users" className="flex items-center gap-2 text-sm hover:text-blue-200">
             <Users className="w-4 h-4" /> Users
           </Link>
-          {/* Removed Tools link due to missing Tool icon in lucide-react */}
         </div>
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon">
@@ -214,14 +194,8 @@ export default function AdminLayout({
       </div>
 
       <div className="flex min-h-screen">
-        {/* Sidebar */}
+        {/* Sidebar - Dynamic based on collections */}
         <aside className="w-64 border-r border-border bg-secondary/30 flex flex-col">
-          {/* <div className="p-6 border-b border-border">
-            <Link href="/admin/dashboard" className="text-xl font-bold">
-              NextPress
-            </Link>
-            <p className="text-sm text-muted-foreground mt-1">Content Management</p>
-          </div> */}
           <nav className="flex-1 px-3 py-4 overflow-y-auto">
             <ul className="space-y-1">
               {navItems.map((item) => (
