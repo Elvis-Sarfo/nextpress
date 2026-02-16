@@ -19,7 +19,8 @@
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "db:reset": "prisma migrate reset --force",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "schema:generate": "tsx src/scripts/generate-schema.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

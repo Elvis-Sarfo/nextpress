@@ -1,0 +1,738 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================================
+// PAGE - Hierarchical content (like WordPress pages)
+// ============================================================================
+
+model Page {
+  id            String    @id @default(uuid())
+  documentId    String    // Links draft/published versions
+  status        String    @db.VarChar(20) // DRAFT, PUBLISHED, SCHEDULED, ARCHIVED
+  parentId      String?   // Hierarchy
+  order         Int       @default(0)
+  template      String?   @db.VarChar(100)
+  metadata      Json?     // Custom fields, SEO, etc.
+  publishedAt   DateTime?
+  scheduledAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  createdBy     String    @db.VarChar(255)
+
+  parent    Page?         @relation("PageHierarchy", fields: [parentId], references: [id])
+  children  Page[]        @relation("PageHierarchy")
+  locales   PageLocale[]
+  comments  Comment[]
+  menuItems MenuItem[]
+  // Note: versions are queried via documentId, not a direct relation
+
+  @@unique([documentId, status])
+  @@index([status])
+  @@index([parentId])
+  @@index([documentId])
+  @@map("page")
+}
+
+model PageLocale {
+  id      String  @id @default(uuid())
+  pageId  String
+  locale  String  @db.VarChar(10)
+  title   String  @db.VarChar(500)
+  slug    String  @db.VarChar(255)
+  content String  @db.Text
+  excerpt String? @db.Text
+
+  page Page @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@unique([pageId, locale])
+  @@unique([locale, slug])
+  @@index([locale])
+  @@map("page_locale")
+}
+
+model PageVersion {
+  id         String   @id @default(uuid())
+  documentId String
+  version    Int
+  data       Json     // Full snapshot
+  createdAt  DateTime @default(now())
+  createdBy  String   @db.VarChar(255)
+
+  @@unique([documentId, version])
+  @@index([documentId])
+  @@map("page_version")
+}
+
+// ============================================================================
+// POST - Blog posts (like WordPress posts)
+// ============================================================================
+
+model Post {
+  id            String    @id @default(uuid())
+  documentId    String
+  status        String    @db.VarChar(20)
+  featuredImage String?   @db.VarChar(500)
+  metadata      Json?
+  publishedAt   DateTime?
+  scheduledAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  createdBy     String    @db.VarChar(255)
+
+  locales  PostLocale[]
+  comments Comment[]
+  // Note: versions are queried via documentId, not a direct relation
+
+  @@unique([documentId, status])
+  @@index([status])
+  @@index([documentId])
+  @@index([publishedAt(sort: Desc)])
+  @@map("post")
+}
+
+model PostLocale {
+  id      String  @id @default(uuid())
+  postId  String
+  locale  String  @db.VarChar(10)
+  title   String  @db.VarChar(500)
+  slug    String  @db.VarChar(255)
+  content String  @db.Text
+  excerpt String? @db.Text
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, locale])
+  @@unique([locale, slug])
+  @@index([locale])
+  @@map("post_locale")
+}
+
+model PostVersion {
+  id         String   @id @default(uuid())
+  documentId String
+  version    Int
+  data       Json
+  createdAt  DateTime @default(now())
+  createdBy  String   @db.VarChar(255)
+
+  @@unique([documentId, version])
+  @@index([documentId])
+  @@map("post_version")
+}
+
+// ============================================================================
+// NEWS - News articles (date-focused content)
+// ============================================================================
+
+model News {
+  id            String    @id @default(uuid())
+  documentId    String
+  status        String    @db.VarChar(20)
+  category      String?   @db.VarChar(100)
+  featuredImage String?   @db.VarChar(500)
+  metadata      Json?
+  publishedAt   DateTime?
+  scheduledAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  createdBy     String    @db.VarChar(255)
+
+  locales  NewsLocale[]
+  comments Comment[]
+  // Note: versions are queried via documentId, not a direct relation
+
+  @@unique([documentId, status])
+  @@index([status])
+  @@index([documentId])
+  @@index([category])
+  @@index([publishedAt(sort: Desc)])
+  @@map("news")
+}
+
+model NewsLocale {
+  id      String  @id @default(uuid())
+  newsId  String
+  locale  String  @db.VarChar(10)
+  title   String  @db.VarChar(500)
+  slug    String  @db.VarChar(255)
+  content String  @db.Text
+  excerpt String? @db.Text
+
+  news News @relation(fields: [newsId], references: [id], onDelete: Cascade)
+
+  @@unique([newsId, locale])
+  @@unique([locale, slug])
+  @@index([locale])
+  @@map("news_locale")
+}
+
+model NewsVersion {
+  id         String   @id @default(uuid())
+  documentId String
+  version    Int
+  data       Json
+  createdAt  DateTime @default(now())
+  createdBy  String   @db.VarChar(255)
+
+  @@unique([documentId, version])
+  @@index([documentId])
+  @@map("news_version")
+}
+
+// ============================================================================
+// MENU & MENU ITEMS
+// ============================================================================
+
+model Menu {
+  id          String   @id @default(uuid())
+  name        String   @unique @db.VarChar(100)
+  displayName String   @db.VarChar(255)
+  location    String?  @db.VarChar(100) // header, footer, sidebar
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdBy   String   @db.VarChar(255)
+
+  items MenuItem[]
+
+  @@map("menu")
+}
+
+model MenuItem {
+  id        String   @id @default(uuid())
+  menuId    String
+  parentId  String?
+  order     Int      @default(0)
+  label     Json     // { "en": "About", "fr": "À propos" }
+  url       String?  @db.VarChar(500)
+  pageId    String?  // Link to Page
+  postId    String?  // Link to Post
+  newsId    String?  // Link to News
+  target    String   @default("_self") @db.VarChar(20)
+  cssClass  String?  @db.VarChar(100)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  menu     Menu       @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  parent   MenuItem?  @relation("MenuItemHierarchy", fields: [parentId], references: [id])
+  children MenuItem[] @relation("MenuItemHierarchy")
+  page     Page?      @relation(fields: [pageId], references: [id], onDelete: SetNull)
+
+  @@index([menuId])
+  @@index([parentId])
+  @@index([menuId, order])
+  @@map("menu_item")
+}
+
+// ============================================================================
+// LINK COLLECTIONS
+// ============================================================================
+
+model LinkCollection {
+  id          String   @id @default(uuid())
+  name        String   @unique @db.VarChar(100)
+  displayName String   @db.VarChar(255)
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdBy   String   @db.VarChar(255)
+
+  links Link[]
+
+  @@map("link_collection")
+}
+
+model Link {
+  id           String   @id @default(uuid())
+  collectionId String
+  order        Int      @default(0)
+  title        Json     // Localized
+  description  Json?    // Localized
+  url          String   @db.VarChar(500)
+  imageUrl     String?  @db.VarChar(500)
+  target       String   @default("_self") @db.VarChar(20)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  collection LinkCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  @@index([collectionId])
+  @@index([collectionId, order])
+  @@map("link")
+}
+
+// ============================================================================
+// COMMENTS (polymorphic - can attach to Page, Post, or News)
+// ============================================================================
+
+model Comment {
+  id          String    @id @default(uuid())
+  // Polymorphic reference
+  pageId      String?
+  postId      String?
+  newsId      String?
+  // Threading
+  parentId    String?
+  // Author info
+  authorName  String    @db.VarChar(255)
+  authorEmail String    @db.VarChar(255)
+  authorUrl   String?   @db.VarChar(500)
+  authorIp    String?   @db.VarChar(45)
+  // Content
+  content     String    @db.Text
+  status      String    @default("pending") @db.VarChar(20)
+  // Moderation
+  moderatedBy String?   @db.VarChar(255)
+  moderatedAt DateTime?
+  userAgent   String?   @db.VarChar(500)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  page    Page?     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  post    Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  news    News?     @relation(fields: [newsId], references: [id], onDelete: Cascade)
+  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies Comment[] @relation("CommentReplies")
+
+  @@index([pageId])
+  @@index([postId])
+  @@index([newsId])
+  @@index([parentId])
+  @@index([status])
+  @@index([createdAt(sort: Desc)])
+  @@map("comment")
+}
+
+// ============================================================================
+// SLUG REDIRECTS (for URL preservation when slugs change)
+// ============================================================================
+
+model SlugRedirect {
+  id           String   @id @default(uuid())
+  contentType  String   @db.VarChar(20) // 'page', 'post', 'news'
+  locale       String   @db.VarChar(10)
+  fromSlug     String   @db.VarChar(255)
+  toDocumentId String   // documentId of target
+  createdAt    DateTime @default(now())
+
+  @@unique([contentType, locale, fromSlug])
+  @@index([toDocumentId])
+  @@map("slug_redirect")
+}
+
+// ============================================================================
+// RBAC - ROLES
+// ============================================================================
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique @db.VarChar(100)
+  displayName String   @db.VarChar(255)
+  permissions Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users UserRole[]
+
+  @@map("role")
+}
+
+// ============================================================================
+// RBAC - USER ROLE ASSIGNMENT
+// ============================================================================
+
+model UserRole {
+  userId     String   @db.VarChar(255)
+  roleId     String
+  assignedAt DateTime @default(now())
+  assignedBy String   @db.VarChar(255)
+
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+  @@map("user_role")
+}
+
+// ============================================================================
+// MEDIA COLLECTION (Payload CMS)
+// ============================================================================
+
+model Media {
+  id          String   @id @default(uuid())
+  filename    String   @db.VarChar(500)
+  mimeType    String   @db.VarChar(100)
+  filesize    Int?
+  width       Int?
+  height      Int?
+  alt         String   @db.VarChar(500)
+  title       String?  @db.VarChar(500)
+  caption     Json?    // Localized
+  // S3/Cloud fields
+  url         String   @db.VarChar(1000)
+  thumbnailUrl String? @db.VarChar(1000)
+  // Upload tracking
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdBy   String?  @db.VarChar(255)
+
+  // Relations
+  products        Product[]
+  categories      Category[]
+  countries       Country[]
+  heroSlides      HeroSlide[]
+  contentBlocks   ContentBlock[]
+  websiteConfigs  WebsiteConfig[]
+
+  @@index([mimeType])
+  @@index([createdAt(sort: Desc)])
+  @@map("media")
+}
+
+// ============================================================================
+// PRODUCT COLLECTION (Payload CMS)
+// ============================================================================
+
+model Product {
+  id            String    @id @default(uuid())
+  documentId    String
+  status        String    @db.VarChar(20) // DRAFT, PUBLISHED
+  categoryId    String?   // Relationship to Category
+  inStock       Boolean   @default(true)
+  featured      Boolean   @default(false)
+  order         Int       @default(0)
+  metadata      Json?     // Custom fields
+  publishedAt   DateTime?
+  scheduledAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  createdBy     String?   @db.VarChar(255)
+
+  // Relations
+  category   Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  locales    ProductLocale[]
+  versions   ProductVersion[]
+
+  @@unique([documentId, status])
+  @@index([status])
+  @@index([documentId])
+  @@index([categoryId])
+  @@index([featured])
+  @@index([inStock])
+  @@map("product")
+}
+
+model ProductLocale {
+  id              String  @id @default(uuid())
+  productId       String
+  locale          String  @db.VarChar(10)
+  name            String  @db.VarChar(500)
+  model           String  @db.VarChar(255)
+  slug            String  @db.VarChar(255)
+  description     String  @db.Text
+  shortDescription String? @db.Text
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, locale])
+  @@unique([locale, slug])
+  @@index([locale])
+  @@map("product_locale")
+}
+
+model ProductVersion {
+  id         String   @id @default(uuid())
+  documentId String
+  version    Int
+  data       Json     // Full snapshot
+  createdAt  DateTime @default(now())
+  createdBy  String   @db.VarChar(255)
+
+  @@unique([documentId, version])
+  @@index([documentId])
+  @@map("product_version")
+}
+
+// ============================================================================
+// CATEGORY COLLECTION (Payload CMS)
+// ============================================================================
+
+model Category {
+  id              String    @id @default(uuid())
+  documentId      String
+  status          String    @db.VarChar(20) // DRAFT, PUBLISHED
+  parentCategoryId String?  // Self-referencing hierarchy
+  imageId         String?   // Relationship to Media
+  order           Int       @default(0)
+  icon            String?   @db.VarChar(50)
+  metadata        Json?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  createdBy       String?   @db.VarChar(255)
+
+  // Relations
+  parent      Category?       @relation("CategoryHierarchy", fields: [parentCategoryId], references: [id])
+  children    Category[]      @relation("CategoryHierarchy")
+  image       Media?          @relation(fields: [imageId], references: [id], onDelete: SetNull)
+  locales     CategoryLocale[]
+  versions    CategoryVersion[]
+  products    Product[]
+
+  @@unique([documentId, status])
+  @@index([status])
+  @@index([documentId])
+  @@index([parentCategoryId])
+  @@map("category")
+}
+
+model CategoryLocale {
+  id          String  @id @default(uuid())
+  categoryId  String
+  locale      String  @db.VarChar(10)
+  name        String  @db.VarChar(500)
+  slug        String  @db.VarChar(255)
+  description String? @db.Text
+
+  // Media array stored as JSON
+  media       Json?
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([categoryId, locale])
+  @@unique([locale, slug])
+  @@index([locale])
+  @@map("category_locale")
+}
+
+model CategoryVersion {
+  id         String   @id @default(uuid())
+  documentId String
+  version    Int
+  data       Json     // Full snapshot
+  createdAt  DateTime @default(now())
+  createdBy  String   @db.VarChar(255)
+
+  @@unique([documentId, version])
+  @@index([documentId])
+  @@map("category_version")
+}
+
+// ============================================================================
+// COUNTRY COLLECTION (Payload CMS)
+// ============================================================================
+
+model Country {
+  id            String    @id @default(uuid())
+  documentId    String
+  status        String    @db.VarChar(20)
+  code          String?   @db.VarChar(10)
+  flag          String    @db.VarChar(20)
+  color         String    @db.VarChar(20)
+  coordinates   Json      // { latitude, longitude }
+  symbolId      String?   // Media relation
+  backgroundId  String?   // Media relation
+  wallpaperId   String?   // Media relation
+  metadata      Json?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  createdBy     String?   @db.VarChar(255)
+
+  // Relations
+  symbol     Media?         @relation(fields: [symbolId], references: [id], onDelete: SetNull)
+  background Media?         @relation("CountryBackground", fields: [backgroundId], references: [id], onDelete: SetNull)
+  wallpaper  Media?         @relation("CountryWallpaper", fields: [wallpaperId], references: [id], onDelete: SetNull)
+  locales    CountryLocale[]
+  versions   CountryVersion[]
+
+  @@unique([documentId, status])
+  @@index([status])
+  @@index([documentId])
+  @@index([code])
+  @@map("country")
+}
+
+model CountryLocale {
+  id          String  @id @default(uuid())
+  countryId   String
+  locale      String  @db.VarChar(10)
+  name        String  @db.VarChar(500)
+  description String? @db.Text
+
+  // Offices array stored as JSON
+  offices     Json?
+
+  country Country @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@unique([countryId, locale])
+  @@index([locale])
+  @@map("country_locale")
+}
+
+model CountryVersion {
+  id         String   @id @default(uuid())
+  documentId String
+  version    Int
+  data       Json
+  createdAt  DateTime @default(now())
+  createdBy  String   @db.VarChar(255)
+
+  @@unique([documentId, version])
+  @@index([documentId])
+  @@map("country_version")
+}
+
+// ============================================================================
+// HERO SLIDE COLLECTION (Payload CMS)
+// ============================================================================
+
+model HeroSlide {
+  id              String    @id @default(uuid())
+  documentId      String
+  status          String    @db.VarChar(20)
+  mediaType       String    @db.VarChar(20) // image, video, youtube
+  imageId         String?   // Media relation
+  mobileImageId   String?   // Media relation
+  videoUrl        String?   @db.VarChar(500)
+  youtubeId       String?   @db.VarChar(50)
+  ctaLink         String?   @db.VarChar(500)
+  textPosition    Json      // Desktop/mobile alignment
+  textColor       String    @default("white") @db.VarChar(20)
+  overlayOpacity  Int       @default(30)
+  order           Int       @default(0)
+  active          Boolean   @default(true)
+  metadata        Json?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  createdBy       String?   @db.VarChar(255)
+
+  // Relations
+  image       Media?          @relation(fields: [imageId], references: [id], onDelete: SetNull)
+  mobileImage Media?          @relation("HeroSlideMobile", fields: [mobileImageId], references: [id], onDelete: SetNull)
+  locales     HeroSlideLocale[]
+  versions    HeroSlideVersion[]
+
+  @@unique([documentId, status])
+  @@index([status])
+  @@index([documentId])
+  @@index([order])
+  @@index([active])
+  @@map("hero_slide")
+}
+
+model HeroSlideLocale {
+  id          String  @id @default(uuid())
+  heroSlideId String
+  locale      String  @db.VarChar(10)
+  title       String  @db.VarChar(500)
+  subtitle    String? @db.Text
+  ctaText     String? @db.VarChar(255)
+
+  heroSlide HeroSlide @relation(fields: [heroSlideId], references: [id], onDelete: Cascade)
+
+  @@unique([heroSlideId, locale])
+  @@index([locale])
+  @@map("hero_slide_locale")
+}
+
+model HeroSlideVersion {
+  id         String   @id @default(uuid())
+  documentId String
+  version    Int
+  data       Json
+  createdAt  DateTime @default(now())
+  createdBy  String   @db.VarChar(255)
+
+  @@unique([documentId, version])
+  @@index([documentId])
+  @@map("hero_slide_version")
+}
+
+// ============================================================================
+// CONTENT BLOCK COLLECTION (Payload CMS)
+// ============================================================================
+
+model ContentBlock {
+  id          String    @id @default(uuid())
+  documentId  String
+  status      String    @db.VarChar(20) // published, draft
+  key         String    @unique @db.VarChar(100)
+  metadata    Json?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdBy   String?   @db.VarChar(255)
+
+  locales   ContentBlockLocale[]
+  versions  ContentBlockVersion[]
+
+  @@index([status])
+  @@map("content_block")
+}
+
+model ContentBlockLocale {
+  id        String  @id @default(uuid())
+  blockId   String
+  locale    String  @db.VarChar(10)
+  title     String  @db.VarChar(500)
+  content   String  @db.Text
+
+  // Images array stored as JSON
+  images    Json?
+
+  block ContentBlock @relation(fields: [blockId], references: [id], onDelete: Cascade)
+
+  @@unique([blockId, locale])
+  @@index([locale])
+  @@map("content_block_locale")
+}
+
+model ContentBlockVersion {
+  id         String   @id @default(uuid())
+  documentId String
+  version    Int
+  data       Json
+  createdAt  DateTime @default(now())
+  createdBy  String   @db.VarChar(255)
+
+  @@unique([documentId, version])
+  @@index([documentId])
+  @@map("content_block_version")
+}
+
+// ============================================================================
+// WEBSITE CONFIG COLLECTION (Payload CMS - Singleton)
+// ============================================================================
+
+model WebsiteConfig {
+  id          String    @id @default(uuid())
+  documentId  String    @default("website-config")
+  status      String    @db.VarChar(20)
+  metadata    Json?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdBy   String?   @db.VarChar(255)
+
+  locales   WebsiteConfigLocale[]
+
+  @@unique([documentId, status])
+  @@map("website_config")
+}
+
+model WebsiteConfigLocale {
+  id        String  @id @default(uuid())
+  configId  String
+  locale    String  @db.VarChar(10)
+
+  // Store all localized fields as JSON
+  data      Json    // { siteName, logo, contact, headerNavigation, footer, socialMedia, newsletter, legal, features }
+
+  config WebsiteConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@unique([configId, locale])
+  @@index([locale])
+  @@map("website_config_locale")
+}

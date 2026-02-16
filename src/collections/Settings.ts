@@ -1,7 +1,7 @@
-import type { CollectionConfig } from 'payload'
+import { CollectionConfig } from "@/core/types";
 
-export const WebsiteConfig: CollectionConfig = {
-  slug: 'website-config',
+export const Settings: CollectionConfig<'settings'> = {
+  slug: 'settings',
   admin: {
     useAsTitle: 'siteName',
     defaultColumns: ['siteName', 'updatedAt'],

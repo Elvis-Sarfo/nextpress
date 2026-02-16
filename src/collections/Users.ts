@@ -98,10 +98,15 @@ export const Users: CollectionConfig<'users'> = {
     } satisfies CheckboxField,
   ],
   
-  // Enable versioning
+  // Disable versioning for users (not needed, security risk)
   versions: {
-    enabled: true,
-    maxPerDoc: 10,
+    enabled: false,
+  },
+  
+  // Disable localization for users (not needed - user data is language-agnostic)
+  localization: {
+    locales: [],
+    defaultLocale: 'en',
   },
   
   // Indexes
@@ -116,4 +121,15 @@ export const Users: CollectionConfig<'users'> = {
 // export const Users: CollectionConfig<'users'> = { ... }
 
 // Register the collection
-Collections.register(Users);
+// Note: Collections are now registered centrally in nextpress.config.ts
+// Collections.register(Users);
+
+export interface IUser {
+  id: string;
+  email: string;
+  role: 'admin' | 'editor' | 'user';
+  name?: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+};

@@ -3,18 +3,23 @@
  * 
  * Run: npx tsx src/scripts/generate-schema.ts
  * 
- * This generates the Prisma schema from all registered collections.
+ * This generates the Prisma schema from all registered collections
+ * defined in nextpress.config.ts.
  */
 
 import { generatePrismaSchema } from '../core/schema-engine';
 import * as fs from 'fs';
 import * as path from 'path';
 
-// Import all collections
-import { Users } from '../collections/Users';
+// Import config (which contains all collections)
+import nextpressConfig from '../nextpress.config';
 
-// Register collections and generate schema
-const collections = [Users];
+// Get collections from config
+const collections = nextpressConfig.collections;
+
+console.log(`📦 Generating schema for ${collections.length} collections:`);
+collections.forEach(c => console.log(`   - ${c.slug}`));
+console.log();
 
 // Generate schema
 const schema = generatePrismaSchema(collections, {
@@ -24,7 +29,7 @@ const schema = generatePrismaSchema(collections, {
 });
 
 // Output path
-const outputPath = path.join(process.cwd(), 'src/adapters/prisma-adapter/prisma/generated-schema.prisma');
+const outputPath = path.join(process.cwd(), 'src/adapters/prisma-adapter/prisma/schema.prisma');
 
 // Write to file
 fs.writeFileSync(outputPath, schema);

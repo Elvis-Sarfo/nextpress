@@ -28,6 +28,23 @@ class CollectionRegistryClass {
   }
   
   /**
+   * Register multiple collections at once
+   */
+  registerMany(configs: CollectionConfig[]): void {
+    for (const config of configs) {
+      this.register(config);
+    }
+  }
+  
+  /**
+   * Initialize collections from NextPress config
+   */
+  initFromConfig(config: { collections: CollectionConfig[] }): void {
+    this.clear();
+    this.registerMany(config.collections);
+  }
+  
+  /**
    * Get a collection by slug
    */
   get<T extends CollectionSlug>(slug: T): CollectionConfig<T> | undefined {

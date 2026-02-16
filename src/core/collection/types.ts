@@ -12,25 +12,7 @@ import type { Permission, Action, ResourceType } from '../permissions/types';
 // COLLECTION SLUGS
 // ============================================================================
 
-export type CollectionSlug = 
-  | 'users'
-  | 'roles'
-  | 'media'
-  | 'products'
-  | 'categories'
-  | 'pages'
-  | 'posts'
-  | 'news'
-  | 'countries'
-  | 'hero-slides'
-  | 'content-blocks'
-  | 'website-config'
-  | 'menus'
-  | 'menu-items'
-  | 'links'
-  | 'link-collections'
-  | 'comments'
-  | 'slug-redirects';
+export type CollectionSlug = string;
 
 // ============================================================================
 // FIELD TYPES
@@ -40,6 +22,7 @@ export type CollectionSlug =
 export interface BaseField {
   name: string;
   type: string;
+  label?: string;
   required?: boolean;
   localized?: boolean;
   default?: unknown;
