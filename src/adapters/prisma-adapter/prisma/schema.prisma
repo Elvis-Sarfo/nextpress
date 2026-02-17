@@ -44,7 +44,6 @@ model Permissions {
   action String @db.VarChar(100)
   description String? @db.VarChar(255)
   metadata Json?
-  metadata Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   createdBy String? @db.VarChar(255)
@@ -65,7 +64,7 @@ model Media {
   alt String? @db.VarChar(255)
   caption String? @db.VarChar(255)
   metadata Json?
-  metadata Json?
+  featuredInPages Pages[] @relation("featuredImage")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   createdBy String? @db.VarChar(255)
@@ -90,15 +89,14 @@ model MediaVersion {
 model Pages {
   id String @id @default(uuid())
   documentId String
-  status String @db.VarChar(20)
   title String @db.VarChar(255)
   slug String @db.VarChar(255) @unique
   excerpt String? @db.Text
   content Json?
   status String @db.VarChar(100) @default("draft")
   seo Json?
-  featuredImage String? @db.VarChar(255)
-  featuredImage Media @relation("featuredImage", fields: [featuredImage], references: [id], onDelete: SetNull)
+  featuredImageId String? @db.VarChar(255)
+  featuredImage Media? @relation("featuredImage", fields: [featuredImageId], references: [id], onDelete: SetNull)
   metadata Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

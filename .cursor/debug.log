@@ -1,0 +1,1 @@
+{"location":"src/scripts/run-migration.ts:47","message":"Executing Prisma command","data":{"command":"npx prisma db push","cwd":"/Users/user/Documents/Projects/KantaTech/nextpress/nextpress"},"timestamp":1771354405352,"runId":"post-fix","hypothesisId":"H1"}

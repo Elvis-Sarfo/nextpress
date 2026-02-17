@@ -14,16 +14,19 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "clean": "rm -rf dist",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
-    "db:seed": "tsx prisma/seed.ts",
+    "db:deploy": "prisma migrate deploy",
+    "db:seed": "tsx src/adapters/prisma-adapter/prisma/seed.ts",
     "db:reset": "prisma migrate reset --force",
-    "clean": "rm -rf dist",
+    "db:migration:run": "tsx src/scripts/run-migration.ts",
     "schema:generate": "tsx src/scripts/generate-schema.ts"
   },
   "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx src/adapters/prisma-adapter/prisma/seed.ts",
+    "schema": "src/adapters/prisma-adapter/prisma/schema.prisma"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.0.0",

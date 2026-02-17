@@ -24,29 +24,29 @@ const config = {
     Users,
     Roles,
     Permissions,
-    
+
     // Content collections
     Media,
     Pages,
-    
+
     // Settings
     Settings,
   ],
-  
+
   // Secret for authentication
   secret: process.env.PAYLOAD_SECRET || '',
-  
+
   // TypeScript configuration
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
-  
+
   // Database configuration
   db: {
     provider: 'postgres',
     url: process.env.DATABASE_URI || '',
   },
-  
+
   // Localization configuration
   localization: {
     locales: [
@@ -66,7 +66,7 @@ const config = {
     defaultLocale: 'en',
     fallback: true,
   },
-  
+
   // Schema generation settings
   schema: {
     // Generate Prisma schema on startup (dev only)
@@ -84,6 +84,12 @@ const config = {
     stateBackend: 'memory',
     // Used when stateBackend is "file"
     stateFilePath: '.next/cache/nextpress-state.json',
+    // Migration mode:
+    // - "auto" - Automatically run migrations after schema changes (default in dev)
+    // - "manual" - Never auto-migrate, user must run migrations manually
+    // - "deploy" - Use prisma migrate deploy (for production)
+    // - "prompt" - Ask before running migrations
+    migrationMode: process.env.NODE_ENV === 'production' ? 'deploy' : 'auto',
   },
 } satisfies NextPressConfig
 

@@ -175,6 +175,7 @@ function formatTableName(slug: string, prefix?: string): string {
 function generateMainModel(config: CollectionConfig, options: SchemaEngineOptions): PrismaModel {
   const fields: PrismaField[] = [];
   const indexes: string[] = [];
+  const collectionFieldNames = new Set(config.fields.map(f => f.name));
   
   // ID field
   fields.push({
@@ -196,14 +197,16 @@ function generateMainModel(config: CollectionConfig, options: SchemaEngineOption
     });
   }
   
-  // Status field
-  fields.push({
-    name: 'status',
-    type: 'String',
-    isOptional: false,
-    isList: false,
-    attributes: ['@db.VarChar(20)'],
-  });
+  // Status field (skip if collection defines its own status field)
+  if (!collectionFieldNames.has('status')) {
+    fields.push({
+      name: 'status',
+      type: 'String',
+      isOptional: false,
+      isList: false,
+      attributes: ['@db.VarChar(20)'],
+    });
+  }
   
   // Process collection fields
   const relationshipFields: PrismaField[] = [];
@@ -214,18 +217,31 @@ function generateMainModel(config: CollectionConfig, options: SchemaEngineOption
       const targetCollection = field.type === 'upload' 
         ? 'media' 
         : (field as any).relationTo;
-      
+
+      // Foreign key field (e.g., featuredImageId)
+      const foreignKeyField = mapFieldToPrisma(field, options);
+      foreignKeyField.name = `${field.name}Id`;
+      fields.push(foreignKeyField);
+
+      // Relation field (e.g., featuredImage)
       const relation: PrismaRelation = {
         name: field.name,
         model: formatModelName(targetCollection),
-        fields: [field.name],
+        fields: [foreignKeyField.name],
         references: ['id'],
         onDelete: 'SetNull',
       };
-      
-      const prismaField = mapFieldToPrisma(field, options);
-      prismaField.relation = relation;
-      relationshipFields.push(prismaField);
+
+      const relationField: PrismaField = {
+        name: field.name,
+        type: formatModelName(targetCollection),
+        isOptional: foreignKeyField.isOptional,
+        isList: false,
+        attributes: [],
+        relation,
+      };
+
+      relationshipFields.push(relationField);
     } else {
       fields.push(mapFieldToPrisma(field, options));
     }
@@ -234,14 +250,16 @@ function generateMainModel(config: CollectionConfig, options: SchemaEngineOption
   // Add relationship fields
   fields.push(...relationshipFields);
   
-  // Add metadata field
-  fields.push({
-    name: 'metadata',
-    type: 'Json',
-    isOptional: true,
-    isList: false,
-    attributes: [],
-  });
+  // Add metadata field (skip if collection defines its own metadata field)
+  if (!collectionFieldNames.has('metadata')) {
+    fields.push({
+      name: 'metadata',
+      type: 'Json',
+      isOptional: true,
+      isList: false,
+      attributes: [],
+    });
+  }
   
   // Add timestamps
   fields.push({
@@ -479,7 +497,7 @@ function generateModelString(model: PrismaModel): string {
     
     // Add relation
     if (field.relation) {
-      fieldLine += `\n  ${field.relation.name} ${field.relation.model} @relation("${field.relation.name}", `;
+      fieldLine += ` @relation(`;
       fieldLine += `fields: [${field.relation.fields.join(', ')}], `;
       fieldLine += `references: [${field.relation.references.join(', ')}]`;
       if (field.relation.onDelete) {

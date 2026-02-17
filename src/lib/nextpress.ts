@@ -11,10 +11,63 @@ import type {
   NextPressSchemaConfig,
   NextPressSchemaStateBackend,
   NextPressSchemaStrategy,
+  NextPressMigrationMode,
 } from '../core/types/nextpress-config.types';
 import * as fs from 'fs';
 import * as path from 'path';
+import { execSync } from 'child_process';
 import * as crypto from 'crypto';
+
+// ============================================================================
+// MIGRATION HANDLER
+// ============================================================================
+
+/**
+ * Run database migration based on the configured migration mode
+ */
+async function runMigration(migrationMode: NextPressMigrationMode | undefined): Promise<boolean> {
+  // Default to 'manual' if not specified
+  const mode = migrationMode || 'manual';
+
+  // Skip migration in manual mode
+  if (mode === 'manual') {
+    console.log(`[NextPress] 📋 Migration mode is 'manual' - skipping auto-migration`);
+    console.log(`[NextPress] ℹ️  Run 'pnpm db:migrate' or 'pnpm db:push' manually when needed`);
+    return false;
+  }
+
+  // Determine which command to run based on mode
+  let command: string;
+  let description: string;
+
+  switch (mode) {
+    case 'deploy':
+      command = 'npx prisma migrate deploy';
+      description = 'Deploying migrations...';
+      break;
+    case 'prompt':
+      // For prompt mode, we'll just log and skip (would need stdin for actual prompts)
+      console.log(`[NextPress] ⚠️  Migration mode is 'prompt' - requires manual confirmation`);
+      console.log(`[NextPress] ℹ️  Run 'pnpm db:migrate' to proceed`);
+      return false;
+    case 'auto':
+    default:
+      command = 'npx prisma db push';
+      description = 'Pushing schema changes to database...';
+      break;
+  }
+
+  console.log(`[NextPress] 🔄 ${description}`);
+
+  try {
+    execSync(command, { stdio: 'inherit' });
+    console.log(`[NextPress] ✅ Migration completed successfully!`);
+    return true;
+  } catch (error) {
+    console.error(`[NextPress] ❌ Migration failed:`, error);
+    return false;
+  }
+}
 
 // ============================================================================
 // STATE TRACKING
@@ -114,7 +167,7 @@ function setState(state: NextPressRuntimeState): void {
  */
 function generateConfigHash(): string {
   const collections = nextpressConfig.collections;
-  
+
   // Create a simplified representation of the config
   const configData = collections.map(c => ({
     slug: c.slug,
@@ -128,7 +181,7 @@ function generateConfigHash(): string {
     versioning: typeof c.versions === 'object' ? c.versions?.enabled : c.versions,
     localization: typeof c.localization === 'object' ? c.localization?.locales : c.localization,
   }));
-  
+
   const json = JSON.stringify(configData);
   return crypto.createHash('md5').update(json).digest('hex');
 }
@@ -143,12 +196,12 @@ function generateConfigHash(): string {
 function shouldInitialize(): boolean {
   const state = getState();
   const { strategy: configChangeDetectionStrategy } = getSchemaRuntimeConfig();
-  
+
   switch (configChangeDetectionStrategy) {
     case 'always':
       // Always run - useful for debugging
       return true;
-      
+
     case 'hash':
       // Run when config hash changes
       const currentHash = generateConfigHash();
@@ -161,7 +214,7 @@ function shouldInitialize(): boolean {
         lastConfigHash: currentHash,
       });
       return true;
-      
+
     case 'once':
     default:
       // Run once per server start (default)
@@ -181,23 +234,23 @@ function shouldInitialize(): boolean {
  * Initialize NextPress with the central configuration
  * Uses the configChangeDetectionStrategy defined in nextpress.config.ts
  */
-export function initializeNextPress(): void {
+export async function initializeNextPress(): Promise<void> {
   // Check if we should initialize based on configChangeDetectionStrategy
   if (!shouldInitialize()) {
     return;
   }
-  
+
   // Initialize collections from config
   Collections.initFromConfig(nextpressConfig);
-  
+
   console.log(`[NextPress] Initialized ${Collections.count()} collections:`);
   for (const slug of Collections.getSlugs()) {
     console.log(`  - ${slug}`);
   }
-  
+
   // Generate Prisma schema on startup if enabled
   if (nextpressConfig.schema?.generateOnStart) {
-    generateSchema();
+    await generateSchema();
   }
 }
 
@@ -208,27 +261,27 @@ export function initializeNextPress(): void {
 /**
  * Generate Prisma schema from collections
  */
-export function generateSchema(): void {
+export async function generateSchema(): Promise<void> {
   const collections = nextpressConfig.collections;
   const dbProvider = nextpressConfig.db?.provider;
-  
+
   console.log(`[NextPress] Generating Prisma schema for ${collections.length} collections...`);
-  
+
   const schema = generatePrismaSchema(collections, {
     provider: dbProvider === 'postgres' ? 'postgresql' : (dbProvider || 'postgresql'),
     localization: true,
     versioning: true,
   });
-  
-  const outputPath = path.resolve(process.cwd(), nextpressConfig.schema?.outputPath || 
+
+  const outputPath = path.resolve(process.cwd(), nextpressConfig.schema?.outputPath ||
     'src/adapters/prisma-adapter/prisma/schema.prisma');
-  
+
   // Ensure directory exists
   const dir = path.dirname(outputPath);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
-  
+
   // Avoid touching the file when schema content is unchanged, which prevents dev watch loops.
   if (fs.existsSync(outputPath)) {
     const currentSchema = fs.readFileSync(outputPath, 'utf8');
@@ -241,6 +294,12 @@ export function generateSchema(): void {
   fs.writeFileSync(outputPath, schema, 'utf8');
 
   console.log(`[NextPress] ✅ Schema generated: ${outputPath}`);
+
+  // Handle migration based on configured mode
+  const schemaConfig = nextpressConfig.schema as { migrationMode?: string } | undefined;
+  const migrationMode = schemaConfig?.migrationMode as NextPressMigrationMode | undefined;
+
+  await runMigration(migrationMode);
 }
 
 // ============================================================================
