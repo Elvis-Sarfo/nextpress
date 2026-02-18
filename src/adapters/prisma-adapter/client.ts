@@ -1,3 +1,12 @@
+/**
+ * Prisma PostgreSQL Client
+ * 
+ * Singleton Prisma client with PostgreSQL adapter and connection pooling.
+ * In development, stores in global to survive hot module replacement (HMR).
+ * 
+ * @module prisma-adapter/client
+ */
+
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';

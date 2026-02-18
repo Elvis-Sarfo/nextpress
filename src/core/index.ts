@@ -1,4 +1,17 @@
 // Core types and utilities
+/**
+ * NextPress Core Module
+ * 
+ * Central export point for all core CMS functionality including:
+ * - Core types (branded IDs, Result type, errors)
+ * - Collections (configuration, registry, field types)
+ * - Events (event bus for CMS events)
+ * - Content types (pages, posts, news)
+ * - Navigation (menus, links)
+ * - Comments
+ * - Permissions (RBAC engine)
+ * - Workflow
+ */
 export * from './core';
 
 // Collections (Payload CMS-style)

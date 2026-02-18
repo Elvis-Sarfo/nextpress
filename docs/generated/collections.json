@@ -1,0 +1,41 @@
+{
+  "generatedAt": "2026-02-18T03:47:12.987Z",
+  "collections": [
+    {
+      "slug": "users",
+      "singular": "User",
+      "plural": "Users",
+      "fieldCount": 4
+    },
+    {
+      "slug": "roles",
+      "singular": "Role",
+      "plural": "Roles",
+      "fieldCount": 4
+    },
+    {
+      "slug": "permissions",
+      "singular": "Permission",
+      "plural": "Permissions",
+      "fieldCount": 5
+    },
+    {
+      "slug": "media",
+      "singular": "Media",
+      "plural": "Media",
+      "fieldCount": 9
+    },
+    {
+      "slug": "pages",
+      "singular": "Page",
+      "plural": "Pages",
+      "fieldCount": 7
+    },
+    {
+      "slug": "settings",
+      "singular": "settings",
+      "plural": "settingss",
+      "fieldCount": 9
+    }
+  ]
+}

@@ -21,6 +21,13 @@ const SOURCE_FILES = [
   'scripts/run-migration.ts',
   'scripts/generate-docs.ts',
   'core/collection/types.ts',
+  'core/collection/index.ts',
+  'core/collection/registry.ts',
+  'core/permissions/rbac-engine.ts',
+  'core/content/version-manager.ts',
+  'core/core/types.ts',
+  'adapters/prisma-adapter/client.ts',
+  'adapters/prisma-adapter/index.ts',
 ];
 
 const JSDOC_BLOCK = /\/\*\*([\s\S]*?)\*\//g;

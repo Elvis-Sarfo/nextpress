@@ -1,5 +1,10 @@
 /**
- * Collection module exports
+ * NextPress Collection Module
+ * 
+ * Provides collection configuration types, registry, and utilities
+ * for managing content collections in the CMS.
+ * 
+ * @module core/collection
  */
 
 // Main config
