@@ -1,12 +1,19 @@
+import { redirect } from 'next/navigation';
+import { auth } from '@/auth';
 import { ThemeProviderClient } from '@/components/providers/ThemeProviderClient';
 import { AdminBar } from './AdminBar';
 import { AdminSidebar } from './AdminSidebar';
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const session = await auth();
+  if (!session) {
+    redirect('/auth/signin');
+  }
+
   return (
     <ThemeProviderClient>
       <div className="flex flex-col min-h-screen">

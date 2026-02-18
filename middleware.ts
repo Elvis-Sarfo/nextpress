@@ -9,7 +9,6 @@ export default auth((req) => {
   if (pathname.startsWith('/api/admin') && !isLoggedIn) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
   // UI routes — redirect to sign-in with callbackUrl
   if (pathname.startsWith('/admin') && !isLoggedIn) {
     const signInUrl = new URL('/auth/signin', req.url);
@@ -22,5 +21,5 @@ export default auth((req) => {
 
 export const config = {
   // Cover both the admin UI and the admin API surface
-  matcher: ['/admin/:path*', '/api/admin/:path*'],
+  matcher: ['/admin', '/admin/:path*', '/api/admin/:path*'],
 };
