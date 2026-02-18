@@ -15,7 +15,7 @@ export default async function CommentsListPage() {
     ...pendingComments.map((c) => ({ ...c, statusGroup: 'pending' as const })),
     ...approvedComments.map((c) => ({ ...c, statusGroup: 'approved' as const })),
     ...spamComments.map((c) => ({ ...c, statusGroup: 'spam' as const })),
-  ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  ].sort((a, b) => (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0));
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -80,7 +80,7 @@ export default async function CommentsListPage() {
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center">
                     <span className="text-lg font-semibold">
-                      {comment.authorName.charAt(0).toUpperCase()}
+                      {(comment.authorName ?? '?').charAt(0).toUpperCase()}
                     </span>
                   </div>
                   <div>
@@ -103,7 +103,7 @@ export default async function CommentsListPage() {
               <p className="text-sm mb-4">{comment.content}</p>
 
               <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span>{formatDateTime(comment.createdAt)}</span>
+                <span>{comment.createdAt ? formatDateTime(comment.createdAt) : ''}</span>
                 <div className="flex gap-2">
                   {comment.status === 'pending' && (
                     <>

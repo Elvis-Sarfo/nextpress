@@ -87,7 +87,7 @@ export default async function LinksListPage() {
                 <div className="border-t border-border pt-4">
                   <p className="text-sm font-medium mb-2">Links:</p>
                   <ul className="space-y-2">
-                    {collection.links
+                    {(collection.links as Array<{ id: string; order: number; title: unknown; url: string }>)
                       .sort((a, b) => a.order - b.order)
                       .map((link) => {
                         const title = readLocalized(link.title);

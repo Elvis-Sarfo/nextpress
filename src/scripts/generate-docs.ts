@@ -52,7 +52,7 @@ async function main() {
     '',
     '| Slug | Singular | Plural | Fields |',
     '|------|----------|--------|--------|',
-    ...collectionList.map((c) => `| ${c.slug} | ${c.singular} | ${c.plural} | ${c.fieldCount} |`),
+    ...collectionList.map((c: { slug: string; singular: string; plural: string; fieldCount: number }) => `| ${c.slug} | ${c.singular} | ${c.plural} | ${c.fieldCount} |`),
   ].join('\n');
 
   fs.writeFileSync(path.join(outDir, 'collections.md'), md);

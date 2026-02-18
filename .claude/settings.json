@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Bash(npx tsx:*)",
+      "Bash(ls:*)",
+      "Bash(grep:*)",
+      "Bash(pnpm build:*)",
+      "Bash(xargs:*)",
+      "Bash(pnpm install:*)",
+      "Bash(CI=true pnpm install:*)"
+    ]
+  }
+}

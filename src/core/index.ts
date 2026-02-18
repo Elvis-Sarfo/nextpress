@@ -20,17 +20,6 @@ export * from './collection';
 // Events
 export * from './events';
 
-// Content types
-export * from './page';
-export * from './post';
-export * from './news';
-
-// Navigation
-export * from './navigation';
-
-// Comments
-export * from './comments';
-
 // Permissions
 export * from './permissions';
 

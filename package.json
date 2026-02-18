@@ -15,7 +15,7 @@
     "start": "next start",
     "lint": "next lint",
     "clean": "rm -rf dist",
-    "db:generate": "prisma generate",
+    "db:generate": "prisma generate && node scripts/fix-prisma-symlink.mjs",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
     "db:deploy": "prisma migrate deploy",
@@ -46,6 +46,7 @@
     "@tiptap/extension-placeholder": "^2.4.0",
     "@tiptap/react": "^2.4.0",
     "@tiptap/starter-kit": "^2.4.0",
+    "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "date-fns": "^3.6.0",
@@ -64,6 +65,7 @@
     "zod": "^3.23.0"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^3.0.0",
     "@types/node": "^20.0.0",
     "@types/pg": "^8.11.0",
     "@types/react": "^19.0.0",

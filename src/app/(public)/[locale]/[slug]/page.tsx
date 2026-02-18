@@ -57,7 +57,7 @@ export default async function ContentPage({ params }: PageProps) {
   }
 
   // Get available locales for language switcher
-  const availableLocales = content.data.locales
+  const availableLocales = (content.data.locales as Array<{ locale: string; slug: string }>)
     .filter((l) => l.locale !== locale)
     .map((l) => ({ locale: l.locale, slug: l.slug }));
 

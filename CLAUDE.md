@@ -70,7 +70,9 @@ NextPress is a headless CMS where **collections** define content types, and a **
 
 **Event bus**: Cross-module communication uses `src/core/events/event-bus.ts`. Prefer events over direct imports between kernel modules.
 
-**RBAC**: Role-Based Access Control is implemented in `src/core/permissions/`. Collections declare their access rules; the admin UI enforces them.
+**Authentication**: NextAuth v5 (`src/auth.ts`) — credentials provider with JWT strategy. Exports `auth`, `handlers`, `signIn`, `signOut`. Route protection is via `middleware.ts` at the project root. Admin users are created by seeding or via the admin UI (no self-registration).
+
+**RBAC**: Role-Based Access Control is implemented in `src/core/permissions/`. The `RBACEngine` class and predefined roles (`ADMIN_ROLE`, `EDITOR_ROLE`, `AUTHOR_ROLE`, `VIEWER_ROLE`) live in `src/core/permissions/rbac-engine.ts`. `getCurrentPrincipal()` in `src/lib/cms.ts` maps the NextAuth session role to a kernel `Principal`. Use `src/lib/auth-utils.ts` (`requireAuth`, `requireRole`) for server-side route protection.
 
 **Content versioning**: Managed by `src/core/content/version-manager.ts`.
 

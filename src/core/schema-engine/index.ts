@@ -527,6 +527,65 @@ function generateModelString(model: PrismaModel): string {
 // ============================================================================
 
 /**
+ * Inject implicit back-relation fields into target models.
+ *
+ * Prisma requires both sides of a relation to be declared. The schema engine
+ * only generates the owning side (e.g. `featuredImage Media?` on Pages).
+ * This pass scans all generated models for relation fields and adds the
+ * corresponding list field on the referenced model (e.g. `pages Pages[]`).
+ *
+ * When a single source model has multiple relations to the same target, the
+ * back-relation fields are disambiguated as `<sourceModel>_<fieldName>`.
+ */
+function injectBackRelations(models: PrismaModel[]): void {
+  const modelMap = new Map<string, PrismaModel>();
+  for (const model of models) {
+    modelMap.set(model.name, model);
+  }
+
+  // targetModelName -> sourceModelName -> fieldNames[]
+  const forward = new Map<string, Map<string, string[]>>();
+
+  for (const model of models) {
+    for (const field of model.fields) {
+      if (!field.relation) continue;
+      const target = field.relation.model;
+      if (!forward.has(target)) forward.set(target, new Map());
+      const bySource = forward.get(target)!;
+      if (!bySource.has(model.name)) bySource.set(model.name, []);
+      bySource.get(model.name)!.push(field.name);
+    }
+  }
+
+  for (const [targetModelName, bySource] of forward) {
+    const targetModel = modelMap.get(targetModelName);
+    if (!targetModel) continue;
+
+    for (const [sourceModelName, fieldNames] of bySource) {
+      const needsDisambiguation = fieldNames.length > 1;
+      const sourceBase = sourceModelName.charAt(0).toLowerCase() + sourceModelName.slice(1);
+
+      for (const fieldName of fieldNames) {
+        const backFieldName = needsDisambiguation
+          ? `${sourceBase}_${fieldName}`
+          : sourceBase;
+
+        // Skip if a field with this name already exists
+        if (targetModel.fields.some(f => f.name === backFieldName)) continue;
+
+        targetModel.fields.push({
+          name: backFieldName,
+          type: sourceModelName,
+          isOptional: false,
+          isList: true,
+          attributes: [],
+        });
+      }
+    }
+  }
+}
+
+/**
  * Generate Prisma schema from collection configurations
  */
 export function generatePrismaSchema(
@@ -534,7 +593,28 @@ export function generatePrismaSchema(
   options: SchemaEngineOptions = {}
 ): string {
   const provider = options.provider || 'postgresql';
-  
+
+  // Phase 1: build all models
+  const allModels: PrismaModel[] = [];
+
+  for (const collection of collections) {
+    allModels.push(generateMainModel(collection, options));
+
+    if (options.localization !== false) {
+      const localeModel = generateLocaleModel(collection, options);
+      if (localeModel) allModels.push(localeModel);
+    }
+
+    if (options.versioning !== false) {
+      const versionModel = generateVersionModel(collection, options);
+      if (versionModel) allModels.push(versionModel);
+    }
+  }
+
+  // Phase 2: inject back-relations so every relation has both sides
+  injectBackRelations(allModels);
+
+  // Phase 3: render to string
   let schema = `generator client {
   provider = "prisma-client-js"
 }
@@ -544,32 +624,12 @@ datasource db {
 }
 
 `;
-  
-  for (const collection of collections) {
-    // Generate main model
-    const mainModel = generateMainModel(collection, options);
-    schema += generateModelString(mainModel);
+
+  for (const model of allModels) {
+    schema += generateModelString(model);
     schema += '\n';
-    
-    // Generate locale model
-    if (options.localization !== false) {
-      const localeModel = generateLocaleModel(collection, options);
-      if (localeModel) {
-        schema += generateModelString(localeModel);
-        schema += '\n';
-      }
-    }
-    
-    // Generate version model
-    if (options.versioning !== false) {
-      const versionModel = generateVersionModel(collection, options);
-      if (versionModel) {
-        schema += generateModelString(versionModel);
-        schema += '\n';
-      }
-    }
   }
-  
+
   return schema;
 }
 

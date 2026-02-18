@@ -4,9 +4,11 @@
  * NextPress-style collection definition using the new CollectionConfig type.
  */
 
-import { 
+import {
   CollectionConfig,
   CollectionTextField,
+  CollectionNumberField,
+  DateField,
   SelectField,
   CheckboxField,
   Collections,
@@ -96,6 +98,23 @@ export const Users: CollectionConfig<'users'> = {
         description: 'Whether the user account is active',
       },
     } satisfies CheckboxField,
+    // System-only fields — hidden from admin UI, managed by auth layer
+    {
+      name: 'passwordHash',
+      type: 'text',
+      admin: { hidden: true },
+    } satisfies CollectionTextField,
+    {
+      name: 'loginAttempts',
+      type: 'number',
+      defaultValue: 0,
+      admin: { hidden: true },
+    } satisfies CollectionNumberField,
+    {
+      name: 'lockedUntil',
+      type: 'date',
+      admin: { hidden: true },
+    } satisfies DateField,
   ],
   
   // Disable versioning for users (not needed, security risk)

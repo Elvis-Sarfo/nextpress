@@ -83,7 +83,7 @@ export default async function MenusListPage() {
                 <div className="border-t border-border pt-4">
                   <p className="text-sm font-medium mb-2">Menu Items:</p>
                   <ul className="space-y-2">
-                    {menu.items
+                    {(menu.items as Array<{ id: string; parentId?: string | null; order: number; label: unknown; url?: string | null }>)
                       .filter((item) => !item.parentId)
                       .sort((a, b) => a.order - b.order)
                       .map((item) => {
