@@ -101,11 +101,15 @@ function mapFieldToPrisma(field: Field, options: SchemaEngineOptions): PrismaFie
       break;
       
     case 'upload':
-    case 'relationship':
-      // These become String foreign keys
+      // Upload fields become String foreign keys pointing to Media
       type = 'String';
-      const maxLen = field.type === 'upload' ? 255 : 100;
-      attributes.push(`@db.VarChar(${maxLen})`);
+      attributes.push(`@db.VarChar(255)`);
+      break;
+
+    case 'relationship':
+      // Handled separately in generateMainModel — do not map here
+      type = 'String';
+      attributes.push(`@db.VarChar(100)`);
       break;
       
     case 'array':
@@ -212,36 +216,66 @@ function generateMainModel(config: CollectionConfig, options: SchemaEngineOption
   const relationshipFields: PrismaField[] = [];
   
   for (const field of config.fields) {
-    if (field.type === 'relationship' || field.type === 'upload') {
-      // Handle relationships separately
-      const targetCollection = field.type === 'upload' 
-        ? 'media' 
-        : (field as any).relationTo;
-
-      // Foreign key field (e.g., featuredImageId)
+    if (field.type === 'upload') {
+      // Upload: FK + @relation to Media (single reference)
       const foreignKeyField = mapFieldToPrisma(field, options);
       foreignKeyField.name = `${field.name}Id`;
       fields.push(foreignKeyField);
 
-      // Relation field (e.g., featuredImage)
       const relation: PrismaRelation = {
         name: field.name,
-        model: formatModelName(targetCollection),
+        model: formatModelName((field as any).relationTo ?? 'media'),
         fields: [foreignKeyField.name],
         references: ['id'],
         onDelete: 'SetNull',
       };
 
-      const relationField: PrismaField = {
+      relationshipFields.push({
         name: field.name,
-        type: formatModelName(targetCollection),
+        type: formatModelName((field as any).relationTo ?? 'media'),
         isOptional: foreignKeyField.isOptional,
         isList: false,
         attributes: [],
         relation,
-      };
+      });
+    } else if (field.type === 'relationship') {
+      const relField = field as any;
+      const targetSlug = Array.isArray(relField.relationTo)
+        ? relField.relationTo[0]
+        : relField.relationTo;
 
-      relationshipFields.push(relationField);
+      if (relField.hasMany === true) {
+        // Many-to-many: implicit Prisma junction table (roles Roles[])
+        relationshipFields.push({
+          name: field.name,
+          type: formatModelName(targetSlug),
+          isOptional: false,
+          isList: true,
+          attributes: [],
+        });
+      } else {
+        // Many-to-one: FK + @relation
+        const foreignKeyField = mapFieldToPrisma(field, options);
+        foreignKeyField.name = `${field.name}Id`;
+        fields.push(foreignKeyField);
+
+        const relation: PrismaRelation = {
+          name: field.name,
+          model: formatModelName(targetSlug),
+          fields: [foreignKeyField.name],
+          references: ['id'],
+          onDelete: 'SetNull',
+        };
+
+        relationshipFields.push({
+          name: field.name,
+          type: formatModelName(targetSlug),
+          isOptional: foreignKeyField.isOptional,
+          isList: false,
+          attributes: [],
+          relation,
+        });
+      }
     } else {
       fields.push(mapFieldToPrisma(field, options));
     }
@@ -482,10 +516,11 @@ function generateModelString(model: PrismaModel): string {
   for (const field of model.fields) {
     let fieldLine = `  ${field.name} ${field.type}`;
     
-    if (field.isOptional && !field.attributes.some(a => a.startsWith('@default'))) {
+    // List fields are never nullable in Prisma — do not add '?'
+    if (!field.isList && field.isOptional && !field.attributes.some(a => a.startsWith('@default'))) {
       fieldLine += '?';
     }
-    
+
     if (field.isList) {
       fieldLine += '[]';
     }
@@ -548,12 +583,22 @@ function injectBackRelations(models: PrismaModel[]): void {
 
   for (const model of models) {
     for (const field of model.fields) {
-      if (!field.relation) continue;
-      const target = field.relation.model;
-      if (!forward.has(target)) forward.set(target, new Map());
-      const bySource = forward.get(target)!;
-      if (!bySource.has(model.name)) bySource.set(model.name, []);
-      bySource.get(model.name)!.push(field.name);
+      // Explicit FK relation (@relation annotation)
+      if (field.relation) {
+        const target = field.relation.model;
+        if (!forward.has(target)) forward.set(target, new Map());
+        const bySource = forward.get(target)!;
+        if (!bySource.has(model.name)) bySource.set(model.name, []);
+        bySource.get(model.name)!.push(field.name);
+      }
+      // Implicit many-to-many: list field pointing to a known model
+      else if (field.isList && modelMap.has(field.type)) {
+        const target = field.type;
+        if (!forward.has(target)) forward.set(target, new Map());
+        const bySource = forward.get(target)!;
+        if (!bySource.has(model.name)) bySource.set(model.name, []);
+        bySource.get(model.name)!.push(field.name);
+      }
     }
   }
 

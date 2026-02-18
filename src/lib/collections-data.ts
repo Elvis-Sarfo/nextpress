@@ -18,6 +18,21 @@ export interface CollectionGroup {
   order: number;
 }
 
+export interface CollectionFieldMeta {
+  name: string;
+  type: string;
+  required?: boolean;
+  label?: string;
+  /** For select fields: available options */
+  options?: { label: string; value: string }[];
+  /** For relationship fields: target collection slug */
+  relationTo?: string;
+  /** For relationship fields: true = many-to-many */
+  hasMany?: boolean;
+  /** Whether this field is hidden in the admin UI */
+  hidden?: boolean;
+}
+
 export interface CollectionMeta {
   slug: string;
   labels: {
@@ -31,12 +46,7 @@ export interface CollectionMeta {
     group?: string | { key: string; label: string; order?: number };
     hidden?: boolean;
   };
-  fields: {
-    name: string;
-    type: string;
-    required?: boolean;
-    label?: string;
-  }[];
+  fields: CollectionFieldMeta[];
 }
 
 // Default groups configuration
@@ -91,12 +101,30 @@ function extractMeta(config: CollectionConfig): CollectionMeta {
       group: typedGroup,
       hidden: typeof config.admin?.hidden === 'function' ? false : config.admin?.hidden,
     },
-    fields: config.fields.map((f) => ({
-      name: f.name,
-      type: f.type,
-      required: f.required,
-      label: f.label,
-    })),
+    fields: config.fields.map((f) => {
+      const meta: CollectionFieldMeta = {
+        name: f.name,
+        type: f.type,
+        required: f.required,
+        label: f.label,
+        hidden: typeof f.admin?.hidden === 'boolean' ? f.admin.hidden : false,
+      };
+
+      if (f.type === 'select') {
+        const sf = f as { options?: { label: string; value: string }[] };
+        if (sf.options) meta.options = sf.options;
+      }
+
+      if (f.type === 'relationship') {
+        const rf = f as { relationTo?: string | string[]; hasMany?: boolean };
+        if (rf.relationTo) {
+          meta.relationTo = Array.isArray(rf.relationTo) ? rf.relationTo[0] : rf.relationTo;
+        }
+        meta.hasMany = rf.hasMany ?? false;
+      }
+
+      return meta;
+    }),
   };
 }
 

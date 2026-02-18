@@ -11,6 +11,18 @@ const authConfig: CollectionAuth =
 const MAX_LOGIN_ATTEMPTS = authConfig.maxLoginAttempts ?? 5;
 const LOCK_TIME_MS = authConfig.lockTime ?? 600_000; // 10 minutes
 
+// Priority order for deriving a single "primary" role name from a user's role set.
+// This is stored in the JWT for quick access; the full permission set is always
+// resolved from the DB via loadPrincipalFromDB() in rbac-service.ts.
+const ROLE_PRIORITY = ['admin', 'editor', 'author', 'viewer'] as const;
+
+function derivePrimaryRole(roleNames: string[]): string {
+  for (const r of ROLE_PRIORITY) {
+    if (roleNames.includes(r)) return r;
+  }
+  return roleNames[0] ?? 'user';
+}
+
 export const { auth, handlers, signIn, signOut } = NextAuth({
   session: { strategy: 'jwt' },
 
@@ -27,7 +39,11 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
         if (!email || !password) return null;
 
-        const user = await prisma.users.findUnique({ where: { email } });
+        // Load user with their roles so we can derive the primary role
+        const user = await prisma.users.findUnique({
+          where: { email },
+          include: { roles: { select: { name: true } } },
+        });
 
         if (!user || !user.active || !user.passwordHash) return null;
 
@@ -39,7 +55,6 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         const passwordValid = await bcrypt.compare(password, user.passwordHash);
 
         if (!passwordValid) {
-          // Increment failed attempts and potentially lock the account
           const newAttempts = (user.loginAttempts ?? 0) + 1;
           const shouldLock = newAttempts >= MAX_LOGIN_ATTEMPTS;
 
@@ -56,17 +71,19 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
           return null;
         }
 
-        // Successful login — reset counter
+        // Successful login — reset counter and build the session user
         await prisma.users.update({
           where: { id: user.id },
           data: { loginAttempts: 0, lockedUntil: null },
         });
 
+        const roleNames = user.roles.map((r) => r.name);
+
         return {
           id: user.id,
           email: user.email,
           name: user.name ?? undefined,
-          role: user.role,
+          role: derivePrimaryRole(roleNames),
         };
       },
     }),
@@ -82,7 +99,6 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     },
 
     session({ session, token }) {
-      // token properties are Record<string, unknown> — cast to our extended shape
       const jwt = token as { id: string; role: string };
       session.user.id = jwt.id;
       session.user.role = jwt.role;

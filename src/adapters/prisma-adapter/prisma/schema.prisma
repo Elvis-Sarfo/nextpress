@@ -10,12 +10,12 @@ model Users {
   id String @id @default(uuid())
   status String @db.VarChar(20)
   email String @db.VarChar(255) @unique
-  role String @db.VarChar(100) @default("user")
   name String? @db.VarChar(255)
   active Boolean @default(true)
   passwordHash String? @db.VarChar(255)
   loginAttempts Int @default(0)
   lockedUntil DateTime?
+  roles Roles[]
   metadata Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -30,11 +30,12 @@ model Roles {
   name String @db.VarChar(255) @unique
   displayName String @db.VarChar(255)
   description String? @db.VarChar(255)
-  permissions Json
+  permissions Permissions[]
   metadata Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   createdBy String? @db.VarChar(255)
+  users Users[]
   @@index([status])
   @@map("roles")
 }
@@ -45,11 +46,13 @@ model Permissions {
   name String @db.VarChar(255) @unique
   resource String @db.VarChar(100)
   action String @db.VarChar(100)
+  scope String @db.VarChar(100) @default("all")
   description String? @db.VarChar(255)
   metadata Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   createdBy String? @db.VarChar(255)
+  roles Roles[]
   @@index([status])
   @@map("permissions")
 }

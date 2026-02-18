@@ -57,9 +57,5 @@ export default async function EditDocumentPage({ params }: PageProps) {
     notFound();
   }
   
-  // In a real implementation, we'd fetch the document from the database
-  // For now, we'll pass undefined and let the form handle empty state
-  const initialData = undefined;
-  
-  return <CollectionEdit collection={collection} documentId={id} initialData={initialData} />;
+  return <CollectionEdit collection={collection} documentId={id} />;
 }

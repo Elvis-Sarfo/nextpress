@@ -1,7 +1,9 @@
 /**
  * Users Collection
- * 
+ *
  * NextPress-style collection definition using the new CollectionConfig type.
+ * Users are linked to one or more Roles via a many-to-many relationship.
+ * Role-based permissions are resolved dynamically at runtime from the DB.
  */
 
 import {
@@ -9,21 +11,20 @@ import {
   CollectionTextField,
   CollectionNumberField,
   DateField,
-  SelectField,
   CheckboxField,
+  RelationshipField,
   Collections,
-  registerCollection
+  registerCollection,
 } from '../core/collection';
 
-// Define the collection configuration
 export const Users: CollectionConfig<'users'> = {
   slug: 'users',
-  
+
   labels: {
     singular: 'User',
     plural: 'Users',
   },
-  
+
   // Authentication configuration
   auth: {
     tokenExpiration: 7200, // 2 hours
@@ -31,32 +32,28 @@ export const Users: CollectionConfig<'users'> = {
     maxLoginAttempts: 5,
     lockTime: 600000, // 10 minutes
   },
-  
+
   // Admin panel configuration
   admin: {
     useAsTitle: 'email',
-    defaultColumns: ['email', 'role', 'createdAt'],
+    defaultColumns: ['email', 'name', 'active', 'createdAt'],
     group: { key: 'user-management', label: 'User Management', order: 1 },
   },
-  
+
   // Access control
   access: {
-    // Anyone can create the first user
     create: () => true,
-    // Admins can read all, users can only read themselves
     read: ({ req }) => {
       if (req.user?.role === 'admin') return true;
       return { id: { equals: req.user?.id } };
     },
-    // Admins can update all, users can update themselves
     update: ({ req }) => {
       if (req.user?.role === 'admin') return true;
       return { id: { equals: req.user?.id } };
     },
-    // Only admins can delete
     delete: ({ req }) => req.user?.role === 'admin',
   },
-  
+
   // Field definitions
   fields: [
     {
@@ -69,20 +66,6 @@ export const Users: CollectionConfig<'users'> = {
       },
     } satisfies CollectionTextField,
     {
-      name: 'role',
-      type: 'select',
-      required: true,
-      defaultValue: 'user',
-      options: [
-        { label: 'Admin', value: 'admin' },
-        { label: 'Editor', value: 'editor' },
-        { label: 'User', value: 'user' },
-      ],
-      admin: {
-        description: 'Admin users have full access to the CMS',
-      },
-    } satisfies SelectField,
-    {
       name: 'name',
       type: 'text',
       admin: {
@@ -90,6 +73,15 @@ export const Users: CollectionConfig<'users'> = {
         placeholder: 'John Doe',
       },
     } satisfies CollectionTextField,
+    {
+      name: 'roles',
+      type: 'relationship',
+      relationTo: 'roles',
+      hasMany: true,
+      admin: {
+        description: 'Roles assigned to this user — determines their permissions',
+      },
+    } satisfies RelationshipField,
     {
       name: 'active',
       type: 'checkbox',
@@ -116,39 +108,21 @@ export const Users: CollectionConfig<'users'> = {
       admin: { hidden: true },
     } satisfies DateField,
   ],
-  
-  // Disable versioning for users (not needed, security risk)
-  versions: {
-    enabled: false,
-  },
-  
-  // Disable localization for users (not needed - user data is language-agnostic)
-  localization: {
-    locales: [],
-    defaultLocale: 'en',
-  },
-  
-  // Indexes
+
+  versions: { enabled: false },
+  localization: { locales: [], defaultLocale: 'en' },
+
   indexes: [
     { fields: ['email'], unique: true },
-    { fields: ['role'] },
   ],
 };
-
-// Alternative: Using the decorator approach
-// @registerCollection('users')
-// export const Users: CollectionConfig<'users'> = { ... }
-
-// Register the collection
-// Note: Collections are now registered centrally in nextpress.config.ts
-// Collections.register(Users);
 
 export interface IUser {
   id: string;
   email: string;
-  role: 'admin' | 'editor' | 'user';
   name?: string;
   active: boolean;
+  roles: string[]; // array of role IDs
   createdAt: string;
   updatedAt: string;
-};
+}

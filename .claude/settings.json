@@ -8,7 +8,12 @@
       "Bash(pnpm build:*)",
       "Bash(xargs:*)",
       "Bash(pnpm install:*)",
-      "Bash(CI=true pnpm install:*)"
+      "Bash(CI=true pnpm install:*)",
+      "Bash(npx prisma db push:*)",
+      "Bash(pnpm db:seed:*)",
+      "Bash(node:*)",
+      "Bash(curl:*)",
+      "Bash(python3:*)"
     ]
   }
 }

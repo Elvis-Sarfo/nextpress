@@ -1,40 +1,41 @@
 /**
  * Roles Collection
- * 
+ *
  * NextPress-style collection for RBAC roles.
+ * Roles are assigned to users (many-to-many) and hold a set of Permissions
+ * (many-to-many). The RBAC engine loads roles and permissions from the DB at runtime.
  */
 
-import { 
+import {
   CollectionConfig,
   CollectionTextField,
-  JSONField,
+  RelationshipField,
   Collections,
 } from '../core/collection';
 
 export const Roles: CollectionConfig<'roles'> = {
   slug: 'roles',
-  
+
   labels: {
     singular: 'Role',
     plural: 'Roles',
   },
-  
+
   // Admin panel configuration
   admin: {
     useAsTitle: 'displayName',
     defaultColumns: ['name', 'displayName', 'createdAt'],
     group: { key: 'user-management', label: 'User Management', order: 1 },
   },
-  
-  // Access control
+
+  // Access control — only admins can manage roles
   access: {
-    // Only admins can manage roles
     create: ({ req }) => req.user?.role === 'admin',
     read: ({ req }) => req.user?.role === 'admin',
     update: ({ req }) => req.user?.role === 'admin',
     delete: ({ req }) => req.user?.role === 'admin',
   },
-  
+
   // Field definitions
   fields: [
     {
@@ -43,7 +44,7 @@ export const Roles: CollectionConfig<'roles'> = {
       required: true,
       unique: true,
       admin: {
-        description: 'Internal name (e.g., admin, editor, author)',
+        description: 'Internal identifier (e.g., admin, editor, author)',
       },
     } satisfies CollectionTextField,
     {
@@ -51,44 +52,31 @@ export const Roles: CollectionConfig<'roles'> = {
       type: 'text',
       required: true,
       admin: {
-        description: 'Display name (e.g., Administrator, Editor)',
+        description: 'Human-readable label (e.g., Administrator, Content Editor)',
       },
     } satisfies CollectionTextField,
     {
       name: 'description',
       type: 'text',
       admin: {
-        description: 'Brief description of this role',
+        description: 'Brief description of what this role allows',
       },
     } satisfies CollectionTextField,
     {
       name: 'permissions',
-      type: 'json',
-      required: true,
-      defaultValue: [],
+      type: 'relationship',
+      relationTo: 'permissions',
+      hasMany: true,
       admin: {
-        description: 'JSON array of permission objects',
+        description: 'Permissions granted to users who hold this role',
       },
-    } satisfies JSONField,
+    } satisfies RelationshipField,
   ],
-  
-  // Disable versioning (not needed for roles)
-  versions: {
-    enabled: false,
-  },
-  
-  // Disable localization (roles are system-wide, not localized)
-  localization: {
-    locales: [],
-    defaultLocale: 'en',
-  },
-  
-  // Indexes
+
+  versions: { enabled: false },
+  localization: { locales: [], defaultLocale: 'en' },
+
   indexes: [
     { fields: ['name'], unique: true },
   ],
 };
-
-// Register the collection
-// Note: Collections are now registered centrally in nextpress.config.ts
-// Collections.register(Roles);

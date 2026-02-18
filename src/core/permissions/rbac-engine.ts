@@ -150,11 +150,15 @@ export class RBACEngine {
   private getAllActionsForResource(resource: ResourceType): Action[] {
     switch (resource) {
       case 'content':
-        return ['create', 'read', 'update', 'delete', 'publish', 'unpublish', 'schedule'];
+        return ['create', 'read', 'update', 'delete', 'publish', 'unpublish', 'schedule', 'manage'];
       case 'schema':
-        return ['create', 'read', 'update', 'delete'];
+        return ['create', 'read', 'update', 'delete', 'manage'];
       case 'user':
-        return ['create', 'read', 'update', 'delete'];
+        return ['create', 'read', 'update', 'delete', 'manage'];
+      case 'media':
+        return ['create', 'read', 'update', 'delete', 'manage'];
+      case 'settings':
+        return ['read', 'update', 'manage'];
       default:
         return [];
     }

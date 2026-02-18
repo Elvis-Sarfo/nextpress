@@ -11,13 +11,16 @@ export type ContentAction =
   | 'delete'
   | 'publish'
   | 'unpublish'
-  | 'schedule';
+  | 'schedule'
+  | 'manage';
 
-export type SchemaAction = 'create' | 'read' | 'update' | 'delete';
-export type UserAction = 'create' | 'read' | 'update' | 'delete';
+export type SchemaAction = 'create' | 'read' | 'update' | 'delete' | 'manage';
+export type UserAction = 'create' | 'read' | 'update' | 'delete' | 'manage';
+export type MediaAction = 'create' | 'read' | 'update' | 'delete' | 'manage';
+export type SettingsAction = 'read' | 'update' | 'manage';
 
-export type ResourceType = 'content' | 'schema' | 'user';
-export type Action = ContentAction | SchemaAction | UserAction;
+export type ResourceType = 'content' | 'schema' | 'user' | 'media' | 'settings';
+export type Action = ContentAction | SchemaAction | UserAction | MediaAction | SettingsAction;
 
 // ============================================================================
 // PERMISSION SCOPE

@@ -1,13 +1,8 @@
 import { prisma } from '@/adapters/prisma-adapter';
 import { ContentStatus } from '@/core/content/types';
 import { auth } from '@/auth';
-import {
-  ADMIN_ROLE,
-  EDITOR_ROLE,
-  AUTHOR_ROLE,
-  VIEWER_ROLE,
-} from '@/core/permissions/rbac-engine';
-import type { PrincipalId } from '@/core/core/types';
+import { loadPrincipalFromDB } from '@/lib/rbac-service';
+import type { Principal } from '@/core/permissions/types';
 
 // Re-export from kernel for backwards compatibility
 export type { ContentStatus };
@@ -44,17 +39,8 @@ export function buildCommentTree(
     .map((c) => ({ ...c, replies: buildCommentTree(comments, c.id) }));
 }
 
-// ============================================================================
-// ROLE / PRINCIPAL TYPES
-// ============================================================================
-
-// Use inference from the Prisma client to avoid depending on GetPayload API
-export type Role = Awaited<ReturnType<typeof prisma.roles.findFirst>>;
-
-export interface Principal {
-  id: string;
-  roles: Role[];
-}
+// Re-export kernel Principal so callers that previously imported from here still work
+export type { Principal } from '@/core/permissions/types';
 
 // ============================================================================
 // PLACEHOLDER TYPES for models not yet in the generated schema
@@ -93,25 +79,10 @@ export const localeEngine = {
 // AUTH / PRINCIPAL
 // ============================================================================
 
-const ROLE_MAP = {
-  admin: ADMIN_ROLE,
-  editor: EDITOR_ROLE,
-  author: AUTHOR_ROLE,
-  viewer: VIEWER_ROLE,
-  user: VIEWER_ROLE,
-} as const;
-
 export async function getCurrentPrincipal(): Promise<Principal | null> {
   const session = await auth();
   if (!session?.user?.id) return null;
-
-  const kernelRole =
-    ROLE_MAP[session.user.role as keyof typeof ROLE_MAP] ?? VIEWER_ROLE;
-
-  return {
-    id: session.user.id,
-    roles: [kernelRole] as unknown as Role[],
-  };
+  return loadPrincipalFromDB(session.user.id);
 }
 
 export async function requirePrincipal(): Promise<Principal> {
