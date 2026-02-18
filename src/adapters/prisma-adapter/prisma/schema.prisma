@@ -64,7 +64,6 @@ model Media {
   alt String? @db.VarChar(255)
   caption String? @db.VarChar(255)
   metadata Json?
-  featuredInPages Pages[] @relation("featuredImage")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   createdBy String? @db.VarChar(255)
@@ -94,9 +93,9 @@ model Pages {
   excerpt String? @db.Text
   content Json?
   status String @db.VarChar(100) @default("draft")
-  seo Json?
   featuredImageId String? @db.VarChar(255)
-  featuredImage Media? @relation("featuredImage", fields: [featuredImageId], references: [id], onDelete: SetNull)
+  seo Json?
+  featuredImage Media? @relation(fields: [featuredImageId], references: [id], onDelete: SetNull)
   metadata Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

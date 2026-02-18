@@ -42,5 +42,10 @@
 - To add a new content type: update `kernel/schema/`, add mappers, update Prisma schema, and expose via repository.
 - To add an admin page: create a new route under `src/app/admin/` and use shared UI components.
 
+## Documentation
+- **In-repo docs**: `docs/` – markdown reference for developers and AI. Rendered in-app at `/docs`.
+- **Regenerate from code**: Run `pnpm docs:generate` after changing `nextpress.config.ts` or collections; updates `docs/generated/`.
+- Prefer `docs/` and the docs app over guessing paths and behaviour.
+
 ---
-For questions, review the structure above and check referenced files for implementation details.
+For questions, review the structure above, the `docs/` folder, and the app at `/docs`.

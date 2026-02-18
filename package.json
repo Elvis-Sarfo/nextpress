@@ -22,7 +22,8 @@
     "db:seed": "tsx src/adapters/prisma-adapter/prisma/seed.ts",
     "db:reset": "prisma migrate reset --force",
     "db:migration:run": "tsx src/scripts/run-migration.ts",
-    "schema:generate": "tsx src/scripts/generate-schema.ts"
+    "schema:generate": "tsx src/scripts/generate-schema.ts",
+    "docs:generate": "tsx src/scripts/generate-docs.ts"
   },
   "prisma": {
     "seed": "tsx src/adapters/prisma-adapter/prisma/seed.ts",
@@ -56,6 +57,8 @@
     "pg": "^8.13.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-markdown": "^9.0.1",
+    "remark-gfm": "^4.0.0",
     "tailwind-merge": "^2.3.0",
     "tailwindcss": "^3.4.0",
     "zod": "^3.23.0"
