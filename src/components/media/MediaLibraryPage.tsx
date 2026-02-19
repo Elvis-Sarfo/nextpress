@@ -323,6 +323,7 @@ export function MediaLibraryPage() {
         </div>
 
         <select
+          aria-label="Type filter"
           value={media.typeFilter}
           onChange={(e) => {
             media.setTypeFilter(e.target.value);
