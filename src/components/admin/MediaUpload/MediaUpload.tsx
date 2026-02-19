@@ -1,9 +1,10 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { MEDIA_ALLOWED_MIME_TYPES, MEDIA_MAX_FILE_SIZE_BYTES } from '@/lib/media/constants';
+import { MediaDropzone } from '@/components/media/MediaDropzone';
 
 type UploadStatus = 'pending' | 'uploading' | 'done' | 'error';
 
@@ -41,8 +42,6 @@ interface SignedUploadResponse {
 }
 
 export function MediaUpload() {
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
   const [items, setItems] = useState<UploadItem[]>([]);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -71,10 +70,6 @@ export function MediaUpload() {
     }
 
     setItems((prev) => [...next, ...prev]);
-  };
-
-  const openBrowserUploader = () => {
-    inputRef.current?.click();
   };
 
   const updateItem = (id: string, patch: Partial<UploadItem>) => {
@@ -199,52 +194,25 @@ export function MediaUpload() {
     <div className="space-y-6">
       <h1 className="text-3xl font-semibold tracking-tight">Upload New Media</h1>
 
-      <section
-        className={`min-h-[210px] rounded-sm border-4 border-dashed p-6 transition-colors ${
-          isDragging ? 'border-slate-400 bg-slate-100' : 'border-slate-300 bg-slate-50'
-        }`}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setIsDragging(true);
-        }}
-        onDragLeave={() => setIsDragging(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setIsDragging(false);
-          void onFilesSelected(e.dataTransfer.files);
-        }}
-      >
-        <div className="flex min-h-[170px] flex-col items-center justify-center gap-2 text-center">
-          <p className="text-4xl text-slate-500">+</p>
-          <p className="text-3xl font-medium text-slate-700">Drop files to upload</p>
-          <p className="text-xl text-slate-600">or</p>
-          <button
-            type="button"
-            onClick={openBrowserUploader}
-            className="rounded border border-blue-500 bg-white px-4 py-2 text-blue-600 hover:bg-blue-50"
-          >
-            Select Files
-          </button>
-          <input
-            ref={inputRef}
-            type="file"
-            multiple
-            className="hidden"
-            onChange={(e) => void onFilesSelected(e.target.files)}
-          />
-        </div>
-      </section>
-
-      <div className="space-y-1 text-lg text-slate-700">
-        <p>
-          You are using the multi-file uploader. Problems? Try the{' '}
-          <button type="button" onClick={openBrowserUploader} className="text-blue-600 underline">
-            browser uploader
-          </button>{' '}
-          instead.
-        </p>
-        <p>Maximum upload file size: {Math.floor(MEDIA_MAX_FILE_SIZE_BYTES / (1024 * 1024))} MB.</p>
-      </div>
+      <MediaDropzone
+        onFilesSelected={onFilesSelected}
+        buttonLabel="Select Files"
+        dropLabel="Drop files to upload"
+        renderFooter={(openFilePicker) => (
+          <div className="space-y-1 text-lg text-slate-700">
+            <p>
+              You are using the multi-file uploader. Problems? Try the{' '}
+              <button type="button" onClick={openFilePicker} className="text-blue-600 underline">
+                browser uploader
+              </button>{' '}
+              instead.
+            </p>
+            <p>
+              Maximum upload file size: {Math.floor(MEDIA_MAX_FILE_SIZE_BYTES / (1024 * 1024))} MB.
+            </p>
+          </div>
+        )}
+      />
 
       {globalError && (
         <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">

@@ -60,7 +60,7 @@ export function useMediaLibrary() {
 
   const updateMetadata = useCallback(async (
     id: string,
-    payload: { altText?: string; title?: string; description?: string }
+    payload: { altText?: string; title?: string; description?: string; metadata?: Record<string, unknown> }
   ) => {
     const res = await fetch(`/api/media/${id}`, {
       method: 'PATCH',
