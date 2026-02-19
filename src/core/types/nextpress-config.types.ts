@@ -3,6 +3,7 @@ import type { CollectionConfig } from '../collection';
 export type NextPressSchemaStrategy = 'once' | 'hash' | 'always';
 export type NextPressSchemaStateBackend = 'memory' | 'file';
 export type NextPressDatabaseProvider = 'postgres' | 'postgresql' | 'mysql' | 'sqlite';
+export type NextPressStorageProvider = 'local' | 's3' | 'supabase' | 'cloudinary';
 
 /**
  * Migration mode options:
@@ -58,11 +59,47 @@ export interface NextPressDbConfig {
   url: string;
 }
 
+export interface NextPressStorageConfig {
+  provider: NextPressStorageProvider;
+  local?: {
+    /**
+     * Relative path from project root where files are stored.
+     * Default: "public/uploads/media"
+     */
+    uploadDir?: string;
+    /**
+     * Public URL prefix for local files.
+     * Default: "/uploads/media"
+     */
+    publicBasePath?: string;
+  };
+  s3?: {
+    bucket: string;
+    region: string;
+    accessKeyId: string;
+    secretAccessKey: string;
+    endpoint?: string;
+    publicBaseUrl?: string;
+  };
+  supabase?: {
+    url: string;
+    serviceRoleKey: string;
+    bucket: string;
+  };
+  cloudinary?: {
+    cloudName: string;
+    apiKey: string;
+    apiSecret: string;
+    folder?: string;
+  };
+}
+
 export interface NextPressConfig {
   collections: CollectionConfig[];
   secret?: string;
   typescript?: NextPressTypeScriptConfig;
   db?: NextPressDbConfig;
+  storage?: NextPressStorageConfig;
   localization?: NextPressLocalizationConfig;
   schema?: NextPressSchemaConfig;
 }

@@ -8,6 +8,7 @@
 import { notFound } from 'next/navigation';
 import { getCollection, collectionsMeta } from '@/lib/collections-data';
 import { CollectionEdit } from '@/components/admin/CollectionEdit/CollectionEdit';
+import { MediaUpload } from '@/components/admin/MediaUpload';
 
 interface PageProps {
   params: Promise<{
@@ -46,6 +47,11 @@ export default async function NewDocumentPage({ params }: PageProps) {
   if (!collection) {
     notFound();
   }
-  
+
+  // Dedicated uploader UX for media creation
+  if (collectionSlug === 'media') {
+    return <MediaUpload />;
+  }
+
   return <CollectionEdit collection={collection} />;
 }

@@ -47,6 +47,34 @@ const config = {
     url: process.env.DATABASE_URI || '',
   },
 
+  // Media storage configuration (switch provider without code changes)
+  storage: {
+    provider: (process.env.NEXTPRESS_STORAGE_PROVIDER as 'local' | 's3' | 'supabase' | 'cloudinary') || 'local',
+    local: {
+      uploadDir: process.env.NEXTPRESS_LOCAL_UPLOAD_DIR || 'public/uploads/media',
+      publicBasePath: process.env.NEXTPRESS_LOCAL_PUBLIC_PATH || '/uploads/media',
+    },
+    s3: {
+      bucket: process.env.S3_BUCKET || '',
+      region: process.env.S3_REGION || '',
+      accessKeyId: process.env.S3_ACCESS_KEY_ID || '',
+      secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || '',
+      endpoint: process.env.S3_ENDPOINT || '',
+      publicBaseUrl: process.env.S3_PUBLIC_BASE_URL || '',
+    },
+    supabase: {
+      url: process.env.SUPABASE_URL || '',
+      serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
+      bucket: process.env.SUPABASE_STORAGE_BUCKET || 'media',
+    },
+    cloudinary: {
+      cloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
+      apiKey: process.env.CLOUDINARY_API_KEY || '',
+      apiSecret: process.env.CLOUDINARY_API_SECRET || '',
+      folder: process.env.CLOUDINARY_FOLDER || 'nextpress-media',
+    },
+  },
+
   // Localization configuration
   localization: {
     locales: [

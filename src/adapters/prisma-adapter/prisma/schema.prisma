@@ -62,14 +62,24 @@ model Media {
   documentId String
   status String @db.VarChar(20)
   filename String @db.VarChar(255)
-  mimeType String @db.VarChar(255)
+  originalFilename String? @db.VarChar(255)
   url String @db.VarChar(255)
+  mimeType String @db.VarChar(255)
+  kind String @db.VarChar(100)
+  extension String? @db.VarChar(255)
+  size Int
   width Int?
   height Int?
-  filesize Int
+  storageProvider String @db.VarChar(100)
+  storageKey String @db.VarChar(255)
+  altText String? @db.VarChar(255)
+  title String? @db.VarChar(255)
+  description String? @db.VarChar(255)
+  uploadedAt DateTime
+  metadata Json?
+  filesize Int?
   alt String? @db.VarChar(255)
   caption String? @db.VarChar(255)
-  metadata Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   createdBy String? @db.VarChar(255)

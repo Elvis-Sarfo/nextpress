@@ -8,6 +8,7 @@
 import { notFound } from 'next/navigation';
 import { getCollection, collectionsMeta } from '@/lib/collections-data';
 import { CollectionList } from '@/components/admin/CollectionList/CollectionList';
+import { MediaLibraryPage } from '@/components/media/MediaLibraryPage';
 
 interface PageProps {
   params: Promise<{
@@ -46,6 +47,11 @@ export default async function CollectionPage({ params }: PageProps) {
   if (!collection) {
     notFound();
   }
-  
+
+  // Dedicated media library UX for media collection
+  if (collectionSlug === 'media') {
+    return <MediaLibraryPage />;
+  }
+
   return <CollectionList collection={collection} />;
 }
