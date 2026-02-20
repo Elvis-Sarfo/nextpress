@@ -105,10 +105,13 @@ model MediaVersion {
 model Pages {
   id String @id @default(uuid())
   documentId String
-  title String @db.VarChar(255)
-  slug String @db.VarChar(255) @unique
-  excerpt String? @db.Text
-  content Json?
+  title Json
+  slug Json
+  excerpt Json?
+  sections Json?
+  config Json?
+  parentId String? @db.VarChar(255)
+  order Int @default(0)
   status String @db.VarChar(100) @default("draft")
   featuredImageId String? @db.VarChar(255)
   seo Json?
@@ -117,10 +120,25 @@ model Pages {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   createdBy String? @db.VarChar(255)
+  pagesLocale PagesLocale[]
   @@index([status])
   @@unique([documentId, status])
   @@index([documentId])
   @@map("pages")
+}
+
+model PagesLocale {
+  id String @id @default(uuid())
+  pagesId String
+  locale String @db.VarChar(10)
+  title Json?
+  slug Json?
+  excerpt Json?
+  Pages Pages @relation(fields: [pagesId], references: [id], onDelete: Cascade)
+  @@unique([pagesId, locale])
+  @@unique([locale, slug])
+  @@index([locale])
+  @@map("pages_locale")
 }
 
 model PagesVersion {
@@ -133,6 +151,33 @@ model PagesVersion {
   @@unique([documentId, version])
   @@index([documentId])
   @@map("pages_version")
+}
+
+model Blocks {
+  id String @id @default(uuid())
+  name String @db.VarChar(255) @unique
+  type String @db.VarChar(100)
+  templateName String? @db.VarChar(255)
+  content Json
+  status String @db.VarChar(100) @default("draft")
+  metadata Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String? @db.VarChar(255)
+  blocksLocale BlocksLocale[]
+  @@index([status])
+  @@map("blocks")
+}
+
+model BlocksLocale {
+  id String @id @default(uuid())
+  blocksId String
+  locale String @db.VarChar(10)
+  content Json?
+  Blocks Blocks @relation(fields: [blocksId], references: [id], onDelete: Cascade)
+  @@unique([blocksId, locale])
+  @@index([locale])
+  @@map("blocks_locale")
 }
 
 model Settings {

@@ -4,13 +4,15 @@ import {
   getPublishedPage,
   getPublishedPost,
   getPublishedNewsItem,
-  getLocalizedField,
   localeEngine,
   type PageWithLocales,
   type PostWithLocales,
   type NewsWithLocales,
 } from '@/lib/cms';
+import { getLocale, getLocaleAlternates } from '@/lib/locale-utils';
+import { PageRenderer } from '@/components/blocks/PageRenderer';
 import { ArrowLeft } from 'lucide-react';
+import type { Metadata } from 'next';
 
 interface PageProps {
   params: Promise<{ locale: string; slug: string }>;
@@ -22,7 +24,6 @@ type ContentItem =
   | { type: 'news'; data: NewsWithLocales };
 
 async function findContent(locale: string, slug: string): Promise<ContentItem | null> {
-  // Try to find content by slug across all content types
   const [page, post, news] = await Promise.all([
     getPublishedPage(locale, slug),
     getPublishedPost(locale, slug),
@@ -39,76 +40,78 @@ async function findContent(locale: string, slug: string): Promise<ContentItem | 
 export default async function ContentPage({ params }: PageProps) {
   const { locale, slug } = await params;
 
-  // Validate locale
   if (!localeEngine.isSupported(locale)) {
     notFound();
   }
 
   const content = await findContent(locale, slug);
+  if (!content) notFound();
 
-  if (!content) {
-    notFound();
-  }
+  const page = content.data;
 
-  const localeData = getLocalizedField(content.data, locale);
+  // Extract locale-first fields
+  const title   = getLocale(page.title   as Record<string, string> | null, locale);
+  const excerpt = getLocale(page.excerpt as Record<string, string> | null, locale);
+  const slugMap = page.slug as Record<string, string> | null;
 
-  if (!localeData) {
-    notFound();
-  }
-
-  // Get available locales for language switcher
-  const availableLocales = (content.data.locales as Array<{ locale: string; slug: string }>)
-    .filter((l) => l.locale !== locale)
-    .map((l) => ({ locale: l.locale, slug: l.slug }));
+  // Locale alternates for language switcher (exclude current locale)
+  const alternates = getLocaleAlternates(slugMap).filter((a) => a.locale !== locale);
 
   const typeLabel =
     content.type === 'page' ? 'Page' : content.type === 'post' ? 'Post' : 'News';
 
+  // Sections-based render (block page builder)
+  const hasSections =
+    Array.isArray(page.sections) && page.sections.length > 0;
+
   return (
-    <article className="container mx-auto px-4 py-16 max-w-3xl">
-      <Link
-        href={`/${locale}`}
-        className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back to home
-      </Link>
+    <article>
+      {hasSections ? (
+        <PageRenderer sections={page.sections} locale={locale} />
+      ) : (
+        <div className="container mx-auto px-4 py-16 max-w-3xl">
+          <Link
+            href={`/${locale}`}
+            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to home
+          </Link>
 
-      <header className="mb-8">
-        <p className="text-sm text-muted-foreground mb-2">{typeLabel}</p>
-        <h1 className="text-4xl font-bold">{localeData.title}</h1>
-        {localeData.excerpt && (
-          <p className="text-xl text-muted-foreground mt-4">{localeData.excerpt}</p>
-        )}
-        <div className="mt-4 text-sm text-muted-foreground">
-          Published{' '}
-          {new Date(content.data.publishedAt ?? content.data.createdAt).toLocaleDateString()}
+          <header className="mb-8">
+            <p className="text-sm text-muted-foreground mb-2">{typeLabel}</p>
+            <h1 className="text-4xl font-bold">{title ?? slug}</h1>
+            {excerpt && (
+              <p className="text-xl text-muted-foreground mt-4">{excerpt}</p>
+            )}
+            <div className="mt-4 text-sm text-muted-foreground">
+              Published{' '}
+              {new Date(page.createdAt ?? Date.now()).toLocaleDateString()}
+            </div>
+          </header>
+
+          <div className="prose prose-lg dark:prose-invert">
+            <p className="text-muted-foreground italic">No content yet — add sections via the admin.</p>
+          </div>
         </div>
-      </header>
-
-      {/* Render content */}
-      <div className="prose prose-lg dark:prose-invert">
-        {localeData.content.startsWith('<') && localeData.content.includes('>') ? (
-          <div dangerouslySetInnerHTML={{ __html: localeData.content }} />
-        ) : (
-          <div className="whitespace-pre-wrap">{localeData.content}</div>
-        )}
-      </div>
+      )}
 
       {/* Locale alternates */}
-      {availableLocales.length > 0 && (
-        <div className="mt-12 pt-8 border-t border-border">
-          <p className="text-sm text-muted-foreground mb-2">Available in other languages:</p>
-          <div className="flex gap-2">
-            {availableLocales.map((alt) => (
-              <Link
-                key={alt.locale}
-                href={`/${alt.locale}/${alt.slug}`}
-                className="px-3 py-1 bg-secondary rounded hover:bg-secondary/80"
-              >
-                {alt.locale.toUpperCase()}
-              </Link>
-            ))}
+      {alternates.length > 0 && (
+        <div className="container mx-auto px-4 pb-8">
+          <div className="pt-8 border-t border-border">
+            <p className="text-sm text-muted-foreground mb-2">Available in other languages:</p>
+            <div className="flex gap-2">
+              {alternates.map((alt) => (
+                <Link
+                  key={alt.locale}
+                  href={`/${alt.locale}/${alt.slug}`}
+                  className="px-3 py-1 bg-secondary rounded hover:bg-secondary/80 text-sm"
+                >
+                  {alt.locale.toUpperCase()}
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -116,19 +119,26 @@ export default async function ContentPage({ params }: PageProps) {
   );
 }
 
-export async function generateMetadata({ params }: PageProps) {
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale, slug } = await params;
 
   const content = await findContent(locale, slug);
+  if (!content) return { title: slug };
 
-  if (!content) {
-    return { title: slug };
-  }
+  const page = content.data;
+  const title   = getLocale(page.title   as Record<string, string> | null, locale);
+  const excerpt = getLocale(page.excerpt as Record<string, string> | null, locale);
+  const slugMap = page.slug as Record<string, string> | null;
 
-  const localeData = getLocalizedField(content.data, locale);
+  const alternates = getLocaleAlternates(slugMap);
 
   return {
-    title: localeData?.title ?? slug,
-    description: localeData?.excerpt,
+    title:       title ?? slug,
+    description: excerpt,
+    alternates: {
+      languages: Object.fromEntries(
+        alternates.map(({ locale: l, slug: s }) => [l, `/${l}/${s}`])
+      ),
+    },
   };
 }

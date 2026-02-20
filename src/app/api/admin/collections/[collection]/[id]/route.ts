@@ -16,7 +16,7 @@ const INCLUDE_MAP: Record<string, object> = {
   roles: { permissions: { select: { id: true, name: true, resource: true, action: true, scope: true } } },
 };
 
-const ALLOWED = new Set(['users', 'roles', 'permissions', 'media', 'pages', 'settings']);
+const ALLOWED = new Set(['users', 'roles', 'permissions', 'media', 'pages', 'settings', 'blocks']);
 
 function getPrismaModel(collection: string) {
   const db = prisma as unknown as Record<string, unknown>;

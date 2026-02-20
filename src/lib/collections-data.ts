@@ -31,6 +31,10 @@ export interface CollectionFieldMeta {
   hasMany?: boolean;
   /** Whether this field is hidden in the admin UI */
   hidden?: boolean;
+  /** Whether this field stores locale-first JSON: { "en": ..., "fr": ... } */
+  localized?: boolean;
+  /** Input type rendered inside each locale tab (default: 'text') */
+  localizedAs?: 'text' | 'textarea' | 'json';
 }
 
 export interface CollectionMeta {
@@ -47,6 +51,11 @@ export interface CollectionMeta {
     hidden?: boolean;
   };
   fields: CollectionFieldMeta[];
+  /** Localization config — present when the collection defines supported locales */
+  localization?: {
+    locales: string[];
+    defaultLocale: string;
+  };
 }
 
 // Default groups configuration
@@ -89,6 +98,18 @@ function extractMeta(config: CollectionConfig): CollectionMeta {
     typedGroup = undefined;
   }
   
+  // Extract localization config
+  let localization: CollectionMeta['localization'];
+  if (config.localization && typeof config.localization === 'object') {
+    const loc = config.localization as { locales?: string[]; defaultLocale?: string };
+    if (loc.locales && loc.locales.length > 0) {
+      localization = {
+        locales: loc.locales,
+        defaultLocale: loc.defaultLocale ?? loc.locales[0],
+      };
+    }
+  }
+
   return {
     slug: config.slug,
     labels: {
@@ -101,6 +122,7 @@ function extractMeta(config: CollectionConfig): CollectionMeta {
       group: typedGroup,
       hidden: typeof config.admin?.hidden === 'function' ? false : config.admin?.hidden,
     },
+    localization,
     fields: config.fields.map((f) => {
       const meta: CollectionFieldMeta = {
         name: f.name,
@@ -108,6 +130,8 @@ function extractMeta(config: CollectionConfig): CollectionMeta {
         required: f.required,
         label: f.label,
         hidden: typeof f.admin?.hidden === 'boolean' ? f.admin.hidden : false,
+        localized: f.localized ?? false,
+        localizedAs: (f.admin as { localizedAs?: CollectionFieldMeta['localizedAs'] })?.localizedAs,
       };
 
       if (f.type === 'select') {
@@ -140,6 +164,7 @@ import { Roles } from '@/collections/Roles';
 import { Permissions } from '@/collections/Permissions';
 import { Media } from '@/collections/Media';
 import { Pages } from '@/collections/Pages';
+import { Blocks } from '@/collections/Blocks';
 import { Settings } from '@/collections/Settings';
 
 export const collectionsMeta: CollectionMeta[] = [
@@ -148,6 +173,7 @@ export const collectionsMeta: CollectionMeta[] = [
   extractMeta(Permissions),
   extractMeta(Media),
   extractMeta(Pages),
+  extractMeta(Blocks),
   extractMeta(Settings),
 ].filter((c) => !c.admin.hidden);
 

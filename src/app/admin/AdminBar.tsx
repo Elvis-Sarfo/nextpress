@@ -3,6 +3,7 @@ import { auth, signOut } from '@/auth';
 import { Menu, Home, Plus, Users, Bell, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeSwitcher } from '@/components/admin/ThemeSwitcher';
+import { LocaleSwitcher } from '@/components/admin/LocaleSwitcher';
 
 export async function AdminBar() {
   const session = await auth();
@@ -26,6 +27,8 @@ export async function AdminBar() {
       </div>
 
       <div className="flex items-center gap-2">
+        <LocaleSwitcher />
+        <div className="w-px h-5 bg-gray-700" />
         <ThemeSwitcher />
         <Button variant="ghost" size="icon">
           <Bell className="w-5 h-5" />

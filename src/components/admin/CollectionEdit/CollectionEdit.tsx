@@ -2,7 +2,7 @@
 
 /**
  * Collection Edit Form — loads existing data, handles all field types
- * (including relationship multi-select), and saves via the admin API.
+ * (including relationship multi-select and localized fields), and saves via the admin API.
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -15,6 +15,8 @@ import {
   Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { useAdminLocale } from '@/components/providers/AdminLocaleProvider';
 import type { CollectionMeta, CollectionFieldMeta } from '@/lib/collections-data';
 
 interface CollectionEditProps {
@@ -36,6 +38,17 @@ export function CollectionEdit({ collection, documentId }: CollectionEditProps) 
   const [relationOptions, setRelationOptions] = useState<
     Record<string, { id: string; label: string }[]>
   >({});
+
+  // ── Locale state ────────────────────────────────────────────────────────────
+  const { locale: adminLocale } = useAdminLocale();
+  const collectionLocales = collection.localization?.locales ?? ['en', 'fr', 'de', 'es'];
+  const [activeLocale, setActiveLocale] = useState(() => adminLocale);
+  const hasLocalizedFields = collection.fields.some((f) => f.localized);
+
+  // Sync active locale when global admin locale changes
+  useEffect(() => {
+    setActiveLocale(adminLocale);
+  }, [adminLocale]);
 
   // ── Load existing document ──────────────────────────────────────────────────
   useEffect(() => {
@@ -159,6 +172,17 @@ export function CollectionEdit({ collection, documentId }: CollectionEditProps) 
     setFormData((prev) => ({ ...prev, [fieldName]: value }));
   };
 
+  // ── Update a single locale within a localized field ────────────────────────
+  const updateLocalizedField = useCallback((fieldName: string, locale: string, value: unknown) => {
+    setFormData((prev) => ({
+      ...prev,
+      [fieldName]: {
+        ...((prev[fieldName] as Record<string, unknown>) ?? {}),
+        [locale]: value,
+      },
+    }));
+  }, []);
+
   // ── Toggle a relationship ID in a multi-select ─────────────────────────────
   const toggleRelationId = (fieldName: string, id: string) => {
     const current = (formData[fieldName] as string[]) ?? [];
@@ -168,9 +192,74 @@ export function CollectionEdit({ collection, documentId }: CollectionEditProps) 
     updateField(fieldName, next);
   };
 
+  // ── Localized field input (single input for the active locale) ─────────────
+  const renderLocalizedInput = (field: CollectionFieldMeta) => {
+    const localeMap = (formData[field.name] as Record<string, unknown>) ?? {};
+    const localeValue = localeMap[activeLocale] ?? '';
+    const localizedAs = field.localizedAs ?? 'text';
+    const baseInput = 'flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+
+    const inputId = `${field.name}-${activeLocale}`;
+    const ariaLabel = `${getFieldLabel(field)} (${activeLocale.toUpperCase()})`;
+
+    if (localizedAs === 'text') {
+      return (
+        <input
+          id={inputId}
+          type="text"
+          aria-label={ariaLabel}
+          value={String(localeValue)}
+          onChange={(e) => updateLocalizedField(field.name, activeLocale, e.target.value)}
+          required={field.required && activeLocale === collectionLocales[0]}
+          className={cn(baseInput, 'h-10')}
+        />
+      );
+    }
+
+    if (localizedAs === 'textarea') {
+      return (
+        <textarea
+          id={inputId}
+          aria-label={ariaLabel}
+          value={String(localeValue)}
+          onChange={(e) => updateLocalizedField(field.name, activeLocale, e.target.value)}
+          rows={4}
+          className={cn(baseInput, 'min-h-[80px]')}
+        />
+      );
+    }
+
+    // localizedAs === 'json'
+    return (
+      <textarea
+        id={inputId}
+        aria-label={ariaLabel}
+        value={
+          typeof localeValue === 'object' && localeValue !== null
+            ? JSON.stringify(localeValue, null, 2)
+            : String(localeValue)
+        }
+        onChange={(e) => {
+          try {
+            updateLocalizedField(field.name, activeLocale, JSON.parse(e.target.value));
+          } catch {
+            updateLocalizedField(field.name, activeLocale, e.target.value);
+          }
+        }}
+        rows={8}
+        className={cn(baseInput, 'min-h-[120px] font-mono')}
+      />
+    );
+  };
+
   // ── Field renderers ────────────────────────────────────────────────────────
   const renderField = (field: CollectionFieldMeta) => {
     if (field.hidden) return null;
+
+    // Localized fields: render a single input for the active locale
+    if (field.localized) {
+      return renderLocalizedInput(field);
+    }
 
     const value = formData[field.name] ?? null;
     const baseInput =
@@ -377,7 +466,40 @@ export function CollectionEdit({ collection, documentId }: CollectionEditProps) 
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          {/* Locale switcher — only shown for collections with localized fields */}
+          {hasLocalizedFields && (
+            <div className="flex items-center gap-1.5 rounded-md border border-input px-2 py-1">
+              <span className="text-xs text-muted-foreground">Locale:</span>
+              {collectionLocales.map((loc) => {
+                const localeMap = formData as Record<string, Record<string, unknown>>;
+                const hasAnyContent = collection.fields
+                  .filter((f) => f.localized)
+                  .some((f) => {
+                    const v = localeMap[f.name];
+                    return v && typeof v === 'object' && (v as Record<string, unknown>)[loc];
+                  });
+                return (
+                  <button
+                    key={loc}
+                    type="button"
+                    onClick={() => setActiveLocale(loc)}
+                    className={cn(
+                      'px-2 py-0.5 rounded text-xs font-medium transition-colors',
+                      loc === activeLocale
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-muted-foreground hover:text-foreground',
+                      hasAnyContent && loc !== activeLocale && 'underline decoration-dotted'
+                    )}
+                    title={hasAnyContent ? `${loc.toUpperCase()} — has content` : loc.toUpperCase()}
+                  >
+                    {loc.toUpperCase()}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           {saveSuccess && (
             <span className="text-sm text-green-600 font-medium">Saved</span>
           )}
@@ -401,11 +523,16 @@ export function CollectionEdit({ collection, documentId }: CollectionEditProps) 
           {visibleFields.map((field) => (
             <div key={field.name} className="space-y-2">
               <label
-                htmlFor={field.name}
+                htmlFor={field.localized ? undefined : field.name}
                 className="text-sm font-medium leading-none"
               >
                 {getFieldLabel(field)}
                 {field.required && <span className="text-red-500 ml-1">*</span>}
+                {field.localized && (
+                  <span className="ml-2 text-xs text-muted-foreground font-normal">
+                    — {activeLocale.toUpperCase()}
+                  </span>
+                )}
               </label>
               {renderField(field)}
             </div>

@@ -1,86 +1,105 @@
 /**
  * Pages Collection
- * 
- * NextPress-style collection for static pages.
+ *
+ * Block-based page builder. Pages contain Sections → Columns → Block references.
+ * All text fields (title, slug, excerpt) are locale-first JSON:
+ *   { "en": "About", "fr": "À propos" }
  */
 
-import { 
+import {
   CollectionConfig,
   CollectionTextField,
-  CollectionTextareaField,
-  CollectionRichTextField,
+  CollectionNumberField,
   SelectField,
   UploadField,
   GroupField,
   CheckboxField,
-  Collections,
+  JSONField,
 } from '../core/collection';
 
 export const Pages: CollectionConfig<'pages'> = {
   slug: 'pages',
-  
+
   labels: {
     singular: 'Page',
     plural: 'Pages',
   },
-  
-  // Admin panel configuration
+
   admin: {
     useAsTitle: 'title',
     defaultColumns: ['title', 'slug', 'status', 'createdAt'],
     group: 'Content',
   },
-  
-  // Access control
+
   access: {
-    // Anyone can read published pages
     read: ({ req }) => {
-      // Admins can read all
       if (req.user?.role === 'admin') return true;
-      // Only published pages are public
       return { status: { equals: 'published' } };
     },
-    // Only admins/editors can create
     create: ({ req }) => req.user?.role === 'admin' || req.user?.role === 'editor',
-    // Only admins/editors can update
     update: ({ req }) => req.user?.role === 'admin' || req.user?.role === 'editor',
-    // Only admins can delete
     delete: ({ req }) => req.user?.role === 'admin',
   },
-  
-  // Field definitions
+
   fields: [
     {
       name: 'title',
-      type: 'text',
+      type: 'json',
       required: true,
+      localized: true,
       admin: {
-        description: 'Page title',
+        localizedAs: 'text',
+        description: 'Page title per locale — { "en": "About Us", "fr": "À propos" }',
       },
-    } satisfies CollectionTextField,
+    } satisfies JSONField,
     {
       name: 'slug',
-      type: 'text',
+      type: 'json',
       required: true,
-      unique: true,
+      localized: true,
       admin: {
-        description: 'URL slug (e.g., about, contact, pricing)',
+        localizedAs: 'text',
+        description: 'URL slug per locale — { "en": "about", "fr": "a-propos" }. Must be unique per locale.',
+      },
+    } satisfies JSONField,
+    {
+      name: 'excerpt',
+      type: 'json',
+      localized: true,
+      admin: {
+        localizedAs: 'textarea',
+        description: 'Short description per locale — { "en": "...", "fr": "..." }',
+      },
+    } satisfies JSONField,
+    {
+      name: 'sections',
+      type: 'json',
+      admin: {
+        description: 'Page sections containing columns and block references. Structure: [{ id, name, templateName, settings, columns: [{ id, width, offset, blocks: [{ blockId, order }] }] }]',
+      },
+    } satisfies JSONField,
+    {
+      name: 'config',
+      type: 'json',
+      admin: {
+        description: 'Page configuration — layout, theme, etc.',
+      },
+    } satisfies JSONField,
+    {
+      name: 'parentId',
+      type: 'text',
+      admin: {
+        description: 'Parent page ID for hierarchical page trees (references pages.id)',
       },
     } satisfies CollectionTextField,
     {
-      name: 'excerpt',
-      type: 'textarea',
+      name: 'order',
+      type: 'number',
+      defaultValue: 0,
       admin: {
-        description: 'Short description for SEO and previews',
+        description: 'Sort order within sibling pages (lower = first)',
       },
-    } satisfies CollectionTextareaField,
-    {
-      name: 'content',
-      type: 'richText',
-      admin: {
-        description: 'Page content (Rich Text)',
-      },
-    } satisfies CollectionRichTextField,
+    } satisfies CollectionNumberField,
     {
       name: 'status',
       type: 'select',
@@ -113,11 +132,11 @@ export const Pages: CollectionConfig<'pages'> = {
         } satisfies CollectionTextField,
         {
           name: 'metaDescription',
-          type: 'textarea',
+          type: 'text',
           admin: {
             description: 'Custom SEO description',
           },
-        } satisfies CollectionTextareaField,
+        } satisfies CollectionTextField,
         {
           name: 'noIndex',
           type: 'checkbox',
@@ -129,27 +148,21 @@ export const Pages: CollectionConfig<'pages'> = {
       ],
     } satisfies GroupField,
   ],
-  
-  // Enable versioning for pages
+
   versions: {
     enabled: true,
     maxPerDoc: 10,
   },
-  
-  // Enable localization (for multi-language content)
+
   localization: {
     locales: ['en', 'fr', 'de'],
     defaultLocale: 'en',
     fallback: true,
   },
-  
-  // Indexes
+
+  // slug uniqueness is enforced at the API level (Json columns can't use DB unique index)
   indexes: [
-    { fields: ['slug'], unique: true },
     { fields: ['status'] },
+    { fields: ['parentId'] },
   ],
 };
-
-// Register the collection
-// Note: Collections are now registered centrally in nextpress.config.ts
-// Collections.register(Pages);

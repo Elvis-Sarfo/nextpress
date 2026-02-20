@@ -10,6 +10,7 @@ import { Permissions } from './collections/Permissions'
 // Content collections
 import { Media } from './collections/Media'
 import { Pages } from './collections/Pages'
+import { Blocks } from './collections/Blocks'
 
 // Settings collection
 import { Settings } from './collections/Settings'
@@ -28,6 +29,7 @@ const config = {
     // Content collections
     Media,
     Pages,
+    Blocks,
 
     // Settings
     Settings,

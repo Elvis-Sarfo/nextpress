@@ -17,6 +17,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAdminLocale } from '@/components/providers/AdminLocaleProvider';
 import type { CollectionMeta } from '@/lib/collections-data';
 
 interface CollectionListProps {
@@ -27,6 +28,7 @@ type Doc = Record<string, unknown>;
 
 export function CollectionList({ collection }: CollectionListProps) {
   const router = useRouter();
+  const { locale } = useAdminLocale();
   const [docs, setDocs] = useState<Doc[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -97,6 +99,16 @@ export function CollectionList({ collection }: CollectionListProps) {
   const formatCellValue = (field: CollectionMeta['fields'][0], doc: Doc): string => {
     const val = doc[field.name];
     if (val === null || val === undefined) return '—';
+
+    // Locale-first JSON: extract value for the current admin locale
+    if (field.localized && typeof val === 'object' && !Array.isArray(val)) {
+      const localeMap = val as Record<string, unknown>;
+      const localeVal = localeMap[locale] ?? localeMap['en'];
+      if (localeVal === null || localeVal === undefined) return '—';
+      if (typeof localeVal === 'object') return JSON.stringify(localeVal);
+      return String(localeVal);
+    }
+
     if (Array.isArray(val)) {
       return (
         val

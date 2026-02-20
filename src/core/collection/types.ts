@@ -207,6 +207,8 @@ export interface FieldAdminConfig {
   width?: string;
   style?: Record<string, string>;
   className?: string;
+  /** For localized fields: controls the input type rendered inside each locale tab */
+  localizedAs?: 'text' | 'textarea' | 'json';
 }
 
 // ============================================================================

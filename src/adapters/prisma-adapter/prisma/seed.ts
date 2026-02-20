@@ -214,41 +214,40 @@ async function main() {
   );
 
   // ── 4. Sample pages ───────────────────────────────────────────────────────
+  // title, slug, excerpt are now locale-first JSON: { "en": "...", "fr": "..." }
+  // upsert uses @@unique([documentId, status]) as the where key
   console.log('Creating sample pages…');
 
-  const homePage = await prisma.pages.upsert({
-    where: { slug: 'home' },
+  const homeDocId = '15254c88-e2ed-498b-988b-3eb83461bf92';
+  const aboutDocId = 'a2b3c4d5-e6f7-8901-abcd-ef0123456789';
+
+  await prisma.pages.upsert({
+    where: { documentId_status: { documentId: homeDocId, status: 'published' } },
     update: {},
     create: {
-      documentId: randomUUID(),
-      status: 'PUBLISHED',
-      title: 'Welcome to NextPress',
-      slug: 'home',
-      excerpt: 'A modern headless CMS for developers',
-      content: {
-        html: '<h1>Welcome to NextPress</h1><p>A modern headless CMS built with Next.js and TypeScript.</p>',
-      },
+      documentId: homeDocId,
+      status: 'published',
+      title:   { en: 'Welcome to NextPress', fr: 'Bienvenue sur NextPress' },
+      slug:    { en: 'home', fr: 'accueil' },
+      excerpt: { en: 'A modern headless CMS for developers', fr: 'Un CMS headless moderne pour les développeurs' },
       createdBy: 'system',
     },
   });
 
-  const aboutPage = await prisma.pages.upsert({
-    where: { slug: 'about' },
+  await prisma.pages.upsert({
+    where: { documentId_status: { documentId: aboutDocId, status: 'published' } },
     update: {},
     create: {
-      documentId: randomUUID(),
-      status: 'PUBLISHED',
-      title: 'About Us',
-      slug: 'about',
-      excerpt: 'Learn about NextPress and our mission',
-      content: {
-        html: '<h1>About NextPress</h1><p>NextPress is a powerful, developer-friendly CMS.</p>',
-      },
+      documentId: aboutDocId,
+      status: 'published',
+      title:   { en: 'About Us', fr: 'À propos' },
+      slug:    { en: 'about', fr: 'a-propos' },
+      excerpt: { en: 'Learn about NextPress and our mission', fr: 'Découvrez NextPress et notre mission' },
       createdBy: 'system',
     },
   });
 
-  console.log(`  Pages: ${homePage.slug}, ${aboutPage.slug}`);
+  console.log(`  Pages: home (${homeDocId}), about (${aboutDocId})`);
   console.log('Database seeded successfully!');
 }
 

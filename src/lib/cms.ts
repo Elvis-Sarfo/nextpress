@@ -136,20 +136,57 @@ export async function getPageByDocumentId(
 }
 
 export async function getPublishedPage(
-  _locale: string,
+  locale: string,
   slug: string
 ): Promise<PageWithLocales | null> {
   return prisma.pages.findFirst({
-    where: { status: 'PUBLISHED', slug },
+    where: {
+      status: 'published',
+      slug: { path: [locale], equals: slug },
+    },
   });
 }
 
 export async function getPageChildren(
-  _parentId: string,
-  _options?: { status?: ContentStatus }
+  parentId: string,
+  options?: { status?: ContentStatus }
 ): Promise<PageWithLocales[]> {
-  // Pages model has no parentId in the current schema
-  return [];
+  return prisma.pages.findMany({
+    where: {
+      parentId,
+      ...(options?.status ? { status: options.status } : {}),
+    },
+    orderBy: { order: 'asc' },
+  });
+}
+
+// ============================================================================
+// BLOCKS  (uses prisma.blocks — reusable localized content blocks)
+// ============================================================================
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type BlockRecord = any;
+
+export async function getBlocks(options?: {
+  type?: string;
+  status?: string;
+}): Promise<BlockRecord[]> {
+  return prisma.blocks.findMany({
+    where: {
+      ...(options?.type   ? { type:   options.type   } : {}),
+      ...(options?.status ? { status: options.status } : {}),
+    },
+    orderBy: { name: 'asc' },
+  });
+}
+
+export async function getBlock(id: string): Promise<BlockRecord | null> {
+  return prisma.blocks.findUnique({ where: { id } });
+}
+
+export async function getBlocksByIds(ids: string[]): Promise<BlockRecord[]> {
+  if (ids.length === 0) return [];
+  return prisma.blocks.findMany({ where: { id: { in: ids } } });
 }
 
 // ============================================================================

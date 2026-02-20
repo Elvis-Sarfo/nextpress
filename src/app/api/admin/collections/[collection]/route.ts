@@ -19,16 +19,18 @@ const INCLUDE_MAP: Record<string, object> = {
 };
 
 // Allowed collection slugs that this API handles
-const ALLOWED = new Set(['users', 'roles', 'permissions', 'media', 'pages', 'settings']);
+const ALLOWED = new Set(['users', 'roles', 'permissions', 'media', 'pages', 'settings', 'blocks']);
 
-// Fields to use for full-text search per collection (only fields that actually exist)
+// Fields to use for full-text search per collection (only plain String fields)
+// Note: pages.title and pages.slug are now Json — omitted from search until JSON search is implemented
 const SEARCH_FIELDS: Record<string, string[]> = {
   users: ['name', 'email'],
   roles: ['name', 'displayName', 'description'],
   permissions: ['name', 'resource', 'action'],
   media: ['filename', 'alt', 'caption'],
-  pages: ['title', 'slug'],
+  pages: [],
   settings: ['siteName'],
+  blocks: ['name', 'templateName'],
 };
 
 function getPrismaModel(collection: string) {
@@ -122,6 +124,23 @@ export async function POST(
   }
 
   const body: Record<string, unknown> = await request.json();
+
+  // Enforce per-locale slug uniqueness for pages (Json column can't use DB unique index)
+  if (collection === 'pages' && body.slug && typeof body.slug === 'object') {
+    const slugEntries = Object.entries(body.slug as Record<string, string>);
+    for (const [locale, localeSlug] of slugEntries) {
+      if (!localeSlug) continue;
+      const existing = await prisma.pages.findFirst({
+        where: { slug: { path: [locale], equals: localeSlug } },
+      });
+      if (existing) {
+        return NextResponse.json(
+          { error: `Slug "${localeSlug}" is already in use for locale "${locale}"` },
+          { status: 409 }
+        );
+      }
+    }
+  }
 
   // Extract many-to-many relation arrays before building data
   const rolesIds = body.roles as string[] | undefined;
