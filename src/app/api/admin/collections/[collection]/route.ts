@@ -33,6 +33,18 @@ const SEARCH_FIELDS: Record<string, string[]> = {
   blocks: ['name', 'templateName'],
 };
 
+function supportsBlocksContentDefinition(): boolean {
+  const runtime = (prisma as unknown as {
+    _runtimeDataModel?: {
+      models?: Record<string, { fields?: Array<{ name?: string }> }>;
+    };
+  })._runtimeDataModel;
+
+  const model = runtime?.models?.blocks ?? runtime?.models?.Blocks;
+  if (!model?.fields) return true;
+  return model.fields.some((field) => field.name === 'contentDefinition');
+}
+
 function getPrismaModel(collection: string) {
   const db = prisma as unknown as Record<string, unknown>;
   return db[collection] as {
@@ -124,6 +136,31 @@ export async function POST(
   }
 
   const body: Record<string, unknown> = await request.json();
+
+  if (collection === 'blocks') {
+    if (body.content === undefined || body.content === null) {
+      body.content = {};
+    }
+    if (body.contentDefinition === undefined) {
+      body.contentDefinition = null;
+    }
+    if (!supportsBlocksContentDefinition()) {
+      delete body.contentDefinition;
+    }
+  }
+
+  // For pages: remap the relation field name to the scalar FK accepted by Prisma
+  if (collection === 'pages' && Object.prototype.hasOwnProperty.call(body, 'featuredImage')) {
+    const fi = body.featuredImage;
+    if (fi === null || fi === undefined) {
+      body.featuredImageId = null;
+    } else if (typeof fi === 'string') {
+      body.featuredImageId = fi;
+    } else if (typeof fi === 'object' && fi !== null && 'id' in (fi as Record<string, unknown>)) {
+      body.featuredImageId = (fi as Record<string, unknown>).id;
+    }
+    delete body.featuredImage;
+  }
 
   // Enforce per-locale slug uniqueness for pages (Json column can't use DB unique index)
   if (collection === 'pages' && body.slug && typeof body.slug === 'object') {

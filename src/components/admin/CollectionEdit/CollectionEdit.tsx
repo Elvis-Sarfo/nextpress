@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft,
+  PencilLine,
   Save,
   Trash2,
   Loader2,
@@ -18,6 +19,9 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAdminLocale } from '@/components/providers/AdminLocaleProvider';
 import type { CollectionMeta, CollectionFieldMeta } from '@/lib/collections-data';
+import { BlockContentEditor } from '@/components/admin/BlockContentEditor';
+import { JsonCodeEditor } from '@/components/admin/JsonCodeEditor';
+import { PageSectionsEditor } from '@/components/admin/PageSectionsEditor';
 
 interface CollectionEditProps {
   collection: CollectionMeta;
@@ -198,6 +202,22 @@ export function CollectionEdit({ collection, documentId }: CollectionEditProps) 
     const localeValue = localeMap[activeLocale] ?? '';
     const localizedAs = field.localizedAs ?? 'text';
     const baseInput = 'flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+
+    // ── Block content editor (replaces JSON textarea for blocks collection) ──
+    if (collection.slug === 'blocks' && field.name === 'content') {
+      const localeContent = (typeof localeValue === 'object' && localeValue !== null
+        ? localeValue
+        : {}) as Record<string, unknown>;
+
+      return (
+        <BlockContentEditor
+          content={localeContent}
+          definition={formData['contentDefinition']}
+          locale={activeLocale}
+          onChange={(newContent) => updateLocalizedField(field.name, activeLocale, newContent)}
+        />
+      );
+    }
 
     const inputId = `${field.name}-${activeLocale}`;
     const ariaLabel = `${getFieldLabel(field)} (${activeLocale.toUpperCase()})`;
@@ -398,6 +418,35 @@ export function CollectionEdit({ collection, documentId }: CollectionEditProps) 
         );
 
       case 'json':
+        if (collection.slug === 'pages' && field.name === 'sections') {
+          return (
+            <PageSectionsEditor
+              value={value}
+              onChange={(sections) => updateField(field.name, sections as unknown as FieldValue)}
+            />
+          );
+        }
+
+        if (collection.slug === 'blocks' && field.name === 'contentDefinition') {
+          return (
+            <details className="group rounded-md border border-input bg-muted/30">
+              <summary className="flex cursor-pointer select-none items-center justify-between px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground list-none">
+                <span>Content Definition (schema)</span>
+                <span className="text-xs group-open:hidden">▶ expand</span>
+                <span className="text-xs hidden group-open:inline">▼ collapse</span>
+              </summary>
+              <div className="border-t px-3 py-3">
+                <JsonCodeEditor
+                  id={field.name}
+                  value={value}
+                  onChange={(next) => updateField(field.name, next as FieldValue)}
+                  rows={10}
+                />
+              </div>
+            </details>
+          );
+        }
+
         return (
           <textarea
             id={field.name}
@@ -434,7 +483,12 @@ export function CollectionEdit({ collection, documentId }: CollectionEditProps) 
   const getFieldLabel = (field: CollectionFieldMeta) =>
     field.label || field.name.charAt(0).toUpperCase() + field.name.slice(1).replace(/([A-Z])/g, ' $1');
 
-  const visibleFields = collection.fields.filter((f) => !f.hidden);
+  const visibleFields = collection.fields.filter((f) => {
+    if (f.hidden) return false;
+    // Block content is edited on its own dedicated page (/admin/blocks/[id]/content)
+    if (collection.slug === 'blocks' && f.name === 'content') return false;
+    return true;
+  });
 
   if (isLoading) {
     return (
@@ -467,6 +521,15 @@ export function CollectionEdit({ collection, documentId }: CollectionEditProps) 
         </div>
 
         <div className="flex items-center gap-3">
+          {collection.slug === 'blocks' && documentId && (
+            <Link href={`/admin/blocks/${documentId}/content`}>
+              <Button type="button" variant="outline">
+                <PencilLine className="mr-2 h-4 w-4" />
+                Edit Content
+              </Button>
+            </Link>
+          )}
+
           {/* Locale switcher — only shown for collections with localized fields */}
           {hasLocalizedFields && (
             <div className="flex items-center gap-1.5 rounded-md border border-input px-2 py-1">

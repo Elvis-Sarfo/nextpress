@@ -158,7 +158,8 @@ model Blocks {
   name String @db.VarChar(255) @unique
   type String @db.VarChar(100)
   templateName String? @db.VarChar(255)
-  content Json
+  contentDefinition Json?
+  content Json?
   status String @db.VarChar(100) @default("draft")
   metadata Json?
   createdAt DateTime @default(now())

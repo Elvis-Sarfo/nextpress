@@ -18,6 +18,18 @@ const INCLUDE_MAP: Record<string, object> = {
 
 const ALLOWED = new Set(['users', 'roles', 'permissions', 'media', 'pages', 'settings', 'blocks']);
 
+function supportsBlocksContentDefinition(): boolean {
+  const runtime = (prisma as unknown as {
+    _runtimeDataModel?: {
+      models?: Record<string, { fields?: Array<{ name?: string }> }>;
+    };
+  })._runtimeDataModel;
+
+  const model = runtime?.models?.blocks ?? runtime?.models?.Blocks;
+  if (!model?.fields) return true;
+  return model.fields.some((field) => field.name === 'contentDefinition');
+}
+
 function getPrismaModel(collection: string) {
   const db = prisma as unknown as Record<string, unknown>;
   return db[collection] as {
@@ -94,6 +106,28 @@ export async function PUT(
   }
 
   const body: Record<string, unknown> = await request.json();
+
+  if (collection === 'blocks') {
+    if (Object.prototype.hasOwnProperty.call(body, 'content') && body.content === null) {
+      body.content = {};
+    }
+    if (!supportsBlocksContentDefinition()) {
+      delete body.contentDefinition;
+    }
+  }
+
+  // For pages: remap the relation field name to the scalar FK accepted by Prisma
+  if (collection === 'pages' && Object.prototype.hasOwnProperty.call(body, 'featuredImage')) {
+    const fi = body.featuredImage;
+    if (fi === null || fi === undefined) {
+      body.featuredImageId = null;
+    } else if (typeof fi === 'string') {
+      body.featuredImageId = fi;
+    } else if (typeof fi === 'object' && fi !== null && 'id' in (fi as Record<string, unknown>)) {
+      body.featuredImageId = (fi as Record<string, unknown>).id;
+    }
+    delete body.featuredImage;
+  }
 
   // Extract many-to-many arrays
   const rolesIds = body.roles as string[] | undefined;

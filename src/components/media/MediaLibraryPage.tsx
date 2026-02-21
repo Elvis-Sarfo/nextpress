@@ -41,7 +41,12 @@ interface TrimEditState {
   endSec: string;
 }
 
-export function MediaLibraryPage() {
+interface MediaLibraryPageProps {
+  pickerMode?: boolean;
+  onPickerSelect?: (url: string) => void;
+}
+
+export function MediaLibraryPage({ pickerMode = false, onPickerSelect }: MediaLibraryPageProps = {}) {
   const media = useMediaLibrary();
   const [view, setView] = useState<ViewMode>('grid');
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -150,6 +155,11 @@ export function MediaLibraryPage() {
   };
 
   const openItemAt = (index: number) => {
+    if (pickerMode && onPickerSelect) {
+      const item = media.items[index];
+      if (item) onPickerSelect(item.url || item.filename);
+      return;
+    }
     setSelectedIndex(index);
     setCopyStatus(null);
   };
@@ -358,11 +368,19 @@ export function MediaLibraryPage() {
           {media.items.map((item, index) => (
             <button
               key={item.id}
-              className="group overflow-hidden rounded-xl border bg-card text-left"
+              className={`group overflow-hidden rounded-xl border bg-card text-left transition-all ${pickerMode ? 'hover:ring-2 hover:ring-primary' : ''}`}
               onClick={() => openItemAt(index)}
+              title={pickerMode ? `Select: ${item.title || item.filename}` : undefined}
             >
               <div className="relative aspect-square bg-muted">
                 <MediaThumb item={item} />
+                {pickerMode && (
+                  <div className="absolute inset-0 flex items-end justify-center bg-black/0 group-hover:bg-black/30 transition-colors">
+                    <span className="mb-2 rounded bg-primary px-2 py-0.5 text-xs text-primary-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+                      Select
+                    </span>
+                  </div>
+                )}
               </div>
               <div className="p-2">
                 <p className="truncate text-sm font-medium">{item.title || item.filename}</p>
@@ -428,7 +446,7 @@ export function MediaLibraryPage() {
         </div>
       </div>
 
-      {selected && selectedIndex !== null && (
+      {!pickerMode && selected && selectedIndex !== null && (
         <div className="fixed inset-0 z-50 bg-black/65 p-3 md:p-6">
           <div className="relative mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden rounded-xl border bg-background shadow-xl">
             <div className="flex items-center justify-between border-b px-4 py-3">

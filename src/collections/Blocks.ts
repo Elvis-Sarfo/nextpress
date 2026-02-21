@@ -16,14 +16,17 @@ import {
 } from '../core/collection';
 
 export const BLOCK_TYPES = [
-  { label: 'Hero',           value: 'hero' },
-  { label: 'Text',           value: 'text' },
-  { label: 'Image',          value: 'image' },
-  { label: 'Gallery',        value: 'gallery' },
-  { label: 'Call to Action', value: 'cta' },
-  { label: 'Accordion',      value: 'accordion' },
-  { label: 'Video',          value: 'video' },
-  { label: 'Carousel',       value: 'carousel' },
+  { label: 'Hero',            value: 'hero' },
+  { label: 'Banner Section',  value: 'banner' },
+  { label: 'About Us',        value: 'about' },
+  { label: 'FAQ Section',     value: 'faq' },
+  { label: 'Gallery',         value: 'gallery' },
+  { label: 'Service Section', value: 'service' },
+  { label: 'Testimonial',     value: 'testimonial' },
+  { label: 'Contact Us',      value: 'contact' },
+  { label: 'Subscribe',       value: 'subscribe' },
+  { label: 'Featured Rooms',  value: 'featured_rooms' },
+  { label: 'Showcase',        value: 'showcase' },
 ] as const;
 
 export const Blocks: CollectionConfig<'blocks'> = {
@@ -77,14 +80,20 @@ export const Blocks: CollectionConfig<'blocks'> = {
       },
     } satisfies CollectionTextField,
     {
+      name: 'contentDefinition',
+      type: 'json',
+      admin: {
+        description: 'Schema-like block definition (DB source of truth for block editor fields)',
+      },
+    } satisfies JSONField,
+    {
       name: 'content',
       type: 'json',
-      required: true,
       localized: true,
       defaultValue: { en: {}, fr: {}, de: {} },
       admin: {
         localizedAs: 'json',
-        description: 'Locale-first content — { "en": { "heading": "...", "ctaText": "..." }, "fr": { ... } }',
+        description: 'Block values (locale-first optional) — { "en": { "heading": "..." }, "fr": { ... } }',
       },
     } satisfies JSONField,
     {
