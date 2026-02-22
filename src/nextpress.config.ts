@@ -11,6 +11,7 @@ import { Permissions } from './collections/Permissions'
 import { Media } from './collections/Media'
 import { Pages } from './collections/Pages'
 import { Blocks } from './collections/Blocks'
+import { Menus } from './collections/Menus'
 
 // Settings collection
 import { Settings } from './collections/Settings'
@@ -30,6 +31,7 @@ const config = {
     Media,
     Pages,
     Blocks,
+    Menus,
 
     // Settings
     Settings,

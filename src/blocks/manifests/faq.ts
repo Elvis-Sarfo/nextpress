@@ -1,0 +1,23 @@
+import type { BlockManifest } from '../types';
+import { FAQBlock } from '@/components/blocks/FAQBlock';
+
+export const faqManifest: BlockManifest = {
+  type: 'faq',
+  label: 'FAQ Section',
+  icon: 'HelpCircle',
+  definition: {
+    content: [
+      { name: 'heading', type: 'text', label: 'Heading' },
+      { name: 'subheading', type: 'text', label: 'Subheading' },
+      { name: 'description', type: 'text', label: 'Description' },
+    ],
+    elements: {
+      label: 'FAQ Item',
+      fields: [
+        { name: 'question', type: 'text', label: 'Question', required: true },
+        { name: 'answer', type: 'textarea', label: 'Answer', required: true },
+      ],
+    },
+  },
+  component: FAQBlock,
+};

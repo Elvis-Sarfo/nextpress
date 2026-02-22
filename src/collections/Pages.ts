@@ -87,6 +87,7 @@ export const Pages: CollectionConfig<'pages'> = {
     } satisfies JSONField,
     {
       name: 'parentId',
+      label: 'Parent Page',
       type: 'text',
       admin: {
         description: 'Parent page ID for hierarchical page trees (references pages.id)',

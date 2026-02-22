@@ -1,12 +1,11 @@
 /**
  * Admin Dashboard
- * 
+ *
  * Main dashboard showing collection overview and quick actions.
  */
 
 import Link from 'next/link';
 import {
-  LayoutDashboard,
   FileText,
   Image,
   Users,
@@ -16,9 +15,9 @@ import {
   Database,
   Plus,
   ArrowRight,
-  BarChart3,
 } from 'lucide-react';
-import { collectionsMeta, getGroupedCollections } from '@/lib/collections-data';
+import { collectionsMeta } from '@/lib/collections-data';
+import { getPageCount, getMediaCount, getUserCount } from '@/lib/cms';
 
 // Icon mapping for collections
 const collectionIcons: Record<string, React.ElementType> = {
@@ -35,8 +34,12 @@ function getCollectionIcon(slug: string): React.ElementType {
   return collectionIcons[slug] || collectionIcons.default;
 }
 
-export default function AdminDashboard() {
-  const groupedCollections = getGroupedCollections();
+export default async function AdminDashboard() {
+  const [pageCount, mediaCount, userCount] = await Promise.all([
+    getPageCount(),
+    getMediaCount(),
+    getUserCount(),
+  ]);
 
   return (
     <div className="space-y-8">
@@ -68,7 +71,7 @@ export default function AdminDashboard() {
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Pages</p>
-              <p className="text-2xl font-bold">-</p>
+              <p className="text-2xl font-bold">{pageCount}</p>
             </div>
           </div>
         </div>
@@ -79,7 +82,7 @@ export default function AdminDashboard() {
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Media Files</p>
-              <p className="text-2xl font-bold">-</p>
+              <p className="text-2xl font-bold">{mediaCount}</p>
             </div>
           </div>
         </div>
@@ -90,7 +93,7 @@ export default function AdminDashboard() {
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Users</p>
-              <p className="text-2xl font-bold">-</p>
+              <p className="text-2xl font-bold">{userCount}</p>
             </div>
           </div>
         </div>

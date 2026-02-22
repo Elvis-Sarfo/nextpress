@@ -1,0 +1,18 @@
+import type { BlockManifest } from '../types';
+import { GalleryBlock } from '@/components/blocks/GalleryBlock';
+
+export const galleryManifest: BlockManifest = {
+  type: 'gallery',
+  label: 'Gallery',
+  icon: 'Images',
+  definition: {
+    elements: {
+      label: 'Gallery Image',
+      fields: [
+        { name: 'image', type: 'image', label: 'Image' },
+        { name: 'caption', type: 'text', label: 'Caption' },
+      ],
+    },
+  },
+  component: GalleryBlock,
+};

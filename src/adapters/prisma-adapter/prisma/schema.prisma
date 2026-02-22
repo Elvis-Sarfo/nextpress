@@ -181,6 +181,20 @@ model BlocksLocale {
   @@map("blocks_locale")
 }
 
+model Menus {
+  id String @id @default(uuid())
+  status String @db.VarChar(20)
+  name String @db.VarChar(255)
+  location String? @db.VarChar(100)
+  items Json?
+  metadata Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String? @db.VarChar(255)
+  @@index([status])
+  @@map("menus")
+}
+
 model Settings {
   id String @id @default(uuid())
   status String @db.VarChar(20)

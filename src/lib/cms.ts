@@ -53,8 +53,26 @@ export type PageWithLocales = any;
 export type PostWithLocales = any;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type NewsWithLocales = any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type MenuWithItems = any;
+export interface MenuItem {
+  id: string;
+  label: string;
+  type: 'page' | 'custom' | 'section';
+  pageId?: string;
+  /** Locale → slug map, injected at query time for page-type items */
+  slugsByLocale?: Record<string, string>;
+  url?: string;
+  target?: '_self' | '_blank';
+  children?: MenuItem[];
+}
+
+export interface MenuWithItems {
+  id: string;
+  name: string;
+  location?: string | null;
+  items: MenuItem[];
+}
+
+// LinkCollection / Link — not yet implemented (no DB table)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type LinkCollection = any;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -190,6 +208,22 @@ export async function getBlocksByIds(ids: string[]): Promise<BlockRecord[]> {
 }
 
 // ============================================================================
+// COUNT HELPERS — used by the admin dashboard
+// ============================================================================
+
+export async function getPageCount(): Promise<number> {
+  return prisma.pages.count();
+}
+
+export async function getMediaCount(): Promise<number> {
+  return prisma.media.count();
+}
+
+export async function getUserCount(): Promise<number> {
+  return prisma.users.count();
+}
+
+// ============================================================================
 // POSTS / NEWS / MENUS / LINKS — not yet in the generated schema.
 // Stubs return empty results so callers don't crash at import time.
 // ============================================================================
@@ -261,24 +295,89 @@ export async function getNewsByCategory(
   return [];
 }
 
+// ── Navigation helpers ────────────────────────────────────────────────────────
+
+/** DFS collect all pageIds referenced in an item tree (deduped) */
+function collectPageIds(items: MenuItem[]): string[] {
+  const ids = new Set<string>();
+  function walk(nodes: MenuItem[]) {
+    for (const n of nodes) {
+      if (n.type === 'page' && n.pageId) ids.add(n.pageId);
+      if (n.children?.length) walk(n.children);
+    }
+  }
+  walk(items);
+  return Array.from(ids);
+}
+
+/** Inject slugsByLocale into page-type items using a pageId → slugJSON map */
+function injectPageUrls(
+  items: MenuItem[],
+  slugMap: Record<string, Record<string, string>>
+): void {
+  for (const item of items) {
+    if (item.type === 'page' && item.pageId && slugMap[item.pageId]) {
+      item.slugsByLocale = slugMap[item.pageId];
+    }
+    if (item.children?.length) injectPageUrls(item.children, slugMap);
+  }
+}
+
+/** Rows from the menus table shape */
+interface MenuRow {
+  id: string;
+  name: string;
+  location: string | null;
+  items: unknown;
+}
+
+async function resolveMenuItems(row: MenuRow): Promise<MenuWithItems> {
+  const items = (Array.isArray(row.items) ? row.items : []) as MenuItem[];
+  const pageIds = collectPageIds(items);
+  if (pageIds.length > 0) {
+    const pages = await prisma.pages.findMany({
+      where: { id: { in: pageIds } },
+      select: { id: true, slug: true },
+    });
+    const slugMap: Record<string, Record<string, string>> = {};
+    for (const p of pages) {
+      if (p.slug && typeof p.slug === 'object') {
+        slugMap[p.id] = p.slug as Record<string, string>;
+      }
+    }
+    injectPageUrls(items, slugMap);
+  }
+  return { id: row.id, name: row.name, location: row.location, items };
+}
+
 export async function getMenus(): Promise<MenuWithItems[]> {
-  return [];
+  const rows = await prisma.menus.findMany({
+    orderBy: { createdAt: 'asc' },
+  });
+  return Promise.all(rows.map((r) => resolveMenuItems(r as unknown as MenuRow)));
 }
 
-export async function getMenu(_id: string): Promise<MenuWithItems | null> {
-  return null;
+export async function getMenu(id: string): Promise<MenuWithItems | null> {
+  const row = await prisma.menus.findUnique({ where: { id } });
+  if (!row) return null;
+  return resolveMenuItems(row as unknown as MenuRow);
 }
 
-export async function getMenuByName(_name: string): Promise<MenuWithItems | null> {
-  return null;
+export async function getMenuByName(name: string): Promise<MenuWithItems | null> {
+  const row = await prisma.menus.findFirst({ where: { name } });
+  if (!row) return null;
+  return resolveMenuItems(row as unknown as MenuRow);
 }
 
-export async function getMenuByLocation(_location: string): Promise<MenuWithItems[]> {
-  return [];
+export async function getMenuByLocation(location: string): Promise<MenuWithItems | null> {
+  const row = await prisma.menus.findFirst({ where: { location } });
+  if (!row) return null;
+  return resolveMenuItems(row as unknown as MenuRow);
 }
 
-export async function getMenuItems(_menuId: string): Promise<unknown[]> {
-  return [];
+export async function getMenuItems(menuId: string): Promise<MenuItem[]> {
+  const menu = await getMenu(menuId);
+  return menu?.items ?? [];
 }
 
 export async function getLinkCollections(): Promise<LinkCollection[]> {

@@ -16,6 +16,7 @@ import {
   Pencil,
   Trash2,
   Loader2,
+  AlertTriangle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAdminLocale } from '@/components/providers/AdminLocaleProvider';
@@ -37,6 +38,8 @@ export function CollectionList({ collection }: CollectionListProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   const limit = 20;
   const columns = collection.admin.defaultColumns ?? ['id', 'createdAt'];
@@ -79,6 +82,11 @@ export function CollectionList({ collection }: CollectionListProps) {
     return () => clearTimeout(t);
   }, [fetchDocs]);
 
+  // Reset selection when page or search changes
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [page, searchQuery]);
+
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this document? This cannot be undone.')) return;
     setDeleteId(id);
@@ -95,6 +103,37 @@ export function CollectionList({ collection }: CollectionListProps) {
     } finally {
       setDeleteId(null);
     }
+  };
+
+  const handleBulkDelete = async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    if (!confirm(`Delete ${ids.length} selected item${ids.length === 1 ? '' : 's'}? This cannot be undone.`)) return;
+    setIsBulkDeleting(true);
+    try {
+      for (const id of ids) {
+        await fetch(`/api/admin/collections/${collection.slug}/${id}`, { method: 'DELETE' });
+      }
+      setSelectedIds(new Set());
+      fetchDocs();
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    const allIds = docs.map((d) => d.id as string);
+    const allSelected = allIds.every((id) => selectedIds.has(id));
+    setSelectedIds(allSelected ? new Set() : new Set(allIds));
   };
 
   const formatCellValue = (field: CollectionMeta['fields'][0], doc: Doc): string => {
@@ -151,19 +190,36 @@ export function CollectionList({ collection }: CollectionListProps) {
         </Link>
       </div>
 
-      {/* Search */}
-      <div className="relative flex-1 max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <input
-          type="text"
-          placeholder={`Search ${collection.labels.plural.toLowerCase()}...`}
-          value={searchQuery}
-          onChange={(e) => {
-            setSearchQuery(e.target.value);
-            setPage(1);
-          }}
-          className="w-full pl-9 pr-4 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-        />
+      {/* Search + Bulk Actions */}
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder={`Search ${collection.labels.plural.toLowerCase()}...`}
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setPage(1);
+            }}
+            className="w-full pl-9 pr-4 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+        </div>
+        {selectedIds.size > 0 && (
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={handleBulkDelete}
+            disabled={isBulkDeleting}
+          >
+            {isBulkDeleting ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <AlertTriangle className="mr-2 h-4 w-4" />
+            )}
+            Delete {selectedIds.size} selected
+          </Button>
+        )}
       </div>
 
       {/* Error */}
@@ -179,6 +235,15 @@ export function CollectionList({ collection }: CollectionListProps) {
           <table className="w-full">
             <thead>
               <tr className="border-b bg-muted/50">
+                <th className="w-10 px-4 py-3">
+                  <input
+                    type="checkbox"
+                    aria-label="Select all on this page"
+                    checked={docs.length > 0 && docs.every((d) => selectedIds.has(d.id as string))}
+                    onChange={toggleSelectAll}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                </th>
                 {displayFields.map((field) => (
                   <th
                     key={field.name}
@@ -198,13 +263,13 @@ export function CollectionList({ collection }: CollectionListProps) {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={displayFields.length + 1} className="px-4 py-12 text-center">
+                  <td colSpan={displayFields.length + 2} className="px-4 py-12 text-center">
                     <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
                   </td>
                 </tr>
               ) : docs.length === 0 ? (
                 <tr>
-                  <td colSpan={displayFields.length + 1} className="px-4 py-12 text-center">
+                  <td colSpan={displayFields.length + 2} className="px-4 py-12 text-center">
                     <div className="flex flex-col items-center gap-2">
                       <p className="text-muted-foreground">
                         No {collection.labels.plural.toLowerCase()} found
@@ -224,6 +289,15 @@ export function CollectionList({ collection }: CollectionListProps) {
                     key={doc.id as string}
                     className="border-b hover:bg-muted/30 transition-colors"
                   >
+                    <td className="w-10 px-4 py-3">
+                      <input
+                        type="checkbox"
+                        aria-label={`Select item ${doc.id}`}
+                        checked={selectedIds.has(doc.id as string)}
+                        onChange={() => toggleSelect(doc.id as string)}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+                    </td>
                     {displayFields.map((field) => (
                       <td key={field.name} className="px-4 py-3 text-sm">
                         {formatCellValue(field, doc)}

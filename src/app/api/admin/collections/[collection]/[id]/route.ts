@@ -14,9 +14,10 @@ import { invalidatePrincipalCache } from '@/lib/rbac-service';
 const INCLUDE_MAP: Record<string, object> = {
   users: { roles: { select: { id: true, name: true, displayName: true } } },
   roles: { permissions: { select: { id: true, name: true, resource: true, action: true, scope: true } } },
+  pages: { featuredImage: { select: { id: true, url: true, altText: true } } },
 };
 
-const ALLOWED = new Set(['users', 'roles', 'permissions', 'media', 'pages', 'settings', 'blocks']);
+const ALLOWED = new Set(['users', 'roles', 'permissions', 'media', 'pages', 'settings', 'blocks', 'menus']);
 
 function supportsBlocksContentDefinition(): boolean {
   const runtime = (prisma as unknown as {

@@ -16,10 +16,11 @@ import { invalidatePrincipalCache } from '@/lib/rbac-service';
 const INCLUDE_MAP: Record<string, object> = {
   users: { roles: { select: { id: true, name: true, displayName: true } } },
   roles: { permissions: { select: { id: true, name: true, resource: true, action: true, scope: true } } },
+  pages: { featuredImage: { select: { id: true, url: true, altText: true } } },
 };
 
 // Allowed collection slugs that this API handles
-const ALLOWED = new Set(['users', 'roles', 'permissions', 'media', 'pages', 'settings', 'blocks']);
+const ALLOWED = new Set(['users', 'roles', 'permissions', 'media', 'pages', 'settings', 'blocks', 'menus']);
 
 // Fields to use for full-text search per collection (only plain String fields)
 // Note: pages.title and pages.slug are now Json — omitted from search until JSON search is implemented
@@ -31,6 +32,7 @@ const SEARCH_FIELDS: Record<string, string[]> = {
   pages: [],
   settings: ['siteName'],
   blocks: ['name', 'templateName'],
+  menus: ['name', 'location'],
 };
 
 function supportsBlocksContentDefinition(): boolean {

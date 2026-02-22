@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAdminLocale } from '@/components/providers/AdminLocaleProvider';
 import { BlockContentEditor } from '@/components/admin/BlockContentEditor';
-import { getBlockType } from '@/blocks/block-type-registry';
+import { getBlockType } from '@/blocks/registry';
 
 type LocalizedContent = Record<string, Record<string, unknown>>;
 

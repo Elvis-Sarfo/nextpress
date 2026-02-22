@@ -6,6 +6,8 @@
  * and optional repeatable element fields.
  */
 
+import type { ComponentType } from 'react';
+
 export type BlockFieldType =
   | 'text'
   | 'textarea'
@@ -43,6 +45,39 @@ export interface BlockTypeDefinition {
     label: string;
     fields: BlockField[];
   };
+}
+
+/** Content schema portion of a block manifest (editor fields only) */
+export interface BlockDefinition {
+  /** Section-level fields rendered once per block */
+  content?: BlockField[];
+  /** Repeatable sub-items stored as `_elements` array in content JSON */
+  elements?: {
+    label: string;
+    fields: BlockField[];
+  };
+}
+
+export type BlockContent = Record<string, unknown>;
+export type BlockComponent = ComponentType<{ content: BlockContent }>;
+
+/**
+ * A block manifest ties the canonical DB `type` key to both the admin editor
+ * schema (definition) and the public-facing React component (component).
+ * It is the single source of truth for a block type — adding a new block type
+ * only requires creating a manifest and registering it.
+ */
+export interface BlockManifest {
+  /** Canonical key stored as blocks.type in the database */
+  type: string;
+  /** Human-readable label shown in the admin UI */
+  label: string;
+  /** lucide-react icon name */
+  icon?: string;
+  /** Admin editor field schema */
+  definition: BlockDefinition;
+  /** React component used for public page rendering */
+  component: BlockComponent;
 }
 
 function isRecord(input: unknown): input is Record<string, unknown> {

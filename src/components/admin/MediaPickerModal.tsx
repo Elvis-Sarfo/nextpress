@@ -8,7 +8,7 @@ import { MediaLibraryPage } from '@/components/media/MediaLibraryPage';
 interface MediaPickerModalProps {
   open: boolean;
   onClose: () => void;
-  onSelect: (url: string) => void;
+  onSelect: (media: { id: string; url: string }) => void;
 }
 
 export function MediaPickerModal({ open, onClose, onSelect }: MediaPickerModalProps) {
@@ -23,8 +23,8 @@ export function MediaPickerModal({ open, onClose, onSelect }: MediaPickerModalPr
 
   if (!open) return null;
 
-  const handleSelect = (url: string) => {
-    onSelect(url);
+  const handleSelect = (media: { id: string; url: string }) => {
+    onSelect(media);
     onClose();
   };
 

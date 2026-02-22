@@ -35,6 +35,8 @@ export interface CollectionFieldMeta {
   localized?: boolean;
   /** Input type rendered inside each locale tab (default: 'text') */
   localizedAs?: 'text' | 'textarea' | 'json';
+  /** Custom admin component to render for this field (e.g. 'menu-items') */
+  adminComponent?: string;
 }
 
 export interface CollectionMeta {
@@ -132,6 +134,7 @@ function extractMeta(config: CollectionConfig): CollectionMeta {
         hidden: typeof f.admin?.hidden === 'boolean' ? f.admin.hidden : false,
         localized: f.localized ?? false,
         localizedAs: (f.admin as { localizedAs?: CollectionFieldMeta['localizedAs'] })?.localizedAs,
+        adminComponent: (f.admin as { component?: string })?.component,
       };
 
       if (f.type === 'select') {
@@ -145,6 +148,11 @@ function extractMeta(config: CollectionConfig): CollectionMeta {
           meta.relationTo = Array.isArray(rf.relationTo) ? rf.relationTo[0] : rf.relationTo;
         }
         meta.hasMany = rf.hasMany ?? false;
+      }
+
+      if (f.type === 'upload') {
+        const uf = f as { relationTo?: string };
+        if (uf.relationTo) meta.relationTo = uf.relationTo;
       }
 
       return meta;
@@ -165,6 +173,7 @@ import { Permissions } from '@/collections/Permissions';
 import { Media } from '@/collections/Media';
 import { Pages } from '@/collections/Pages';
 import { Blocks } from '@/collections/Blocks';
+import { Menus } from '@/collections/Menus';
 import { Settings } from '@/collections/Settings';
 
 export const collectionsMeta: CollectionMeta[] = [
@@ -174,6 +183,7 @@ export const collectionsMeta: CollectionMeta[] = [
   extractMeta(Media),
   extractMeta(Pages),
   extractMeta(Blocks),
+  extractMeta(Menus),
   extractMeta(Settings),
 ].filter((c) => !c.admin.hidden);
 

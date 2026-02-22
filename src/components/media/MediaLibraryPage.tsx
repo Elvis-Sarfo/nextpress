@@ -43,7 +43,7 @@ interface TrimEditState {
 
 interface MediaLibraryPageProps {
   pickerMode?: boolean;
-  onPickerSelect?: (url: string) => void;
+  onPickerSelect?: (media: { id: string; url: string }) => void;
 }
 
 export function MediaLibraryPage({ pickerMode = false, onPickerSelect }: MediaLibraryPageProps = {}) {
@@ -157,7 +157,7 @@ export function MediaLibraryPage({ pickerMode = false, onPickerSelect }: MediaLi
   const openItemAt = (index: number) => {
     if (pickerMode && onPickerSelect) {
       const item = media.items[index];
-      if (item) onPickerSelect(item.url || item.filename);
+      if (item) onPickerSelect({ id: item.id, url: item.url || item.filename });
       return;
     }
     setSelectedIndex(index);

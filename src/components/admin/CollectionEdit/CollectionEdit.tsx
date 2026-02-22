@@ -10,7 +10,10 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft,
+  Clock,
   Eye,
+  Globe,
+  GlobeLock,
   PencilLine,
   Save,
   Trash2,
@@ -22,7 +25,9 @@ import { useAdminLocale } from '@/components/providers/AdminLocaleProvider';
 import type { CollectionMeta, CollectionFieldMeta } from '@/lib/collections-data';
 import { BlockContentEditor } from '@/components/admin/BlockContentEditor';
 import { JsonCodeEditor } from '@/components/admin/JsonCodeEditor';
+import { MediaSelector } from '@/components/admin/MediaSelector';
 import { PageSectionsEditor } from '@/components/admin/PageSectionsEditor';
+import { MenuItemsEditor, type MenuItem } from '@/components/admin/MenuItemsEditor/MenuItemsEditor';
 
 interface CollectionEditProps {
   collection: CollectionMeta;
@@ -40,6 +45,7 @@ export function CollectionEdit({ collection, documentId }: CollectionEditProps) 
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   const isPageCollection = collection.slug === 'pages';
+
 
   // Options for relationship fields: slug → list of {id, name/displayName/email}
   const [relationOptions, setRelationOptions] = useState<
@@ -175,6 +181,45 @@ export function CollectionEdit({ collection, documentId }: CollectionEditProps) 
     }
   };
 
+  // ── Publish / Unpublish ────────────────────────────────────────────────────
+  const hasStatusField = collection.fields.some(
+    (f) => f.name === 'status' && f.type === 'select'
+  );
+  const currentStatus = (formData.status as string) ?? 'draft';
+  const isPublished = currentStatus === 'published';
+
+  const handlePublish = async (targetStatus: 'published' | 'draft') => {
+    if (!documentId) return;
+    setIsSaving(true);
+    setSaveError(null);
+    try {
+      const res = await fetch(
+        `/api/admin/collections/${collection.slug}/${documentId}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: targetStatus }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        setSaveError(data.error ?? 'Status update failed');
+        return;
+      }
+      updateField('status', targetStatus);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Network error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Collections that store version history
+  const VERSIONED_COLLECTIONS = ['pages', 'media'];
+  const hasVersions = VERSIONED_COLLECTIONS.includes(collection.slug);
+
   const updateField = (fieldName: string, value: FieldValue) => {
     setFormData((prev) => ({ ...prev, [fieldName]: value }));
   };
@@ -254,23 +299,11 @@ export function CollectionEdit({ collection, documentId }: CollectionEditProps) 
 
     // localizedAs === 'json'
     return (
-      <textarea
+      <JsonCodeEditor
         id={inputId}
-        aria-label={ariaLabel}
-        value={
-          typeof localeValue === 'object' && localeValue !== null
-            ? JSON.stringify(localeValue, null, 2)
-            : String(localeValue)
-        }
-        onChange={(e) => {
-          try {
-            updateLocalizedField(field.name, activeLocale, JSON.parse(e.target.value));
-          } catch {
-            updateLocalizedField(field.name, activeLocale, e.target.value);
-          }
-        }}
-        rows={8}
-        className={cn(baseInput, 'min-h-[120px] font-mono')}
+        value={typeof localeValue === 'object' ? localeValue : null}
+        onChange={(next) => updateLocalizedField(field.name, activeLocale, next)}
+        rows={10}
       />
     );
   };
@@ -421,6 +454,15 @@ export function CollectionEdit({ collection, documentId }: CollectionEditProps) 
         );
 
       case 'json':
+        if (field.adminComponent === 'menu-items') {
+          return (
+            <MenuItemsEditor
+              value={(value ?? []) as unknown as MenuItem[]}
+              onChange={(items) => updateField(field.name, items as unknown as FieldValue)}
+            />
+          );
+        }
+
         if (collection.slug === 'pages' && field.name === 'sections') {
           return (
             <PageSectionsEditor
@@ -451,22 +493,67 @@ export function CollectionEdit({ collection, documentId }: CollectionEditProps) 
         }
 
         return (
-          <textarea
+          <JsonCodeEditor
             id={field.name}
-            value={
-              typeof value === 'object'
-                ? JSON.stringify(value, null, 2)
-                : (value as string) || ''
-            }
-            onChange={(e) => {
-              try {
-                updateField(field.name, JSON.parse(e.target.value));
-              } catch {
-                updateField(field.name, e.target.value);
-              }
-            }}
+            value={value}
+            onChange={(next) => updateField(field.name, next as FieldValue)}
+            rows={10}
+          />
+        );
+
+      case 'group':
+        // Render seo group as individual sub-fields
+        if (collection.slug === 'pages' && field.name === 'seo') {
+          const seoVal = (value as Record<string, unknown>) ?? {};
+          return (
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Meta Title</label>
+                <input
+                  type="text"
+                  value={(seoVal.metaTitle as string) ?? ''}
+                  onChange={(e) => updateField(field.name, { ...seoVal, metaTitle: e.target.value })}
+                  placeholder="Defaults to page title"
+                  className={baseInput}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Meta Description</label>
+                <textarea
+                  title="Meta Description"
+                  value={(seoVal.metaDescription as string) ?? ''}
+                  onChange={(e) => updateField(field.name, { ...seoVal, metaDescription: e.target.value })}
+                  rows={3}
+                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                />
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={(seoVal.noIndex as boolean) ?? false}
+                  onChange={(e) => updateField(field.name, { ...seoVal, noIndex: e.target.checked })}
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+                <span className="text-xs text-muted-foreground">No index (hide from search engines)</span>
+              </label>
+            </div>
+          );
+        }
+        // Generic group — JSON editor fallback
+        return (
+          <JsonCodeEditor
+            id={field.name}
+            value={value}
+            onChange={(next) => updateField(field.name, next as FieldValue)}
             rows={6}
-            className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          />
+        );
+
+      case 'upload':
+        return (
+          <MediaSelector
+            value={value as { id: string; url: string } | null}
+            onChange={(m) => updateField(field.name, m)}
           />
         );
 
@@ -492,6 +579,17 @@ export function CollectionEdit({ collection, documentId }: CollectionEditProps) 
     if (collection.slug === 'blocks' && f.name === 'content') return false;
     return true;
   });
+
+  // For pages, these fields go in the right sidebar (in order)
+  const PAGE_SIDEBAR_FIELDS = ['status', 'parentId', 'order', 'featuredImage', 'seo', 'config'];
+
+  const mainFields = isPageCollection
+    ? visibleFields.filter((f) => !PAGE_SIDEBAR_FIELDS.includes(f.name))
+    : visibleFields;
+
+  const sidebarFields = isPageCollection
+    ? PAGE_SIDEBAR_FIELDS.map((name) => visibleFields.find((f) => f.name === name)).filter(Boolean) as typeof visibleFields
+    : [];
 
   // ── Preview URL (pages only) ─────────────────────────────────────────────
   const previewSlug = isPageCollection
@@ -548,6 +646,15 @@ export function CollectionEdit({ collection, documentId }: CollectionEditProps) 
             </a>
           )}
 
+          {hasVersions && documentId && (
+            <Link href={`/admin/${collection.slug}/${documentId}/history`}>
+              <Button type="button" variant="outline">
+                <Clock className="mr-2 h-4 w-4" />
+                History
+              </Button>
+            </Link>
+          )}
+
           {/* Locale switcher — only shown for collections with localized fields */}
           {hasLocalizedFields && (
             <div className="flex items-center gap-1.5 rounded-md border border-input px-2 py-1">
@@ -601,7 +708,7 @@ export function CollectionEdit({ collection, documentId }: CollectionEditProps) 
       {/* Fields */}
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
-          {visibleFields.map((field) => (
+          {mainFields.map((field) => (
             <div key={field.name} className="space-y-2">
               <label
                 htmlFor={field.localized ? undefined : field.name}
@@ -622,6 +729,24 @@ export function CollectionEdit({ collection, documentId }: CollectionEditProps) 
 
         {/* Sidebar */}
         <div className="space-y-4">
+          {/* Page metadata fields */}
+          {sidebarFields.length > 0 && (
+            <div className="rounded-lg border bg-card p-4 space-y-4">
+              {sidebarFields.map((field) => (
+                <div key={field.name} className="space-y-1.5">
+                  <label
+                    htmlFor={field.localized ? undefined : field.name}
+                    className="text-sm font-medium leading-none"
+                  >
+                    {getFieldLabel(field)}
+                    {field.required && <span className="text-red-500 ml-1">*</span>}
+                  </label>
+                  {renderField(field)}
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Password field for users */}
           {collection.slug === 'users' && (
             <div className="rounded-lg border bg-card p-4 space-y-3">
@@ -641,6 +766,36 @@ export function CollectionEdit({ collection, documentId }: CollectionEditProps) 
           {documentId && (
             <div className="rounded-lg border bg-card p-4 space-y-2">
               <h3 className="font-semibold text-sm">Actions</h3>
+
+              {/* Publish / Unpublish */}
+              {hasStatusField && (
+                isPublished ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start"
+                    onClick={() => handlePublish('draft')}
+                    disabled={isSaving}
+                  >
+                    <GlobeLock className="mr-2 h-4 w-4" />
+                    Unpublish
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start text-green-700 hover:text-green-700 hover:bg-green-50"
+                    onClick={() => handlePublish('published')}
+                    disabled={isSaving}
+                  >
+                    <Globe className="mr-2 h-4 w-4" />
+                    Publish
+                  </Button>
+                )
+              )}
+
               <Button
                 type="button"
                 variant="outline"

@@ -1,6 +1,6 @@
 import { getBlocksByIds } from '@/lib/cms';
 import { getLocale } from '@/lib/locale-utils';
-import { getBlockComponent } from './registry';
+import { getBlockComponent } from '@/blocks/registry';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
