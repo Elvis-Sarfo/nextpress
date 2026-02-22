@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft,
+  Eye,
   PencilLine,
   Save,
   Trash2,
@@ -37,6 +38,8 @@ export function CollectionEdit({ collection, documentId }: CollectionEditProps) 
   const [isLoading, setIsLoading] = useState(!!documentId);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  const isPageCollection = collection.slug === 'pages';
 
   // Options for relationship fields: slug → list of {id, name/displayName/email}
   const [relationOptions, setRelationOptions] = useState<
@@ -490,6 +493,12 @@ export function CollectionEdit({ collection, documentId }: CollectionEditProps) 
     return true;
   });
 
+  // ── Preview URL (pages only) ─────────────────────────────────────────────
+  const previewSlug = isPageCollection
+    ? ((formData.slug as Record<string, string> | null)?.[activeLocale] ?? '')
+    : '';
+  const previewUrl = previewSlug ? `/${activeLocale}/${previewSlug}` : '';
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -498,7 +507,7 @@ export function CollectionEdit({ collection, documentId }: CollectionEditProps) 
     );
   }
 
-  return (
+  const formBody = (
     <form onSubmit={handleSubmit} className="space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -528,6 +537,15 @@ export function CollectionEdit({ collection, documentId }: CollectionEditProps) 
                 Edit Content
               </Button>
             </Link>
+          )}
+
+          {isPageCollection && documentId && previewUrl && (
+            <a href={previewUrl} target="_blank" rel="noreferrer">
+              <Button type="button" variant="outline">
+                <Eye className="mr-2 h-4 w-4" />
+                Preview
+              </Button>
+            </a>
           )}
 
           {/* Locale switcher — only shown for collections with localized fields */}
@@ -639,4 +657,6 @@ export function CollectionEdit({ collection, documentId }: CollectionEditProps) 
       </div>
     </form>
   );
+
+  return formBody;
 }

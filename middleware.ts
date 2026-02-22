@@ -20,6 +20,5 @@ export default auth((req) => {
 });
 
 export const config = {
-  // Cover both the admin UI and the admin API surface
-  matcher: ['/admin', '/admin/:path*', '/api/admin/:path*', '/media', '/media/:path*', '/api/media/:path*'],
+  matcher: ['/admin/:path*', '/api/admin/:path*', '/api/media/:path*', '/media/:path*'],
 };

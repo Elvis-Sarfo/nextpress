@@ -1,3 +1,4 @@
+import { AdminBar } from '@/components/public/AdminBar';
 import Link from 'next/link';
 
 export default function PublicLayout({
@@ -7,6 +8,7 @@ export default function PublicLayout({
 }) {
   return (
     <div className="min-h-screen flex flex-col">
+      <AdminBar />
       {/* Header */}
       <header className="border-b border-border">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -25,7 +27,7 @@ export default function PublicLayout({
               </li>
               <li>
                 <Link
-                  href="/dashboard"
+                  href="/admin"
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Admin

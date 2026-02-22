@@ -1,5 +1,14 @@
-import { getPublishedPosts, getLocalizedField, localeEngine } from '@/lib/cms';
+import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import {
+  getPublishedPage,
+  getPublishedPosts,
+  getLocalizedField,
+  localeEngine,
+} from '@/lib/cms';
+import { getLocale } from '@/lib/locale-utils';
+import { PageRenderer } from '@/components/blocks/PageRenderer';
+import type { Metadata } from 'next';
 
 interface Props {
   params: Promise<{ locale: string }>;
@@ -8,25 +17,35 @@ interface Props {
 export default async function LocaleHomePage({ params }: Props) {
   const { locale } = await params;
 
-  // Validate locale
   if (!localeEngine.isSupported(locale)) {
+    notFound();
+  }
+
+  // Try to find a published page with slug "home" in this locale
+  const homePage = await getPublishedPage(locale, 'home');
+
+  if (homePage) {
+    const hasSections = Array.isArray(homePage.sections) && homePage.sections.length > 0;
+    const title = getLocale(homePage.title as Record<string, string> | null, locale);
+    const excerpt = getLocale(homePage.excerpt as Record<string, string> | null, locale);
     return (
-      <div className="container mx-auto px-4 py-16 text-center">
-        <h1 className="text-2xl font-bold mb-4">Locale Not Found</h1>
-        <p className="text-muted-foreground mb-8">
-          The locale &quot;{locale}&quot; is not available.
-        </p>
-        <Link
-          href={`/${localeEngine.getDefaultLocale()}`}
-          className="text-primary hover:underline"
-        >
-          Go to default locale
-        </Link>
-      </div>
+      <article>
+        {hasSections ? (
+          <PageRenderer sections={homePage.sections} locale={locale} />
+        ) : (
+          <div className="container mx-auto px-4 py-16 max-w-3xl">
+            <h1 className="text-4xl font-bold mb-4">{title ?? 'Home'}</h1>
+            {excerpt && <p className="text-xl text-muted-foreground mt-4">{excerpt}</p>}
+            <p className="text-muted-foreground italic mt-8">
+              No sections yet — add sections via the admin.
+            </p>
+          </div>
+        )}
+      </article>
     );
   }
 
-  // Fetch published posts
+  // Fallback: posts listing
   const posts = await getPublishedPosts(locale, { limit: 20 });
 
   return (
@@ -52,7 +71,6 @@ export default async function LocaleHomePage({ params }: Props) {
         ))}
       </div>
 
-      {/* Published posts */}
       <h2 className="text-2xl font-semibold mb-4">Latest Posts</h2>
       {posts.length === 0 ? (
         <p className="text-muted-foreground">No published posts yet.</p>
@@ -86,7 +104,23 @@ export default async function LocaleHomePage({ params }: Props) {
   );
 }
 
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+
+  if (!localeEngine.isSupported(locale)) return {};
+
+  const homePage = await getPublishedPage(locale, 'home');
+  if (!homePage) return { title: 'Home' };
+
+  const title = getLocale(homePage.title as Record<string, string> | null, locale);
+  const excerpt = getLocale(homePage.excerpt as Record<string, string> | null, locale);
+
+  return {
+    title: title ?? 'Home',
+    description: excerpt ?? undefined,
+  };
+}
+
 export async function generateStaticParams() {
-  const locales = localeEngine.getSupportedLocales();
-  return locales.map((locale) => ({ locale }));
+  return localeEngine.getSupportedLocales().map((locale) => ({ locale }));
 }

@@ -12,6 +12,7 @@ import {
   Plus,
   Search,
   ArrowUpDown,
+  PencilLine,
   Pencil,
   Trash2,
   Loader2,
@@ -230,6 +231,18 @@ export function CollectionList({ collection }: CollectionListProps) {
                     ))}
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        {collection.slug === 'blocks' && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() =>
+                              router.push(`/admin/blocks/${doc.id}/content`)
+                            }
+                            title="Edit Content"
+                          >
+                            <PencilLine className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="icon"
