@@ -29,6 +29,7 @@ import { MediaSelector } from '@/components/admin/MediaSelector';
 import { PageSectionsEditor } from '@/components/admin/PageSectionsEditor';
 import { MenuItemsEditor, type MenuItem } from '@/components/admin/MenuItemsEditor/MenuItemsEditor';
 import { DataSourceBuilder, type DataSourceValue } from '@/components/admin/DataSourceBuilder/DataSourceBuilder';
+import { RichtextEditor } from '@/components/admin/RichtextEditor';
 
 interface CollectionEditProps {
   collection: CollectionMeta;
@@ -46,6 +47,7 @@ export function CollectionEdit({ collection, documentId }: CollectionEditProps) 
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   const isPageCollection = collection.slug === 'pages';
+  const isPostCollection = collection.slug === 'posts';
 
 
   // Options for relationship fields: slug → list of {id, name/displayName/email}
@@ -264,6 +266,17 @@ export function CollectionEdit({ collection, documentId }: CollectionEditProps) 
           definition={formData['contentDefinition']}
           locale={activeLocale}
           onChange={(newContent) => updateLocalizedField(field.name, activeLocale, newContent)}
+        />
+      );
+    }
+
+    // ── Rich text editor for localized richText fields ──────────────────────
+    if (field.type === 'richText') {
+      return (
+        <RichtextEditor
+          value={typeof localeValue === 'string' ? localeValue : ''}
+          onChange={(html) => updateLocalizedField(field.name, activeLocale, html)}
+          placeholder="Start writing your content..."
         />
       );
     }
@@ -512,6 +525,29 @@ export function CollectionEdit({ collection, documentId }: CollectionEditProps) 
           />
         );
 
+      case 'richText':
+        // For Posts collection, use the full-featured WYSIWYG editor
+        if (isPostCollection) {
+          return (
+            <RichtextEditor
+              value={(value as string) || ''}
+              onChange={(html) => updateField(field.name, html)}
+              placeholder="Start writing your post content..."
+            />
+          );
+        }
+        // Fallback to textarea for other collections
+        return (
+          <textarea
+            id={field.name}
+            value={(value as string) || ''}
+            onChange={(e) => updateField(field.name, e.target.value)}
+            required={field.required}
+            rows={8}
+            className="flex min-h-[160px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          />
+        );
+
       case 'group':
         // Render seo group as individual sub-fields
         if (collection.slug === 'pages' && field.name === 'seo') {
@@ -568,6 +604,98 @@ export function CollectionEdit({ collection, documentId }: CollectionEditProps) 
           />
         );
 
+      case 'array': {
+        // For tags field in Posts, render as tag inputs
+        if (isPostCollection && field.name === 'tags') {
+          const items = (value as Array<{ tag?: string }>) ?? [];
+          const tags = items.map((item) => item.tag).filter(Boolean) as string[];
+          
+          const addTag = (tag: string) => {
+            if (tag.trim()) {
+              const newItems = [...items, { tag: tag.trim() }];
+              updateField(field.name, newItems as unknown as FieldValue);
+            }
+          };
+          
+          const removeTag = (index: number) => {
+            const newItems = items.filter((_, i) => i !== index);
+            updateField(field.name, newItems as unknown as FieldValue);
+          };
+          
+          return (
+            <div className="space-y-2">
+              <div className="flex flex-wrap gap-1.5 min-h-[32px]">
+                {tags.map((tag, index) => (
+                  <span
+                    key={index}
+                    className="inline-flex items-center gap-1 px-2 py-1 bg-secondary text-secondary-foreground rounded text-sm"
+                  >
+                    {tag}
+                    <button
+                      type="button"
+                      onClick={() => removeTag(index)}
+                      className="hover:text-destructive"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <input
+                type="text"
+                placeholder="Add tag..."
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addTag((e.target as HTMLInputElement).value);
+                    (e.target as HTMLInputElement).value = '';
+                  }
+                }}
+                onBlur={(e) => {
+                  if (e.target.value.trim()) {
+                    addTag(e.target.value);
+                    e.target.value = '';
+                  }
+                }}
+                className={baseInput}
+              />
+            </div>
+          );
+        }
+        
+        // Default array rendering for other collections
+        const items = (value as unknown as Array<Record<string, unknown>>) ?? [];
+        return (
+          <div className="rounded-md border bg-muted/30 p-3 space-y-2">
+            {items.map((item, index) => (
+              <div key={index} className="flex items-center gap-2">
+                <span className="text-sm flex-1">{JSON.stringify(item)}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newItems = items.filter((_, i) => i !== index);
+                    updateField(field.name, newItems as unknown as FieldValue);
+                  }}
+                  className="text-destructive text-sm hover:underline"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => {
+                const newItems = [...items, {}];
+                updateField(field.name, newItems as unknown as FieldValue);
+              }}
+              className="text-sm text-primary hover:underline"
+            >
+              + Add item
+            </button>
+          </div>
+        );
+      }
+
       default:
         return (
           <input
@@ -594,12 +722,27 @@ export function CollectionEdit({ collection, documentId }: CollectionEditProps) 
   // For pages, these fields go in the right sidebar (in order)
   const PAGE_SIDEBAR_FIELDS = ['status', 'parentId', 'order', 'featuredImage', 'seo', 'config'];
 
+  // For posts, these metadata fields go in the right sidebar (WordPress-style)
+  const POST_SIDEBAR_FIELDS = [
+    'status',
+    'category',
+    'featuredImage',
+    'author',
+    'tags',
+    'publishedAt',
+    'seo',
+  ];
+
   const mainFields = isPageCollection
     ? visibleFields.filter((f) => !PAGE_SIDEBAR_FIELDS.includes(f.name))
+    : isPostCollection
+    ? visibleFields.filter((f) => !POST_SIDEBAR_FIELDS.includes(f.name))
     : visibleFields;
 
   const sidebarFields = isPageCollection
     ? PAGE_SIDEBAR_FIELDS.map((name) => visibleFields.find((f) => f.name === name)).filter(Boolean) as typeof visibleFields
+    : isPostCollection
+    ? POST_SIDEBAR_FIELDS.map((name) => visibleFields.find((f) => f.name === name)).filter(Boolean) as typeof visibleFields
     : [];
 
   // ── Preview URL (pages only) ─────────────────────────────────────────────
@@ -717,31 +860,135 @@ export function CollectionEdit({ collection, documentId }: CollectionEditProps) 
       </div>
 
       {/* Fields */}
-      <div className="grid gap-8 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-6">
-          {mainFields.map((field) => (
-            <div key={field.name} className="space-y-2">
-              <label
-                htmlFor={field.localized ? undefined : field.name}
-                className="text-sm font-medium leading-none"
-              >
-                {getFieldLabel(field)}
-                {field.required && <span className="text-red-500 ml-1">*</span>}
-                {field.localized && (
-                  <span className="ml-2 text-xs text-muted-foreground font-normal">
-                    — {activeLocale.toUpperCase()}
-                  </span>
-                )}
-              </label>
-              {renderField(field)}
+      <div className={isPostCollection ? 'flex gap-8' : 'grid gap-8 lg:grid-cols-3'}>
+        {/* Main Content Area */}
+        <div className={isPostCollection ? 'flex-1 min-w-0' : 'lg:col-span-2 space-y-6'}>
+          {isPostCollection ? (
+            // WordPress-style layout for Posts: stacked with larger rich text editor
+            <div className="space-y-6">
+              {mainFields.map((field) => (
+                <div key={field.name} className={field.name === 'content' ? 'space-y-2' : 'space-y-2'}>
+                  <label
+                    htmlFor={field.localized ? undefined : field.name}
+                    className="text-sm font-medium leading-none"
+                  >
+                    {getFieldLabel(field)}
+                    {field.required && <span className="text-red-500 ml-1">*</span>}
+                    {field.localized && (
+                      <span className="ml-2 text-xs text-muted-foreground font-normal">
+                        — {activeLocale.toUpperCase()}
+                      </span>
+                    )}
+                  </label>
+                  {/* Make content field larger for posts */}
+                  {field.name === 'content' ? (
+                    <div className="[&_.ProseMirror]:min-h-[400px]">
+                      {renderField(field)}
+                    </div>
+                  ) : (
+                    renderField(field)
+                  )}
+                </div>
+              ))}
             </div>
-          ))}
+          ) : (
+            // Default layout for other collections
+            <div className="space-y-6">
+              {mainFields.map((field) => (
+                <div key={field.name} className="space-y-2">
+                  <label
+                    htmlFor={field.localized ? undefined : field.name}
+                    className="text-sm font-medium leading-none"
+                  >
+                    {getFieldLabel(field)}
+                    {field.required && <span className="text-red-500 ml-1">*</span>}
+                    {field.localized && (
+                      <span className="ml-2 text-xs text-muted-foreground font-normal">
+                        — {activeLocale.toUpperCase()}
+                      </span>
+                    )}
+                  </label>
+                  {renderField(field)}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-4">
-          {/* Page metadata fields */}
+        <div className={isPostCollection ? 'w-80 flex-shrink-0 space-y-4' : 'space-y-4'}>
+          {/* Post metadata sidebar - organized in collapsible sections */}
           {sidebarFields.length > 0 && (
+            <div className="rounded-lg border bg-card divide-y">
+              {/* Status Section */}
+              {sidebarFields.find((f) => f.name === 'status') && (
+                <div className="p-4 space-y-3">
+                  <h3 className="font-semibold text-sm flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-green-500" />
+                    Status
+                  </h3>
+                  {renderField(sidebarFields.find((f) => f.name === 'status')!)}
+                </div>
+              )}
+
+              {/* Publication Section */}
+              {(sidebarFields.find((f) => f.name === 'publishedAt') || sidebarFields.find((f) => f.name === 'category')) && (
+                <div className="p-4 space-y-3">
+                  <h3 className="font-semibold text-sm">Publication</h3>
+                  {sidebarFields.find((f) => f.name === 'category') && (
+                    <div className="space-y-1.5">
+                      <label className="text-xs text-muted-foreground">Category</label>
+                      {renderField(sidebarFields.find((f) => f.name === 'category')!)}
+                    </div>
+                  )}
+                  {sidebarFields.find((f) => f.name === 'publishedAt') && (
+                    <div className="space-y-1.5">
+                      <label className="text-xs text-muted-foreground">Publish Date</label>
+                      {renderField(sidebarFields.find((f) => f.name === 'publishedAt')!)}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Media Section */}
+              {sidebarFields.find((f) => f.name === 'featuredImage') && (
+                <div className="p-4 space-y-3">
+                  <h3 className="font-semibold text-sm">Featured Image</h3>
+                  {renderField(sidebarFields.find((f) => f.name === 'featuredImage')!)}
+                </div>
+              )}
+
+              {/* Author Section */}
+              {sidebarFields.find((f) => f.name === 'author') && (
+                <div className="p-4 space-y-3">
+                  <h3 className="font-semibold text-sm">Author</h3>
+                  {renderField(sidebarFields.find((f) => f.name === 'author')!)}
+                </div>
+              )}
+
+              {/* Tags Section */}
+              {sidebarFields.find((f) => f.name === 'tags') && (
+                <div className="p-4 space-y-3">
+                  <h3 className="font-semibold text-sm">Tags</h3>
+                  {renderField(sidebarFields.find((f) => f.name === 'tags')!)}
+                </div>
+              )}
+
+              {/* SEO Section */}
+              {sidebarFields.find((f) => f.name === 'seo') && (
+                <div className="p-4 space-y-3">
+                  <h3 className="font-semibold text-sm flex items-center gap-2">
+                    <span className="text-lg">🔍</span>
+                    SEO
+                  </h3>
+                  {renderField(sidebarFields.find((f) => f.name === 'seo')!)}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Password field for users */}
+          {collection.slug === 'users' && (
             <div className="rounded-lg border bg-card p-4 space-y-4">
               {sidebarFields.map((field) => (
                 <div key={field.name} className="space-y-1.5">
