@@ -18,14 +18,14 @@ export default async function AdminLayout({
   return (
     <ThemeProviderClient>
       <AdminLocaleProvider>
-        <div className="flex flex-col min-h-screen">
+        <div className="h-screen overflow-hidden bg-background [--admin-topbar-height:2.5rem] [--admin-sidebar-width:12rem] xl:[--admin-sidebar-width:13rem]">
           <AdminBar />
-          <div className="flex min-h-screen">
-            <AdminSidebar />
-            <main className="flex-1 overflow-y-auto">
-              <div className="p-8">{children}</div>
-            </main>
-          </div>
+          <AdminSidebar />
+          <main className="fixed right-0 bottom-0 left-0 top-[var(--admin-topbar-height)] z-10 overflow-y-auto md:left-[var(--admin-sidebar-width)]">
+            <div className="px-3 py-3 sm:px-4 sm:py-4 lg:px-5 lg:py-5">
+              {children}
+            </div>
+          </main>
         </div>
       </AdminLocaleProvider>
     </ThemeProviderClient>
