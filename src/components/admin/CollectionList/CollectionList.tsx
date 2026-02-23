@@ -1056,6 +1056,7 @@ export function CollectionList({ collection }: CollectionListProps) {
                     <div className="space-y-1">
                       <label className="text-xs font-medium text-muted-foreground">Duplicate key field</label>
                       <select
+                        aria-label='select'
                         value={importDuplicateField}
                         onChange={(e) => setImportDuplicateField(e.target.value)}
                         className="h-9 w-full rounded border bg-background px-2 text-sm"
@@ -1070,6 +1071,7 @@ export function CollectionList({ collection }: CollectionListProps) {
                     <div className="space-y-1">
                       <label className="text-xs font-medium text-muted-foreground">Duplicate handling</label>
                       <select
+                        aria-label='select'
                         value={importMode}
                         onChange={(e) => setImportMode(e.target.value as ImportMode)}
                         className="h-9 w-full rounded border bg-background px-2 text-sm"
@@ -1095,6 +1097,7 @@ export function CollectionList({ collection }: CollectionListProps) {
                             <td className="px-2 py-2 text-xs font-medium">{header}</td>
                             <td className="px-2 py-2">
                               <select
+                                aria-label='select'
                                 value={importMapping[header] ?? IGNORED_COLUMN}
                                 onChange={(e) =>
                                   setImportMapping((prev) => ({ ...prev, [header]: e.target.value }))
@@ -1166,6 +1169,7 @@ export function CollectionList({ collection }: CollectionListProps) {
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-muted-foreground">Format</label>
                   <select
+                    aria-label='select'
                     value={exportFormat}
                     onChange={(e) => setExportFormat(e.target.value as 'csv' | 'xls' | 'json')}
                     className="h-9 w-full rounded border bg-background px-2 text-sm"
