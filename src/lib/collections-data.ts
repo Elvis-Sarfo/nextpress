@@ -50,6 +50,7 @@ export interface CollectionMeta {
     defaultColumns?: string[];
     /** Group can be a string (group key) or an object with key, label, and order */
     group?: string | { key: string; label: string; order?: number };
+    editorView?: 'page' | 'modal' | 'slider';
     hidden?: boolean;
   };
   fields: CollectionFieldMeta[];
@@ -123,6 +124,7 @@ function extractMeta(config: CollectionConfig): CollectionMeta {
       useAsTitle: config.admin?.useAsTitle,
       defaultColumns: config.admin?.defaultColumns,
       group: typedGroup,
+      editorView: config.admin?.editorView,
       hidden: typeof config.admin?.hidden === 'function' ? false : config.admin?.hidden,
     },
     localization,

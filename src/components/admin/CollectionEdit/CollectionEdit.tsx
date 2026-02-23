@@ -34,11 +34,22 @@ import { RichtextEditor } from '@/components/admin/RichtextEditor';
 interface CollectionEditProps {
   collection: CollectionMeta;
   documentId?: string;
+  mode?: 'page' | 'modal' | 'slider';
+  onSaved?: (doc: Record<string, unknown>) => void;
+  onDeleted?: (id: string) => void;
+  onCancel?: () => void;
 }
 
 type FieldValue = string | number | boolean | string[] | Record<string, unknown> | null;
 
-export function CollectionEdit({ collection, documentId }: CollectionEditProps) {
+export function CollectionEdit({
+  collection,
+  documentId,
+  mode = 'page',
+  onSaved,
+  onDeleted,
+  onCancel,
+}: CollectionEditProps) {
   const router = useRouter();
   const [formData, setFormData] = useState<Record<string, FieldValue>>({});
   const [isSaving, setIsSaving] = useState(false);
@@ -48,6 +59,7 @@ export function CollectionEdit({ collection, documentId }: CollectionEditProps) 
 
   const isPageCollection = collection.slug === 'pages';
   const isPostCollection = collection.slug === 'posts';
+  const isPageMode = mode === 'page';
 
 
   // Options for relationship fields: slug → list of {id, name/displayName/email}
@@ -155,11 +167,14 @@ export function CollectionEdit({ collection, documentId }: CollectionEditProps) 
 
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
+      onSaved?.((data.doc as Record<string, unknown>) ?? {});
 
       if (!documentId) {
-        // Redirect to edit page after creation
-        const newId = (data.doc as Record<string, unknown>).id as string;
-        router.push(`/admin/${collection.slug}/${newId}`);
+        if (isPageMode) {
+          // Redirect to edit page after creation in full-page mode.
+          const newId = (data.doc as Record<string, unknown>).id as string;
+          router.push(`/admin/${collection.slug}/${newId}`);
+        }
       }
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : 'Network error');
@@ -177,7 +192,10 @@ export function CollectionEdit({ collection, documentId }: CollectionEditProps) 
       method: 'DELETE',
     });
     if (res.ok) {
-      router.push(`/admin/${collection.slug}`);
+      onDeleted?.(documentId);
+      if (isPageMode) {
+        router.push(`/admin/${collection.slug}`);
+      }
     } else {
       const data = await res.json();
       alert(data.error ?? 'Delete failed');
@@ -764,13 +782,19 @@ export function CollectionEdit({ collection, documentId }: CollectionEditProps) 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link href={`/admin/${collection.slug}`}>
-            <Button variant="ghost" size="icon" type="button">
-              <ArrowLeft className="h-4 w-4" />
+          {isPageMode ? (
+            <Link href={`/admin/${collection.slug}`}>
+              <Button variant="ghost" size="icon" type="button">
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            </Link>
+          ) : (
+            <Button variant="ghost" size="sm" type="button" onClick={onCancel}>
+              Cancel
             </Button>
-          </Link>
+          )}
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">
+            <h1 className={cn(isPageMode ? 'text-3xl' : 'text-2xl', 'font-bold tracking-tight')}>
               {documentId ? 'Edit' : 'Create'} {collection.labels.singular}
             </h1>
             <p className="text-muted-foreground mt-1">

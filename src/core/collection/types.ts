@@ -379,6 +379,8 @@ export interface CollectionAdmin {
   hidden?: boolean | ((user: CollectionUser) => boolean);
   /** Navigation group - can be a string (group key) or object with key, label, and order */
   group?: string | { key: string; label: string; order?: number };
+  /** Edit UI presentation mode */
+  editorView?: 'page' | 'modal' | 'slider';
   /** Pagination defaults */
   pagination?: {
     defaultLimit?: number;

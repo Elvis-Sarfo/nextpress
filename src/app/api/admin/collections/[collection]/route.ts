@@ -110,24 +110,63 @@ export async function GET(
   const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10));
   const limit = Math.min(100, parseInt(searchParams.get('limit') ?? '20', 10));
   const search = searchParams.get('search') ?? '';
+  const sortField = searchParams.get('sortField') ?? 'createdAt';
+  const sortDir = searchParams.get('sortDir') === 'asc' ? 'asc' : 'desc';
+  const rawFilters = searchParams.get('filters');
 
   const skip = (page - 1) * limit;
 
   const searchableFields = SEARCH_FIELDS[collection] ?? [];
-  const where = search && searchableFields.length > 0
-    ? {
-        OR: searchableFields.map((field) => ({
-          [field]: { contains: search, mode: 'insensitive' },
-        })),
+  let parsedFilters: Record<string, string> = {};
+  if (rawFilters) {
+    try {
+      const candidate = JSON.parse(rawFilters) as Record<string, unknown>;
+      const next: Record<string, string> = {};
+      for (const [k, v] of Object.entries(candidate)) {
+        if (typeof k === 'string' && typeof v === 'string' && v.trim().length > 0) {
+          next[k] = v;
+        }
       }
-    : {};
+      parsedFilters = next;
+    } catch {
+      parsedFilters = {};
+    }
+  }
+
+  const andClauses: Array<Record<string, unknown>> = [];
+  if (search && searchableFields.length > 0) {
+    andClauses.push({
+      OR: searchableFields.map((field) => ({
+        [field]: { contains: search, mode: 'insensitive' },
+      })),
+    });
+  }
+
+  for (const [field, rawValue] of Object.entries(parsedFilters)) {
+    const value = rawValue.trim();
+    if (!value) continue;
+    andClauses.push({
+      [field]: { contains: value, mode: 'insensitive' },
+    });
+  }
+
+  const where = andClauses.length > 0 ? { AND: andClauses } : {};
 
   const include = INCLUDE_MAP[collection];
 
-  const [docs, total] = await Promise.all([
-    model.findMany({ where, skip, take: limit, include, orderBy: { createdAt: 'desc' } }),
-    model.count({ where }),
-  ]);
+  let docs: unknown[] = [];
+  let total = 0;
+  try {
+    [docs, total] = await Promise.all([
+      model.findMany({ where, skip, take: limit, include, orderBy: { [sortField]: sortDir } }),
+      model.count({ where }),
+    ]);
+  } catch {
+    [docs, total] = await Promise.all([
+      model.findMany({ where, skip, take: limit, include, orderBy: { createdAt: 'desc' } }),
+      model.count({ where }),
+    ]);
+  }
 
   // Strip sensitive fields
   if (collection === 'users') {
