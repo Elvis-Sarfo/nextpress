@@ -41,7 +41,7 @@ export const Blocks: CollectionConfig<'blocks'> = {
   admin: {
     useAsTitle: 'name',
     defaultColumns: ['name', 'type', 'templateName', 'status', 'updatedAt'],
-    group: 'Content',
+    group: 'appearance',
   },
 
   access: {

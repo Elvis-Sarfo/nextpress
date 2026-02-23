@@ -199,11 +199,10 @@ export const Settings: CollectionConfig<'settings'> = {
         {
           name: 'description',
           type: 'textarea',
-          required: true,
-          defaultValue:
-            'Leading manufacturer of high-quality agricultural machinery and equipment. Innovation, reliability, and excellence in every product.',
+          localized: true,
           admin: {
-            description: 'Company description',
+            localizedAs: 'textarea',
+            description: 'Company description (localized)',
           },
         },
         {
@@ -304,9 +303,10 @@ export const Settings: CollectionConfig<'settings'> = {
         {
           name: 'placeholder',
           type: 'text',
-          defaultValue: 'Enter your email',
+          localized: true,
           admin: {
-            description: 'Placeholder text for email input',
+            localizedAs: 'text',
+            description: 'Placeholder text for email input (localized)',
           },
         },
       ],

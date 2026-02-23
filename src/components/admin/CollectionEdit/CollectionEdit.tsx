@@ -30,6 +30,7 @@ import { PageSectionsEditor } from '@/components/admin/PageSectionsEditor';
 import { MenuItemsEditor, type MenuItem } from '@/components/admin/MenuItemsEditor/MenuItemsEditor';
 import { DataSourceBuilder, type DataSourceValue } from '@/components/admin/DataSourceBuilder/DataSourceBuilder';
 import { RichtextEditor } from '@/components/admin/RichtextEditor';
+import { GroupFieldEditor } from '@/components/admin/GroupFieldEditor/GroupFieldEditor';
 
 interface CollectionEditProps {
   collection: CollectionMeta;
@@ -567,44 +568,19 @@ export function CollectionEdit({
         );
 
       case 'group':
-        // Render seo group as individual sub-fields
-        if (collection.slug === 'pages' && field.name === 'seo') {
-          const seoVal = (value as Record<string, unknown>) ?? {};
+        // If sub-field metadata is available, render each sub-field natively
+        if (field.fields && field.fields.length > 0) {
           return (
-            <div className="space-y-3">
-              <div className="space-y-1">
-                <label className="text-xs text-muted-foreground">Meta Title</label>
-                <input
-                  type="text"
-                  value={(seoVal.metaTitle as string) ?? ''}
-                  onChange={(e) => updateField(field.name, { ...seoVal, metaTitle: e.target.value })}
-                  placeholder="Defaults to page title"
-                  className={baseInput}
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs text-muted-foreground">Meta Description</label>
-                <textarea
-                  title="Meta Description"
-                  value={(seoVal.metaDescription as string) ?? ''}
-                  onChange={(e) => updateField(field.name, { ...seoVal, metaDescription: e.target.value })}
-                  rows={3}
-                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                />
-              </div>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={(seoVal.noIndex as boolean) ?? false}
-                  onChange={(e) => updateField(field.name, { ...seoVal, noIndex: e.target.checked })}
-                  className="h-4 w-4 rounded border-gray-300"
-                />
-                <span className="text-xs text-muted-foreground">No index (hide from search engines)</span>
-              </label>
-            </div>
+            <GroupFieldEditor
+              field={field}
+              value={(value as Record<string, unknown>) ?? {}}
+              onChange={(updated) => updateField(field.name, updated as FieldValue)}
+              activeLocale={activeLocale}
+              locales={collectionLocales}
+            />
           );
         }
-        // Generic group — JSON editor fallback
+        // Fallback: JSON editor when no sub-field metadata is available
         return (
           <JsonCodeEditor
             id={field.name}

@@ -24,6 +24,7 @@ function derivePrimaryRole(roleNames: string[]): string {
 }
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
+  trustHost: true,
   session: { strategy: 'jwt' },
 
   providers: [

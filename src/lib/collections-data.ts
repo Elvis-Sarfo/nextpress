@@ -3,7 +3,7 @@
  * This is generated from the collection configs
  */
 
-import type { CollectionConfig } from '@/core/collection/types';
+import type { CollectionConfig, Field } from '@/core/collection/types';
 
 // ============================================================================
 // TYPES
@@ -23,6 +23,8 @@ export interface CollectionFieldMeta {
   type: string;
   required?: boolean;
   label?: string;
+  /** Description/hint text shown below the field */
+  description?: string;
   /** For select fields: available options */
   options?: { label: string; value: string }[];
   /** For relationship fields: target collection slug */
@@ -37,6 +39,8 @@ export interface CollectionFieldMeta {
   localizedAs?: 'text' | 'textarea' | 'json';
   /** Custom admin component to render for this field (e.g. 'menu-items') */
   adminComponent?: string;
+  /** Sub-fields for group and array types — drives recursive UI rendering */
+  fields?: CollectionFieldMeta[];
 }
 
 export interface CollectionMeta {
@@ -85,6 +89,46 @@ function getGroupInfo(groupKey: string | undefined): CollectionGroup {
   return { key: groupKey, label: groupKey, order: 99 };
 }
 
+// Recursively convert a Field definition into CollectionFieldMeta
+function mapField(f: Field): CollectionFieldMeta {
+  const meta: CollectionFieldMeta = {
+    name: f.name,
+    type: f.type,
+    required: f.required,
+    label: f.label,
+    hidden: typeof f.admin?.hidden === 'boolean' ? f.admin.hidden : false,
+    localized: f.localized ?? false,
+    localizedAs: (f.admin as { localizedAs?: CollectionFieldMeta['localizedAs'] })?.localizedAs,
+    adminComponent: (f.admin as { component?: string })?.component,
+    description: (f.admin as { description?: string })?.description,
+  };
+
+  if (f.type === 'select') {
+    const sf = f as { options?: { label: string; value: string }[] };
+    if (sf.options) meta.options = sf.options;
+  }
+
+  if (f.type === 'relationship') {
+    const rf = f as { relationTo?: string | string[]; hasMany?: boolean };
+    if (rf.relationTo) {
+      meta.relationTo = Array.isArray(rf.relationTo) ? rf.relationTo[0] : rf.relationTo;
+    }
+    meta.hasMany = (rf.hasMany ?? false);
+  }
+
+  if (f.type === 'upload') {
+    const uf = f as { relationTo?: string };
+    if (uf.relationTo) meta.relationTo = uf.relationTo;
+  }
+
+  if ((f.type === 'group' || f.type === 'array') && 'fields' in f) {
+    const nested = f as { fields: Field[] };
+    meta.fields = nested.fields.map(mapField);
+  }
+
+  return meta;
+}
+
 // Extract metadata from a collection config
 function extractMeta(config: CollectionConfig): CollectionMeta {
   const group = config.admin?.group;
@@ -128,38 +172,7 @@ function extractMeta(config: CollectionConfig): CollectionMeta {
       hidden: typeof config.admin?.hidden === 'function' ? false : config.admin?.hidden,
     },
     localization,
-    fields: config.fields.map((f) => {
-      const meta: CollectionFieldMeta = {
-        name: f.name,
-        type: f.type,
-        required: f.required,
-        label: f.label,
-        hidden: typeof f.admin?.hidden === 'boolean' ? f.admin.hidden : false,
-        localized: f.localized ?? false,
-        localizedAs: (f.admin as { localizedAs?: CollectionFieldMeta['localizedAs'] })?.localizedAs,
-        adminComponent: (f.admin as { component?: string })?.component,
-      };
-
-      if (f.type === 'select') {
-        const sf = f as { options?: { label: string; value: string }[] };
-        if (sf.options) meta.options = sf.options;
-      }
-
-      if (f.type === 'relationship') {
-        const rf = f as { relationTo?: string | string[]; hasMany?: boolean };
-        if (rf.relationTo) {
-          meta.relationTo = Array.isArray(rf.relationTo) ? rf.relationTo[0] : rf.relationTo;
-        }
-        meta.hasMany = rf.hasMany ?? false;
-      }
-
-      if (f.type === 'upload') {
-        const uf = f as { relationTo?: string };
-        if (uf.relationTo) meta.relationTo = uf.relationTo;
-      }
-
-      return meta;
-    }),
+    fields: config.fields.map(mapField),
   };
 }
 

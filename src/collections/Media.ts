@@ -24,7 +24,7 @@ export const Media: CollectionConfig<'media'> = {
   admin: {
     useAsTitle: 'filename',
     defaultColumns: ['filename', 'mimeType', 'size', 'storageProvider', 'uploadedAt'],
-    group: 'Content',
+    group: 'media',
   },
 
   access: {

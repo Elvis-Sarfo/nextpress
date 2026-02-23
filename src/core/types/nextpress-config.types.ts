@@ -94,6 +94,83 @@ export interface NextPressStorageConfig {
   };
 }
 
+// ============================================================================
+// ADMIN UI CONFIG
+// ============================================================================
+
+/** A single sidebar navigation group definition */
+export interface NextPressAdminSidebarGroupConfig {
+  /** Matches the group key used in collection.admin.group */
+  key: string;
+  /** Display label shown in the sidebar */
+  label?: string;
+  /**
+   * Lucide-react icon name (PascalCase).
+   * E.g. 'Users', 'FileText', 'Settings', 'Image'
+   */
+  icon?: string;
+  /** Sort order — lower numbers appear higher in the sidebar */
+  order?: number;
+  /** Whether the group starts collapsed (default: false) */
+  defaultCollapsed?: boolean;
+}
+
+/** Per-collection sidebar overrides */
+export interface NextPressAdminSidebarCollectionConfig {
+  /** Override the display label */
+  label?: string;
+  /** Lucide-react icon name (PascalCase) */
+  icon?: string | null;
+  /** Hide this collection from the sidebar entirely */
+  hidden?: boolean;
+  /** Show the "Add New" sub-item (default: true) */
+  showAddNew?: boolean;
+  /**
+   * Nest this collection inside another collection's menu item.
+   * Provide the parent collection's slug (e.g. 'posts').
+   * The collection is removed from its natural group position
+   * and rendered as a collapsible sub-menu under the specified parent.
+   */
+  parent?: string;
+}
+
+/** A custom link entry in the sidebar */
+export interface NextPressAdminSidebarLinkConfig {
+  /** Display label */
+  label: string;
+  /** Target URL */
+  href: string;
+  /** Lucide-react icon name (PascalCase) */
+  icon?: string;
+  /** Opens link in a new tab */
+  external?: boolean;
+}
+
+export interface NextPressAdminSidebarConfig {
+  /**
+   * Navigation group definitions — controls labels, icons, and sort order.
+   * Keys must match collection.admin.group.key values.
+   */
+  groups?: NextPressAdminSidebarGroupConfig[];
+  /**
+   * Per-collection overrides (keyed by collection slug).
+   * Control icons, labels, visibility, and sub-item presence.
+   */
+  collections?: Record<string, NextPressAdminSidebarCollectionConfig>;
+  /**
+   * Custom links rendered at the top of the sidebar (after Dashboard).
+   */
+  topLinks?: NextPressAdminSidebarLinkConfig[];
+  /**
+   * Custom links rendered at the bottom of the sidebar (alongside "View Site").
+   */
+  footerLinks?: NextPressAdminSidebarLinkConfig[];
+}
+
+export interface NextPressAdminConfig {
+  sidebar?: NextPressAdminSidebarConfig;
+}
+
 export interface NextPressConfig {
   collections: CollectionConfig[];
   secret?: string;
@@ -102,4 +179,6 @@ export interface NextPressConfig {
   storage?: NextPressStorageConfig;
   localization?: NextPressLocalizationConfig;
   schema?: NextPressSchemaConfig;
+  /** Admin UI configuration (sidebar layout, icons, custom links) */
+  admin?: NextPressAdminConfig;
 }

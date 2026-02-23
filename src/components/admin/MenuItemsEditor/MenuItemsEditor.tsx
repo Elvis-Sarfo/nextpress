@@ -119,6 +119,7 @@ function PagePicker({ value, onChange }: { value: string; onChange: (id: string,
 
   return (
     <select
+      aria-label='select'
       value={value}
       onChange={(e) => {
         const found = pages.find((p) => p.id === e.target.value);

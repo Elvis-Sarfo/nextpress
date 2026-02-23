@@ -649,3 +649,50 @@ export function getLocalizedField<T extends { locales: Array<{ locale: string }>
   if (localeData) return localeData;
   return content.locales.find((l) => l.locale === fallbackLocale);
 }
+
+// ============================================================================
+// SETTINGS
+// ============================================================================
+
+/** In-memory cache: { doc, expiresAt } */
+let _settingsCache: { doc: Record<string, unknown>; expiresAt: number } | null = null;
+const SETTINGS_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+/** Invalidate the in-memory settings cache (call after a settings save). */
+export function invalidateSettingsCache(): void {
+  _settingsCache = null;
+}
+
+/**
+ * Returns the active settings document as a plain object.
+ * Results are cached in memory for 5 minutes to avoid repeated DB hits.
+ */
+export async function getSettings(): Promise<Record<string, unknown>> {
+  const now = Date.now();
+  if (_settingsCache && _settingsCache.expiresAt > now) {
+    return _settingsCache.doc;
+  }
+
+  const row = await prisma.settings.findFirst({
+    orderBy: { createdAt: 'asc' },
+  });
+
+  const doc = (row ?? {}) as Record<string, unknown>;
+  _settingsCache = { doc, expiresAt: now + SETTINGS_CACHE_TTL_MS };
+  return doc;
+}
+
+/**
+ * Returns a single settings value by dot-path (e.g. `'contact.email'`).
+ * Returns `undefined` if the path doesn't exist.
+ */
+export async function getSetting<T = unknown>(path: string): Promise<T | undefined> {
+  const doc = await getSettings();
+  const parts = path.split('.');
+  let current: unknown = doc;
+  for (const part of parts) {
+    if (current == null || typeof current !== 'object') return undefined;
+    current = (current as Record<string, unknown>)[part];
+  }
+  return current as T;
+}

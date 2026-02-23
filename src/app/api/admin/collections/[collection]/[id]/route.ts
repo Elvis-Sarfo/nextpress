@@ -10,6 +10,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/adapters/prisma-adapter';
 import bcrypt from 'bcryptjs';
 import { invalidatePrincipalCache } from '@/lib/rbac-service';
+import { invalidateSettingsCache } from '@/lib/cms';
 
 const INCLUDE_MAP: Record<string, object> = {
   users: { roles: { select: { id: true, name: true, displayName: true } } },
@@ -213,6 +214,10 @@ export async function PUT(
     // Invalidate RBAC cache so the next request picks up fresh roles
     if (collection === 'users') {
       invalidatePrincipalCache(id);
+    }
+    // Invalidate settings cache when settings are updated
+    if (collection === 'settings') {
+      invalidateSettingsCache();
     }
     // If a role's permissions changed, invalidate all users who hold this role
     if (collection === 'roles') {

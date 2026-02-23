@@ -34,7 +34,7 @@ export const Menus: CollectionConfig<'menus'> = {
   admin: {
     useAsTitle: 'name',
     defaultColumns: ['name', 'location', 'updatedAt'],
-    group: 'Content',
+    group: 'appearance',
   },
 
   access: {
