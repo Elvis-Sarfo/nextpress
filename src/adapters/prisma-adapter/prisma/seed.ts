@@ -248,6 +248,77 @@ async function main() {
   });
 
   console.log(`  Pages: home (${homeDocId}), about (${aboutDocId})`);
+
+  // ── 5. Sample categories ─────────────────────────────────────────────────
+  console.log('Creating sample categories…');
+
+  const blogCategory = await prisma.categories.upsert({
+    where: { name: 'Blog' },
+    update: {},
+    create: {
+      name: 'Blog',
+      slug: { en: 'blog', fr: 'blog' },
+      description: { en: 'Articles and tutorials', fr: 'Articles et tutoriels' },
+      color: '#3B82F6',
+      status: 'published',
+      createdBy: 'system',
+    },
+  });
+
+  const newsCategory = await prisma.categories.upsert({
+    where: { name: 'News' },
+    update: {},
+    create: {
+      name: 'News',
+      slug: { en: 'news', fr: 'actualites' },
+      description: { en: 'Latest news and announcements', fr: 'Dernières nouvelles et annonces' },
+      color: '#10B981',
+      status: 'published',
+      createdBy: 'system',
+    },
+  });
+
+  console.log(`  Categories: Blog (${blogCategory.id}), News (${newsCategory.id})`);
+
+  // ── 6. Sample posts ───────────────────────────────────────────────────────
+  console.log('Creating sample posts…');
+
+  const post1DocId = randomUUID();
+  const post2DocId = randomUUID();
+
+  await prisma.posts.upsert({
+    where: { documentId_status: { documentId: post1DocId, status: 'published' } },
+    update: {},
+    create: {
+      documentId: post1DocId,
+      status: 'published',
+      title:   { en: 'Welcome to the NextPress Blog', fr: 'Bienvenue sur le blog NextPress' },
+      slug:    { en: 'welcome-to-nextpress-blog', fr: 'bienvenue-sur-le-blog-nextpress' },
+      excerpt: { en: 'Get started with NextPress, the headless CMS built for developers.', fr: 'Démarrez avec NextPress, le CMS headless conçu pour les développeurs.' },
+      content: { en: { type: 'doc', content: [] }, fr: { type: 'doc', content: [] } },
+      categoryId: blogCategory.id,
+      publishedAt: new Date(),
+      createdBy: 'system',
+    },
+  });
+
+  await prisma.posts.upsert({
+    where: { documentId_status: { documentId: post2DocId, status: 'published' } },
+    update: {},
+    create: {
+      documentId: post2DocId,
+      status: 'published',
+      title:   { en: 'NextPress 1.0 Released', fr: 'NextPress 1.0 est sorti' },
+      slug:    { en: 'nextpress-1-0-released', fr: 'nextpress-1-0-sorti' },
+      excerpt: { en: 'We are excited to announce the release of NextPress 1.0.', fr: 'Nous sommes ravis d\'annoncer la sortie de NextPress 1.0.' },
+      content: { en: { type: 'doc', content: [] }, fr: { type: 'doc', content: [] } },
+      categoryId: newsCategory.id,
+      publishedAt: new Date(),
+      createdBy: 'system',
+    },
+  });
+
+  console.log('  Posts: 2 sample posts created');
   console.log('Database seeded successfully!');
 }
 

@@ -17,13 +17,24 @@ const INCLUDE_MAP: Record<string, object> = {
   users: { roles: { select: { id: true, name: true, displayName: true } } },
   roles: { permissions: { select: { id: true, name: true, resource: true, action: true, scope: true } } },
   pages: { featuredImage: { select: { id: true, url: true, altText: true } } },
+  posts: {
+    category: { select: { id: true, name: true, color: true } },
+    featuredImage: { select: { id: true, url: true, altText: true } },
+    author: { select: { id: true, name: true, email: true } },
+  },
+  comments: {
+    author: { select: { id: true, name: true, email: true } },
+  },
 };
 
 // Allowed collection slugs that this API handles
-const ALLOWED = new Set(['users', 'roles', 'permissions', 'media', 'pages', 'settings', 'blocks', 'menus']);
+const ALLOWED = new Set([
+  'users', 'roles', 'permissions', 'media', 'pages', 'settings', 'blocks', 'menus',
+  'categories', 'posts', 'comments',
+]);
 
 // Fields to use for full-text search per collection (only plain String fields)
-// Note: pages.title and pages.slug are now Json — omitted from search until JSON search is implemented
+// Note: pages/posts title and slug are Json — omitted from search until JSON search is implemented
 const SEARCH_FIELDS: Record<string, string[]> = {
   users: ['name', 'email'],
   roles: ['name', 'displayName', 'description'],
@@ -33,6 +44,9 @@ const SEARCH_FIELDS: Record<string, string[]> = {
   settings: ['siteName'],
   blocks: ['name', 'templateName'],
   menus: ['name', 'location'],
+  categories: ['name'],
+  posts: [],
+  comments: ['authorName', 'authorEmail', 'content'],
 };
 
 function supportsBlocksContentDefinition(): boolean {
@@ -45,6 +59,18 @@ function supportsBlocksContentDefinition(): boolean {
   const model = runtime?.models?.blocks ?? runtime?.models?.Blocks;
   if (!model?.fields) return true;
   return model.fields.some((field) => field.name === 'contentDefinition');
+}
+
+function supportsBlocksDataSource(): boolean {
+  const runtime = (prisma as unknown as {
+    _runtimeDataModel?: {
+      models?: Record<string, { fields?: Array<{ name?: string }> }>;
+    };
+  })._runtimeDataModel;
+
+  const model = runtime?.models?.blocks ?? runtime?.models?.Blocks;
+  if (!model?.fields) return true;
+  return model.fields.some((field) => field.name === 'dataSource');
 }
 
 function getPrismaModel(collection: string) {
@@ -149,29 +175,51 @@ export async function POST(
     if (!supportsBlocksContentDefinition()) {
       delete body.contentDefinition;
     }
-  }
-
-  // For pages: remap the relation field name to the scalar FK accepted by Prisma
-  if (collection === 'pages' && Object.prototype.hasOwnProperty.call(body, 'featuredImage')) {
-    const fi = body.featuredImage;
-    if (fi === null || fi === undefined) {
-      body.featuredImageId = null;
-    } else if (typeof fi === 'string') {
-      body.featuredImageId = fi;
-    } else if (typeof fi === 'object' && fi !== null && 'id' in (fi as Record<string, unknown>)) {
-      body.featuredImageId = (fi as Record<string, unknown>).id;
+    if (!supportsBlocksDataSource()) {
+      delete body.dataSource;
     }
-    delete body.featuredImage;
   }
 
-  // Enforce per-locale slug uniqueness for pages (Json column can't use DB unique index)
-  if (collection === 'pages' && body.slug && typeof body.slug === 'object') {
+  // Remap relation object/id to scalar FK for pages and posts
+  for (const col of ['pages', 'posts'] as const) {
+    if (collection === col && Object.prototype.hasOwnProperty.call(body, 'featuredImage')) {
+      const fi = body.featuredImage;
+      body.featuredImageId = fi === null || fi === undefined ? null
+        : typeof fi === 'string' ? fi
+        : typeof fi === 'object' && 'id' in (fi as Record<string, unknown>) ? (fi as Record<string, unknown>).id
+        : null;
+      delete body.featuredImage;
+    }
+  }
+
+  // Posts: remap category and author relation objects to scalar FKs
+  if (collection === 'posts') {
+    if (Object.prototype.hasOwnProperty.call(body, 'category')) {
+      const cat = body.category;
+      body.categoryId = cat === null || cat === undefined ? null
+        : typeof cat === 'string' ? cat
+        : typeof cat === 'object' && 'id' in (cat as Record<string, unknown>) ? (cat as Record<string, unknown>).id
+        : null;
+      delete body.category;
+    }
+    if (Object.prototype.hasOwnProperty.call(body, 'author')) {
+      const au = body.author;
+      body.authorId = au === null || au === undefined ? null
+        : typeof au === 'string' ? au
+        : typeof au === 'object' && 'id' in (au as Record<string, unknown>) ? (au as Record<string, unknown>).id
+        : null;
+      delete body.author;
+    }
+  }
+
+  // Enforce per-locale slug uniqueness for pages and posts (Json column can't use DB unique index)
+  if ((collection === 'pages' || collection === 'posts') && body.slug && typeof body.slug === 'object') {
     const slugEntries = Object.entries(body.slug as Record<string, string>);
     for (const [locale, localeSlug] of slugEntries) {
       if (!localeSlug) continue;
-      const existing = await prisma.pages.findFirst({
-        where: { slug: { path: [locale], equals: localeSlug } },
-      });
+      const existing = collection === 'pages'
+        ? await prisma.pages.findFirst({ where: { slug: { path: [locale], equals: localeSlug } } })
+        : await prisma.posts.findFirst({ where: { slug: { path: [locale], equals: localeSlug } } });
       if (existing) {
         return NextResponse.json(
           { error: `Slug "${localeSlug}" is already in use for locale "${locale}"` },
@@ -179,6 +227,11 @@ export async function POST(
         );
       }
     }
+  }
+
+  // Comments: default status to 'pending' if not provided
+  if (collection === 'comments' && !body.status) {
+    body.status = 'pending';
   }
 
   // Extract many-to-many relation arrays before building data

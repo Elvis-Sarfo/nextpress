@@ -3,7 +3,6 @@ import Link from 'next/link';
 import {
   getPublishedPage,
   getPublishedPosts,
-  getLocalizedField,
   localeEngine,
 } from '@/lib/cms';
 import { getLocale } from '@/lib/locale-utils';
@@ -77,19 +76,21 @@ export default async function LocaleHomePage({ params }: Props) {
       ) : (
         <div className="grid gap-4">
           {posts.map((post) => {
-            const localeData = getLocalizedField(post, locale);
-            if (!localeData) return null;
+            const title = getLocale(post.title as Record<string, string> | null, locale);
+            const slug = getLocale(post.slug as Record<string, string> | null, locale);
+            const excerpt = getLocale(post.excerpt as Record<string, string> | null, locale);
+            if (!slug) return null;
 
             return (
               <Link
                 key={post.id}
-                href={`/${locale}/${localeData.slug}`}
+                href={`/${locale}/${slug}`}
                 className="block p-6 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors"
               >
                 <p className="text-xs text-muted-foreground mb-1">Post</p>
-                <h3 className="font-semibold">{localeData.title}</h3>
-                {localeData.excerpt && (
-                  <p className="text-sm text-muted-foreground mt-2">{localeData.excerpt}</p>
+                <h3 className="font-semibold">{title}</h3>
+                {excerpt && (
+                  <p className="text-sm text-muted-foreground mt-2">{excerpt}</p>
                 )}
                 <p className="text-sm text-muted-foreground mt-2">
                   Published{' '}

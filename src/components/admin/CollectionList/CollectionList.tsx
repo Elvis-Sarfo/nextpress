@@ -163,6 +163,11 @@ export function CollectionList({ collection }: CollectionListProps) {
     if (field.name.endsWith('At')) {
       return new Date(val as string).toLocaleDateString();
     }
+    // Single relationship object — extract a human-readable label
+    if (typeof val === 'object' && val !== null) {
+      const item = val as Record<string, unknown>;
+      return String(item.displayName ?? item.name ?? item.email ?? item.id ?? '—');
+    }
     return String(val);
   };
 

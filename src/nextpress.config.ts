@@ -1,41 +1,14 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 import type { NextPressConfig } from './core/types'
-
-// System collections
-import { Users } from './collections/Users'
-import { Roles } from './collections/Roles'
-import { Permissions } from './collections/Permissions'
-
-// Content collections
-import { Media } from './collections/Media'
-import { Pages } from './collections/Pages'
-import { Blocks } from './collections/Blocks'
-import { Menus } from './collections/Menus'
-
-// Settings collection
-import { Settings } from './collections/Settings'
+import { collections } from './collections/index'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
 const config = {
-  // Collections to register
-  collections: [
-    // System collections (no localization)
-    Users,
-    Roles,
-    Permissions,
-
-    // Content collections
-    Media,
-    Pages,
-    Blocks,
-    Menus,
-
-    // Settings
-    Settings,
-  ],
+  // Collections to register — edit src/collections/index.ts to add/remove collections
+  collections,
 
   // Secret for authentication
   secret: process.env.PAYLOAD_SECRET || '',

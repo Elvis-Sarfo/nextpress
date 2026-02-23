@@ -22,6 +22,7 @@ import { contactManifest }       from './manifests/contact';
 import { subscribeManifest }     from './manifests/subscribe';
 import { featuredRoomsManifest } from './manifests/featured-rooms';
 import { showcaseManifest }      from './manifests/showcase';
+import { postListManifest }      from './manifests/post-list';
 
 const BUILT_IN_MANIFESTS: BlockManifest[] = [
   heroManifest,
@@ -35,6 +36,7 @@ const BUILT_IN_MANIFESTS: BlockManifest[] = [
   subscribeManifest,
   featuredRoomsManifest,
   showcaseManifest,
+  postListManifest,
 ];
 
 const registry = new Map<string, BlockManifest>();

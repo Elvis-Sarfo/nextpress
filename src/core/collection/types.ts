@@ -515,6 +515,12 @@ export interface CollectionConfig<
     singularName?: string;
     pluralName?: string;
   } | false;
+
+  /** Whether this collection supports comments */
+  comments?: boolean;
+
+  /** Set to false to exclude from block data-source queries (default: queryable) */
+  queryable?: false;
 }
 
 export interface CollectionIndex {

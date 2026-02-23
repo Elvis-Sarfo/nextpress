@@ -43,16 +43,45 @@ export function buildCommentTree(
 export type { Principal } from '@/core/permissions/types';
 
 // ============================================================================
-// PLACEHOLDER TYPES for models not yet in the generated schema
-// These functions compile but will throw at runtime until the models are added.
+// CONTENT TYPES
 // ============================================================================
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type PageWithLocales = any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type PostWithLocales = any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type NewsWithLocales = any;
+
+export interface Category {
+  id: string;
+  name: string;
+  slug: Record<string, string> | null;
+  description?: Record<string, string> | null;
+  color?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface PostWithLocales {
+  id: string;
+  documentId?: string | null;
+  title: Record<string, string>;
+  slug: Record<string, string>;
+  excerpt?: Record<string, string> | null;
+  content?: Record<string, unknown> | null;
+  categoryId?: string | null;
+  category?: Category | null;
+  featuredImageId?: string | null;
+  featuredImage?: { id: string; url: string; altText?: string | null } | null;
+  authorId?: string | null;
+  author?: { id: string; name: string; email: string } | null;
+  tags?: unknown[] | null;
+  publishedAt?: Date | null;
+  status: string;
+  seo?: Record<string, unknown> | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/** News is Posts — kept as an alias so existing callers stay compatible */
+export type NewsWithLocales = PostWithLocales;
 export interface MenuItem {
   id: string;
   label: string;
@@ -71,12 +100,6 @@ export interface MenuWithItems {
   location?: string | null;
   items: MenuItem[];
 }
-
-// LinkCollection / Link — not yet implemented (no DB table)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type LinkCollection = any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type Link = any;
 
 // ============================================================================
 // LOCALE ENGINE
@@ -224,75 +247,159 @@ export async function getUserCount(): Promise<number> {
 }
 
 // ============================================================================
-// POSTS / NEWS / MENUS / LINKS — not yet in the generated schema.
-// Stubs return empty results so callers don't crash at import time.
+// CATEGORIES
 // ============================================================================
 
-export async function getPosts(_options?: {
+export async function getCategories(): Promise<Category[]> {
+  return prisma.categories.findMany({ orderBy: { name: 'asc' } }) as unknown as Category[];
+}
+
+export async function getCategory(id: string): Promise<Category | null> {
+  return prisma.categories.findUnique({ where: { id } }) as unknown as Category | null;
+}
+
+export async function getCategoryBySlug(
+  locale: string,
+  slug: string
+): Promise<Category | null> {
+  return prisma.categories.findFirst({
+    where: { slug: { path: [locale], equals: slug } },
+  }) as unknown as Category | null;
+}
+
+// ============================================================================
+// POSTS
+// ============================================================================
+
+const POST_INCLUDE = {
+  category: { select: { id: true, name: true, slug: true, color: true } },
+  featuredImage: { select: { id: true, url: true, altText: true } },
+  author: { select: { id: true, name: true, email: true } },
+};
+
+export async function getPosts(options?: {
   limit?: number;
   offset?: number;
   status?: ContentStatus;
+  categoryId?: string;
 }): Promise<{ posts: PostWithLocales[]; total: number }> {
-  return { posts: [], total: 0 };
+  const where = {
+    ...(options?.status ? { status: options.status } : {}),
+    ...(options?.categoryId ? { categoryId: options.categoryId } : {}),
+  };
+  const [posts, total] = await Promise.all([
+    prisma.posts.findMany({
+      where,
+      take: options?.limit ?? 20,
+      skip: options?.offset ?? 0,
+      include: POST_INCLUDE,
+      orderBy: { publishedAt: 'desc' },
+    }),
+    prisma.posts.count({ where }),
+  ]);
+  return { posts: posts as unknown as PostWithLocales[], total };
 }
 
-export async function getPost(_id: string): Promise<PostWithLocales | null> {
-  return null;
+export async function getPost(id: string): Promise<PostWithLocales | null> {
+  return prisma.posts.findUnique({ where: { id }, include: POST_INCLUDE }) as unknown as PostWithLocales | null;
 }
 
 export async function getPostByDocumentId(
-  _documentId: string,
-  _status?: ContentStatus
+  documentId: string,
+  status?: ContentStatus
 ): Promise<PostWithLocales | null> {
-  return null;
+  return prisma.posts.findFirst({
+    where: { documentId, ...(status ? { status } : {}) },
+    include: POST_INCLUDE,
+  }) as unknown as PostWithLocales | null;
 }
 
 export async function getPublishedPost(
-  _locale: string,
-  _slug: string
+  locale: string,
+  slug: string
 ): Promise<PostWithLocales | null> {
-  return null;
+  return prisma.posts.findFirst({
+    where: {
+      status: 'published',
+      slug: { path: [locale], equals: slug },
+    },
+    include: POST_INCLUDE,
+  }) as unknown as PostWithLocales | null;
 }
 
 export async function getPublishedPosts(
   _locale: string,
-  _options?: { limit?: number; offset?: number }
+  options?: { limit?: number; offset?: number }
 ): Promise<PostWithLocales[]> {
-  return [];
+  const posts = await prisma.posts.findMany({
+    where: { status: 'published' },
+    take: options?.limit ?? 20,
+    skip: options?.offset ?? 0,
+    include: POST_INCLUDE,
+    orderBy: { publishedAt: 'desc' },
+  });
+  return posts as unknown as PostWithLocales[];
 }
 
-export async function getNews(_options?: {
+export async function getPostsByCategory(
+  locale: string,
+  categorySlug: string,
+  options?: { limit?: number; offset?: number }
+): Promise<PostWithLocales[]> {
+  const category = await getCategoryBySlug(locale, categorySlug);
+  if (!category) return [];
+  const posts = await prisma.posts.findMany({
+    where: { status: 'published', categoryId: category.id },
+    take: options?.limit ?? 20,
+    skip: options?.offset ?? 0,
+    include: POST_INCLUDE,
+    orderBy: { publishedAt: 'desc' },
+  });
+  return posts as unknown as PostWithLocales[];
+}
+
+// ============================================================================
+// NEWS — alias to Posts; news = posts with a "News" category
+// Kept for backwards compatibility with existing callers.
+// ============================================================================
+
+export async function getNews(options?: {
   limit?: number;
   offset?: number;
   status?: ContentStatus;
   category?: string;
 }): Promise<{ news: NewsWithLocales[]; total: number }> {
-  return { news: [], total: 0 };
+  const { posts, total } = await getPosts({
+    limit: options?.limit,
+    offset: options?.offset,
+    status: options?.status,
+  });
+  return { news: posts, total };
 }
 
-export async function getNewsItem(_id: string): Promise<NewsWithLocales | null> {
-  return null;
+export async function getNewsItem(id: string): Promise<NewsWithLocales | null> {
+  return getPost(id);
 }
 
 export async function getNewsByDocumentId(
-  _documentId: string,
-  _status?: ContentStatus
+  documentId: string,
+  status?: ContentStatus
 ): Promise<NewsWithLocales | null> {
-  return null;
+  return getPostByDocumentId(documentId, status);
 }
 
 export async function getPublishedNewsItem(
-  _locale: string,
-  _slug: string
+  locale: string,
+  slug: string
 ): Promise<NewsWithLocales | null> {
-  return null;
+  return getPublishedPost(locale, slug);
 }
 
 export async function getNewsByCategory(
-  _category: string,
-  _options?: { limit?: number; offset?: number }
+  categorySlug: string,
+  options?: { limit?: number; offset?: number }
 ): Promise<NewsWithLocales[]> {
-  return [];
+  return getPostsByCategory('en', categorySlug, options);
 }
 
 // ── Navigation helpers ────────────────────────────────────────────────────────
@@ -380,64 +487,153 @@ export async function getMenuItems(menuId: string): Promise<MenuItem[]> {
   return menu?.items ?? [];
 }
 
-export async function getLinkCollections(): Promise<LinkCollection[]> {
-  return [];
-}
-
-export async function getLinkCollection(_id: string): Promise<LinkCollection | null> {
-  return null;
-}
-
-export async function getLinkCollectionByName(
-  _name: string
-): Promise<LinkCollection | null> {
-  return null;
-}
-
-export async function getLinksByCollection(_collectionId: string): Promise<Link[]> {
-  return [];
-}
-
 // ============================================================================
-// COMMENTS — stubs until Comment model is in the schema
+// COMMENTS
 // ============================================================================
+
+const COMMENT_INCLUDE = {
+  author: { select: { id: true, name: true } },
+};
+
+async function fetchContentComments(
+  contentType: 'pages' | 'posts',
+  contentId: string,
+  options?: { status?: CommentStatus; limit?: number; offset?: number }
+): Promise<CommentWithReplies[]> {
+  const flat = await prisma.comments.findMany({
+    where: {
+      contentType,
+      contentId,
+      status: options?.status ?? 'approved',
+    },
+    take: options?.limit ?? 100,
+    skip: options?.offset ?? 0,
+    include: COMMENT_INCLUDE,
+    orderBy: { createdAt: 'asc' },
+  });
+  return buildCommentTree(flat as unknown as Comment[]);
+}
 
 export async function getCommentsByStatus(
-  _status: CommentStatus,
-  _options?: { limit?: number; offset?: number }
+  status: CommentStatus,
+  options?: { limit?: number; offset?: number }
 ): Promise<Comment[]> {
-  return [];
+  return prisma.comments.findMany({
+    where: { status },
+    take: options?.limit ?? 50,
+    skip: options?.offset ?? 0,
+    include: COMMENT_INCLUDE,
+    orderBy: { createdAt: 'desc' },
+  }) as unknown as Comment[];
 }
 
 export async function getPageComments(
-  _pageId: string,
-  _options?: { status?: CommentStatus; limit?: number; offset?: number }
+  pageId: string,
+  options?: { status?: CommentStatus; limit?: number; offset?: number }
 ): Promise<CommentWithReplies[]> {
-  return [];
+  return fetchContentComments('pages', pageId, options);
 }
 
 export async function getPostComments(
-  _postId: string,
-  _options?: { status?: CommentStatus; limit?: number; offset?: number }
+  postId: string,
+  options?: { status?: CommentStatus; limit?: number; offset?: number }
 ): Promise<CommentWithReplies[]> {
-  return [];
+  return fetchContentComments('posts', postId, options);
 }
 
+/** @deprecated News is now Posts — use getPostComments instead */
 export async function getNewsComments(
-  _newsId: string,
-  _options?: { status?: CommentStatus; limit?: number; offset?: number }
+  newsId: string,
+  options?: { status?: CommentStatus; limit?: number; offset?: number }
 ): Promise<CommentWithReplies[]> {
-  return [];
+  return fetchContentComments('posts', newsId, options);
 }
 
 export async function getPendingComments(
-  _options?: { limit?: number; offset?: number }
+  options?: { limit?: number; offset?: number }
 ): Promise<Comment[]> {
-  return [];
+  return getCommentsByStatus('pending', options);
 }
 
 export async function getPendingCommentCount(): Promise<number> {
-  return 0;
+  return prisma.comments.count({ where: { status: 'pending' } });
+}
+
+export async function getPostCount(): Promise<number> {
+  return prisma.posts.count();
+}
+
+// ============================================================================
+// GENERIC COLLECTION QUERY (used by PageRenderer for block data sources)
+// ============================================================================
+
+import type { CollectionQueryParams } from '@/blocks/types';
+
+async function queryPostsDirect(params: CollectionQueryParams) {
+  const where = params.where ?? {};
+  return prisma.posts.findMany({
+    where: {
+      status: (where.status as string | undefined) ?? 'published',
+      ...(where.categoryId ? { categoryId: where.categoryId as string } : {}),
+      ...(where.authorId ? { authorId: where.authorId as string } : {}),
+    },
+    take: params.limit ?? 10,
+    include: POST_INCLUDE,
+    orderBy: (params.orderBy as Record<string, 'asc' | 'desc'> | undefined) ?? { publishedAt: 'desc' },
+  });
+}
+
+// Collections with custom query logic (relationships, access control, etc.)
+const SPECIFIC_HANDLERS: Partial<
+  Record<string, (p: CollectionQueryParams) => Promise<unknown[]>>
+> = {
+  posts: (p) => queryPostsDirect(p),
+  pages: (p) =>
+    prisma.pages.findMany({
+      where: { status: 'published', ...(p.where ?? {}) },
+      take: p.limit ?? 10,
+      orderBy: (p.orderBy as Record<string, 'asc' | 'desc'> | undefined) ?? { createdAt: 'desc' },
+    }),
+};
+
+export async function queryCollection(
+  collection: string,
+  params: CollectionQueryParams
+): Promise<unknown[]> {
+  // Try a collection-specific handler first (handles includes, access control, etc.)
+  const handler = SPECIFIC_HANDLERS[collection];
+  if (handler) {
+    try {
+      return await handler(params);
+    } catch (err) {
+      console.error(`[queryCollection] Handler error for "${collection}":`, err);
+      return [];
+    }
+  }
+
+  // Generic fallback: dynamic Prisma access for any registered collection
+  try {
+    const db = prisma as unknown as Record<string, unknown>;
+    const model = db[collection] as
+      | { findMany: (args: unknown) => Promise<unknown[]> }
+      | undefined;
+
+    if (!model?.findMany) {
+      console.warn(`[queryCollection] No Prisma model found for "${collection}"`);
+      return [];
+    }
+
+    return await model.findMany({
+      take: params.limit ?? 10,
+      ...(params.where && Object.keys(params.where).length > 0 ? { where: params.where } : {}),
+      ...(params.orderBy
+        ? { orderBy: params.orderBy }
+        : { orderBy: { createdAt: 'desc' } }),
+    });
+  } catch (err) {
+    console.error(`[queryCollection] Generic query error for "${collection}":`, err);
+    return [];
+  }
 }
 
 // ============================================================================

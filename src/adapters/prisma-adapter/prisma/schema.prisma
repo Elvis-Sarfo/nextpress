@@ -20,6 +20,8 @@ model Users {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   createdBy String? @db.VarChar(255)
+  posts Posts[]
+  comments Comments[]
   @@index([status])
   @@map("users")
 }
@@ -84,6 +86,7 @@ model Media {
   updatedAt DateTime @updatedAt
   createdBy String? @db.VarChar(255)
   pages Pages[]
+  posts Posts[]
   @@index([status])
   @@unique([documentId, status])
   @@index([documentId])
@@ -159,6 +162,7 @@ model Blocks {
   type String @db.VarChar(100)
   templateName String? @db.VarChar(255)
   contentDefinition Json?
+  dataSource Json?
   content Json?
   status String @db.VarChar(100) @default("draft")
   metadata Json?
@@ -193,6 +197,110 @@ model Menus {
   createdBy String? @db.VarChar(255)
   @@index([status])
   @@map("menus")
+}
+
+model Categories {
+  id String @id @default(uuid())
+  status String @db.VarChar(20)
+  name String @db.VarChar(255) @unique
+  slug Json
+  description Json?
+  color String? @db.VarChar(255)
+  metadata Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String? @db.VarChar(255)
+  categoriesLocale CategoriesLocale[]
+  posts Posts[]
+  @@index([status])
+  @@map("categories")
+}
+
+model CategoriesLocale {
+  id String @id @default(uuid())
+  categoriesId String
+  locale String @db.VarChar(10)
+  slug Json?
+  description Json?
+  Categories Categories @relation(fields: [categoriesId], references: [id], onDelete: Cascade)
+  @@unique([categoriesId, locale])
+  @@unique([locale, slug])
+  @@index([locale])
+  @@map("categories_locale")
+}
+
+model Posts {
+  id String @id @default(uuid())
+  documentId String
+  title Json
+  slug Json
+  excerpt Json?
+  content Json?
+  categoryId String? @db.VarChar(100)
+  featuredImageId String? @db.VarChar(255)
+  authorId String? @db.VarChar(100)
+  tags Json?
+  publishedAt DateTime?
+  status String @db.VarChar(100) @default("draft")
+  seo Json?
+  category Categories? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  featuredImage Media? @relation(fields: [featuredImageId], references: [id], onDelete: SetNull)
+  author Users? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  metadata Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String? @db.VarChar(255)
+  postsLocale PostsLocale[]
+  @@index([status])
+  @@unique([documentId, status])
+  @@index([documentId])
+  @@map("posts")
+}
+
+model PostsLocale {
+  id String @id @default(uuid())
+  postsId String
+  locale String @db.VarChar(10)
+  title Json?
+  slug Json?
+  excerpt Json?
+  content Json?
+  Posts Posts @relation(fields: [postsId], references: [id], onDelete: Cascade)
+  @@unique([postsId, locale])
+  @@unique([locale, slug])
+  @@index([locale])
+  @@map("posts_locale")
+}
+
+model PostsVersion {
+  id String @id @default(uuid())
+  documentId String
+  version Int
+  data Json
+  createdAt DateTime @default(now())
+  createdBy String @db.VarChar(255)
+  @@unique([documentId, version])
+  @@index([documentId])
+  @@map("posts_version")
+}
+
+model Comments {
+  id String @id @default(uuid())
+  content String @db.Text
+  authorName String? @db.VarChar(255)
+  authorEmail String? @db.VarChar(255)
+  authorId String? @db.VarChar(100)
+  contentType String @db.VarChar(100)
+  contentId String @db.VarChar(255)
+  parentId String? @db.VarChar(255)
+  status String @db.VarChar(100) @default("pending")
+  author Users? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  metadata Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String? @db.VarChar(255)
+  @@index([status])
+  @@map("comments")
 }
 
 model Settings {

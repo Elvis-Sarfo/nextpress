@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPage, getPost, getNewsItem, getLocalizedField, localeEngine } from '@/lib/cms';
+import { getPage, getPost, getNewsItem, localeEngine } from '@/lib/cms';
+import { getLocale } from '@/lib/locale-utils';
 import { draftMode } from 'next/headers';
 
 export async function GET(request: NextRequest) {
@@ -23,19 +24,13 @@ export async function GET(request: NextRequest) {
 
     if (type === 'page') {
       const page = await getPage(id);
-      if (page) {
-        slug = getLocalizedField(page, locale)?.slug;
-      }
+      if (page) slug = getLocale(page.slug as Record<string, string> | null, locale) ?? undefined;
     } else if (type === 'post') {
       const post = await getPost(id);
-      if (post) {
-        slug = getLocalizedField(post, locale)?.slug;
-      }
+      if (post) slug = getLocale(post.slug as Record<string, string> | null, locale) ?? undefined;
     } else if (type === 'news') {
       const news = await getNewsItem(id);
-      if (news) {
-        slug = getLocalizedField(news, locale)?.slug;
-      }
+      if (news) slug = getLocale(news.slug as Record<string, string> | null, locale) ?? undefined;
     } else {
       // Try all types
       const [page, post, news] = await Promise.all([
@@ -44,9 +39,9 @@ export async function GET(request: NextRequest) {
         getNewsItem(id),
       ]);
 
-      if (page) slug = getLocalizedField(page, locale)?.slug;
-      else if (post) slug = getLocalizedField(post, locale)?.slug;
-      else if (news) slug = getLocalizedField(news, locale)?.slug;
+      if (page) slug = getLocale(page.slug as Record<string, string> | null, locale) ?? undefined;
+      else if (post) slug = getLocale(post.slug as Record<string, string> | null, locale) ?? undefined;
+      else if (news) slug = getLocale(news.slug as Record<string, string> | null, locale) ?? undefined;
     }
 
     if (!slug) {

@@ -150,6 +150,8 @@ export const Pages: CollectionConfig<'pages'> = {
     } satisfies GroupField,
   ],
 
+  comments: true,
+
   versions: {
     enabled: true,
     maxPerDoc: 10,

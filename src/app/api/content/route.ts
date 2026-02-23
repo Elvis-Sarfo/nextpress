@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPages, getPosts, getNews, getLocalizedField } from '@/lib/cms';
+import { getPages, getPosts, getNews } from '@/lib/cms';
+import { getLocale } from '@/lib/locale-utils';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -17,8 +18,8 @@ export async function GET(request: NextRequest) {
           id: p.id,
           documentId: p.documentId,
           status: p.status,
-          title: getLocalizedField(p, 'en')?.title ?? 'Untitled',
-          slug: getLocalizedField(p, 'en')?.slug ?? '',
+          title: getLocale(p.title as Record<string, string> | null, 'en') ?? 'Untitled',
+          slug: getLocale(p.slug as Record<string, string> | null, 'en') ?? '',
           createdAt: p.createdAt,
           publishedAt: p.publishedAt,
         })),
@@ -36,8 +37,8 @@ export async function GET(request: NextRequest) {
           id: p.id,
           documentId: p.documentId,
           status: p.status,
-          title: getLocalizedField(p, 'en')?.title ?? 'Untitled',
-          slug: getLocalizedField(p, 'en')?.slug ?? '',
+          title: getLocale(p.title as Record<string, string> | null, 'en') ?? 'Untitled',
+          slug: getLocale(p.slug as Record<string, string> | null, 'en') ?? '',
           createdAt: p.createdAt,
           publishedAt: p.publishedAt,
         })),
@@ -55,8 +56,8 @@ export async function GET(request: NextRequest) {
           id: n.id,
           documentId: n.documentId,
           status: n.status,
-          title: getLocalizedField(n, 'en')?.title ?? 'Untitled',
-          slug: getLocalizedField(n, 'en')?.slug ?? '',
+          title: getLocale(n.title as Record<string, string> | null, 'en') ?? 'Untitled',
+          slug: getLocale(n.slug as Record<string, string> | null, 'en') ?? '',
           category: n.category,
           createdAt: n.createdAt,
           publishedAt: n.publishedAt,
@@ -80,8 +81,8 @@ export async function GET(request: NextRequest) {
         id: p.id,
         documentId: p.documentId,
         status: p.status,
-        title: getLocalizedField(p, 'en')?.title ?? 'Untitled',
-        slug: getLocalizedField(p, 'en')?.slug ?? '',
+        title: getLocale(p.title as Record<string, string> | null, 'en') ?? 'Untitled',
+        slug: getLocale(p.slug as Record<string, string> | null, 'en') ?? '',
         createdAt: p.createdAt,
         publishedAt: p.publishedAt,
       })),
@@ -90,8 +91,8 @@ export async function GET(request: NextRequest) {
         id: p.id,
         documentId: p.documentId,
         status: p.status,
-        title: getLocalizedField(p, 'en')?.title ?? 'Untitled',
-        slug: getLocalizedField(p, 'en')?.slug ?? '',
+        title: getLocale(p.title as Record<string, string> | null, 'en') ?? 'Untitled',
+        slug: getLocale(p.slug as Record<string, string> | null, 'en') ?? '',
         createdAt: p.createdAt,
         publishedAt: p.publishedAt,
       })),
@@ -100,8 +101,8 @@ export async function GET(request: NextRequest) {
         id: n.id,
         documentId: n.documentId,
         status: n.status,
-        title: getLocalizedField(n, 'en')?.title ?? 'Untitled',
-        slug: getLocalizedField(n, 'en')?.slug ?? '',
+        title: getLocale(n.title as Record<string, string> | null, 'en') ?? 'Untitled',
+        slug: getLocale(n.slug as Record<string, string> | null, 'en') ?? '',
         createdAt: n.createdAt,
         publishedAt: n.publishedAt,
       })),

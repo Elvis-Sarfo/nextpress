@@ -28,6 +28,7 @@ import { JsonCodeEditor } from '@/components/admin/JsonCodeEditor';
 import { MediaSelector } from '@/components/admin/MediaSelector';
 import { PageSectionsEditor } from '@/components/admin/PageSectionsEditor';
 import { MenuItemsEditor, type MenuItem } from '@/components/admin/MenuItemsEditor/MenuItemsEditor';
+import { DataSourceBuilder, type DataSourceValue } from '@/components/admin/DataSourceBuilder/DataSourceBuilder';
 
 interface CollectionEditProps {
   collection: CollectionMeta;
@@ -468,6 +469,16 @@ export function CollectionEdit({ collection, documentId }: CollectionEditProps) 
             <PageSectionsEditor
               value={value}
               onChange={(sections) => updateField(field.name, sections as unknown as FieldValue)}
+            />
+          );
+        }
+
+        if (collection.slug === 'blocks' && field.name === 'dataSource') {
+          return (
+            <DataSourceBuilder
+              key={documentId ?? 'new'}
+              value={(value as DataSourceValue) ?? {}}
+              onChange={(v) => updateField(field.name, v as FieldValue)}
             />
           );
         }

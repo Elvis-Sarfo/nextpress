@@ -362,4 +362,5 @@ export const Settings: CollectionConfig<'settings'> = {
       ],
     },
   ],
+  queryable: false,
 }

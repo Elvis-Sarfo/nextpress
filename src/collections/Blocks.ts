@@ -27,6 +27,7 @@ export const BLOCK_TYPES = [
   { label: 'Subscribe',       value: 'subscribe' },
   { label: 'Featured Rooms',  value: 'featured_rooms' },
   { label: 'Showcase',        value: 'showcase' },
+  { label: 'Post List',       value: 'post-list' },
 ] as const;
 
 export const Blocks: CollectionConfig<'blocks'> = {
@@ -87,6 +88,13 @@ export const Blocks: CollectionConfig<'blocks'> = {
       },
     } satisfies JSONField,
     {
+      name: 'dataSource',
+      type: 'json',
+      admin: {
+        description: 'Admin-configured query params for the block\'s data source (limit, filters, etc.)',
+      },
+    } satisfies JSONField,
+    {
       name: 'content',
       type: 'json',
       localized: true,
@@ -107,6 +115,8 @@ export const Blocks: CollectionConfig<'blocks'> = {
       ],
     } satisfies SelectField,
   ],
+
+  queryable: false,
 
   indexes: [
     { fields: ['name'], unique: true },

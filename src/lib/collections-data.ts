@@ -66,6 +66,7 @@ const defaultGroups: CollectionGroup[] = [
   { key: 'content', label: 'Content', order: 2 },
   { key: 'media', label: 'Media', order: 3 },
   { key: 'system', label: 'System', order: 4 },
+  {key: 'data', label: 'Data', order: 5},
 ];
 
 // Get group by key
@@ -73,12 +74,12 @@ function getGroupInfo(groupKey: string | undefined): CollectionGroup {
   if (!groupKey) {
     return { key: 'content', label: 'Content', order: 2 };
   }
-  
+
   const found = defaultGroups.find(g => g.key === groupKey.toLowerCase());
   if (found) {
     return found;
   }
-  
+
   // If group not found in defaults, create one with high order
   return { key: groupKey, label: groupKey, order: 99 };
 }
@@ -86,7 +87,7 @@ function getGroupInfo(groupKey: string | undefined): CollectionGroup {
 // Extract metadata from a collection config
 function extractMeta(config: CollectionConfig): CollectionMeta {
   const group = config.admin?.group;
-  
+
   let typedGroup: CollectionMeta['admin']['group'];
   if (typeof group === 'object' && group !== null) {
     typedGroup = {
@@ -99,7 +100,7 @@ function extractMeta(config: CollectionConfig): CollectionMeta {
   } else {
     typedGroup = undefined;
   }
-  
+
   // Extract localization config
   let localization: CollectionMeta['localization'];
   if (config.localization && typeof config.localization === 'object') {
@@ -167,25 +168,11 @@ function extractMeta(config: CollectionConfig): CollectionMeta {
 // This will be populated from the actual collection configs
 // In production, this would be generated at build time or fetched from an API
 
-import { Users } from '@/collections/Users';
-import { Roles } from '@/collections/Roles';
-import { Permissions } from '@/collections/Permissions';
-import { Media } from '@/collections/Media';
-import { Pages } from '@/collections/Pages';
-import { Blocks } from '@/collections/Blocks';
-import { Menus } from '@/collections/Menus';
-import { Settings } from '@/collections/Settings';
+import { collections } from '@/collections/index';
 
-export const collectionsMeta: CollectionMeta[] = [
-  extractMeta(Users),
-  extractMeta(Roles),
-  extractMeta(Permissions),
-  extractMeta(Media),
-  extractMeta(Pages),
-  extractMeta(Blocks),
-  extractMeta(Menus),
-  extractMeta(Settings),
-].filter((c) => !c.admin.hidden);
+export const collectionsMeta: CollectionMeta[] = collections
+  .map((c) => extractMeta(c))
+  .filter((c) => !c.admin.hidden);
 
 // Get all collections
 export function getCollections(): CollectionMeta[] {
@@ -200,12 +187,12 @@ export function getCollection(slug: string): CollectionMeta | undefined {
 // Get grouped collections with ordering
 export function getGroupedCollections(): CollectionGroup[] {
   const groupMap = new Map<string, CollectionMeta[]>();
-  
+
   for (const collection of collectionsMeta) {
     let groupKey: string;
     let groupLabel: string;
     let groupOrder: number;
-    
+
     if (typeof collection.admin.group === 'object' && collection.admin.group !== null) {
       groupKey = collection.admin.group.key;
       groupLabel = collection.admin.group.label || groupKey;
@@ -222,16 +209,16 @@ export function getGroupedCollections(): CollectionGroup[] {
       groupLabel = groupInfo.label;
       groupOrder = groupInfo.order;
     }
-    
+
     if (!groupMap.has(groupKey)) {
       groupMap.set(groupKey, []);
     }
     groupMap.get(groupKey)!.push(collection);
   }
-  
+
   // Convert to array with order info
   const result: CollectionGroup[] = [];
-  
+
   // Add groups that exist in the map
   for (const [key, _collections] of groupMap) {
     const groupInfo = getGroupInfo(key);
@@ -241,20 +228,20 @@ export function getGroupedCollections(): CollectionGroup[] {
       order: groupInfo.order,
     });
   }
-  
+
   // Sort by order
   result.sort((a, b) => a.order - b.order);
-  
+
   return result;
 }
 
 // Get collections grouped by their group key
 export function getCollectionsByGroup(): Map<string, CollectionMeta[]> {
   const groupMap = new Map<string, CollectionMeta[]>();
-  
+
   for (const collection of collectionsMeta) {
     let groupKey: string;
-    
+
     if (typeof collection.admin.group === 'object' && collection.admin.group !== null) {
       groupKey = collection.admin.group.key;
     } else if (typeof collection.admin.group === 'string') {
@@ -262,13 +249,13 @@ export function getCollectionsByGroup(): Map<string, CollectionMeta[]> {
     } else {
       groupKey = 'content';
     }
-    
+
     if (!groupMap.has(groupKey)) {
       groupMap.set(groupKey, []);
     }
     groupMap.get(groupKey)!.push(collection);
   }
-  
+
   return groupMap;
 }
 

@@ -15,9 +15,20 @@ const INCLUDE_MAP: Record<string, object> = {
   users: { roles: { select: { id: true, name: true, displayName: true } } },
   roles: { permissions: { select: { id: true, name: true, resource: true, action: true, scope: true } } },
   pages: { featuredImage: { select: { id: true, url: true, altText: true } } },
+  posts: {
+    category: { select: { id: true, name: true, color: true } },
+    featuredImage: { select: { id: true, url: true, altText: true } },
+    author: { select: { id: true, name: true, email: true } },
+  },
+  comments: {
+    author: { select: { id: true, name: true, email: true } },
+  },
 };
 
-const ALLOWED = new Set(['users', 'roles', 'permissions', 'media', 'pages', 'settings', 'blocks', 'menus']);
+const ALLOWED = new Set([
+  'users', 'roles', 'permissions', 'media', 'pages', 'settings', 'blocks', 'menus',
+  'categories', 'posts', 'comments',
+]);
 
 function supportsBlocksContentDefinition(): boolean {
   const runtime = (prisma as unknown as {
@@ -29,6 +40,18 @@ function supportsBlocksContentDefinition(): boolean {
   const model = runtime?.models?.blocks ?? runtime?.models?.Blocks;
   if (!model?.fields) return true;
   return model.fields.some((field) => field.name === 'contentDefinition');
+}
+
+function supportsBlocksDataSource(): boolean {
+  const runtime = (prisma as unknown as {
+    _runtimeDataModel?: {
+      models?: Record<string, { fields?: Array<{ name?: string }> }>;
+    };
+  })._runtimeDataModel;
+
+  const model = runtime?.models?.blocks ?? runtime?.models?.Blocks;
+  if (!model?.fields) return true;
+  return model.fields.some((field) => field.name === 'dataSource');
 }
 
 function getPrismaModel(collection: string) {
@@ -115,19 +138,41 @@ export async function PUT(
     if (!supportsBlocksContentDefinition()) {
       delete body.contentDefinition;
     }
+    if (!supportsBlocksDataSource()) {
+      delete body.dataSource;
+    }
   }
 
-  // For pages: remap the relation field name to the scalar FK accepted by Prisma
-  if (collection === 'pages' && Object.prototype.hasOwnProperty.call(body, 'featuredImage')) {
-    const fi = body.featuredImage;
-    if (fi === null || fi === undefined) {
-      body.featuredImageId = null;
-    } else if (typeof fi === 'string') {
-      body.featuredImageId = fi;
-    } else if (typeof fi === 'object' && fi !== null && 'id' in (fi as Record<string, unknown>)) {
-      body.featuredImageId = (fi as Record<string, unknown>).id;
+  // Remap relation object/id to scalar FK for pages and posts
+  for (const col of ['pages', 'posts'] as const) {
+    if (collection === col && Object.prototype.hasOwnProperty.call(body, 'featuredImage')) {
+      const fi = body.featuredImage;
+      body.featuredImageId = fi === null || fi === undefined ? null
+        : typeof fi === 'string' ? fi
+        : typeof fi === 'object' && 'id' in (fi as Record<string, unknown>) ? (fi as Record<string, unknown>).id
+        : null;
+      delete body.featuredImage;
     }
-    delete body.featuredImage;
+  }
+
+  // Posts: remap category and author relation objects to scalar FKs
+  if (collection === 'posts') {
+    if (Object.prototype.hasOwnProperty.call(body, 'category')) {
+      const cat = body.category;
+      body.categoryId = cat === null || cat === undefined ? null
+        : typeof cat === 'string' ? cat
+        : typeof cat === 'object' && 'id' in (cat as Record<string, unknown>) ? (cat as Record<string, unknown>).id
+        : null;
+      delete body.category;
+    }
+    if (Object.prototype.hasOwnProperty.call(body, 'author')) {
+      const au = body.author;
+      body.authorId = au === null || au === undefined ? null
+        : typeof au === 'string' ? au
+        : typeof au === 'object' && 'id' in (au as Record<string, unknown>) ? (au as Record<string, unknown>).id
+        : null;
+      delete body.author;
+    }
   }
 
   // Extract many-to-many arrays

@@ -7,7 +7,9 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAdminLocale } from '@/components/providers/AdminLocaleProvider';
 import { BlockContentEditor } from '@/components/admin/BlockContentEditor';
-import { getBlockType } from '@/blocks/registry';
+import { DataSourceBuilder, type DataSourceValue } from '@/components/admin/DataSourceBuilder/DataSourceBuilder';
+import { getBlockManifest, getBlockType } from '@/blocks/registry';
+import type { BlockManifest } from '@/blocks/types';
 
 type LocalizedContent = Record<string, Record<string, unknown>>;
 
@@ -17,6 +19,7 @@ interface BlockDoc {
   type: string;
   content?: unknown;
   contentDefinition?: unknown;
+  dataSource?: unknown;
 }
 
 interface BlockContentPageProps {
@@ -41,6 +44,8 @@ export function BlockContentPage({ blockId }: BlockContentPageProps) {
   const [blockType, setBlockType] = useState('');
   const [definition, setDefinition] = useState<unknown>(null);
   const [content, setContent] = useState<LocalizedContent>({});
+  const [blockManifest, setBlockManifest] = useState<BlockManifest | null>(null);
+  const [dataSource, setDataSource] = useState<DataSourceValue>({});
 
   useEffect(() => {
     setActiveLocale(adminLocale);
@@ -64,18 +69,20 @@ export function BlockContentPage({ blockId }: BlockContentPageProps) {
         setBlockName(doc.name || 'Block');
         setBlockType(doc.type || '');
 
+        // Resolve manifest for this block type
+        const manifest = doc.type ? getBlockManifest(doc.type) ?? null : null;
+        setBlockManifest(manifest);
+
         // Use DB contentDefinition if present, otherwise seed from static registry
-        // so existing blocks immediately show proper fields. The definition will be
-        // persisted to the DB on first save, making it fully DB-driven after that.
         if (doc.contentDefinition != null) {
           setDefinition(doc.contentDefinition);
         } else if (doc.type) {
-          const staticDef = getBlockType(doc.type) ?? null;
-          setDefinition(staticDef);
+          setDefinition(getBlockType(doc.type) ?? null);
         } else {
           setDefinition(null);
         }
 
+        // Load content
         if (isRecord(doc.content)) {
           const normalized: LocalizedContent = {};
           for (const [locale, localeValue] of Object.entries(doc.content)) {
@@ -84,6 +91,49 @@ export function BlockContentPage({ blockId }: BlockContentPageProps) {
           setContent(normalized);
         } else {
           setContent({});
+        }
+
+        // Load data source
+        // Priority: DB-stored (with collection key) → migrate from manifest spec → empty
+        if (isRecord(doc.dataSource) && typeof (doc.dataSource as Record<string, unknown>).collection === 'string') {
+          // Already in builder format
+          setDataSource(doc.dataSource as DataSourceValue);
+        } else if (isRecord(doc.dataSource)) {
+          // Old format (from BlockDataSourceEditor — no collection key).
+          // Migrate: inject collection from manifest if available.
+          const legacyParams = doc.dataSource as Record<string, unknown>;
+          const manifestCollection = manifest?.definition.dataSource?.collection;
+          if (manifestCollection) {
+            const migrated: DataSourceValue = {
+              collection: manifestCollection,
+              ...(typeof legacyParams.limit === 'number' ? { limit: legacyParams.limit } : {}),
+              ...(isRecord(legacyParams.where) ? { where: legacyParams.where } : {}),
+              ...(isRecord(legacyParams.orderBy)
+                ? { orderBy: legacyParams.orderBy as Record<string, 'asc' | 'desc'> }
+                : {}),
+            };
+            setDataSource(migrated);
+          } else {
+            setDataSource({});
+          }
+        } else if (manifest?.definition.dataSource) {
+          // No stored params yet — pre-populate from manifest defaults
+          const spec = manifest.definition.dataSource;
+          const initial: DataSourceValue = { collection: spec.collection };
+          if (spec.defaultParams) {
+            Object.assign(initial, spec.defaultParams);
+          }
+          for (const f of spec.fields) {
+            if (f.default === undefined) continue;
+            if (f.scope === 'root' || !f.scope) {
+              (initial as Record<string, unknown>)[f.name] = f.default;
+            } else if (f.scope === 'where') {
+              initial.where = { ...(initial.where ?? {}), [f.name]: f.default };
+            }
+          }
+          setDataSource(initial);
+        } else {
+          setDataSource({});
         }
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Network error');
@@ -104,10 +154,7 @@ export function BlockContentPage({ blockId }: BlockContentPageProps) {
   const localeContent = content[activeLocale] ?? {};
 
   const updateLocaleContent = (next: Record<string, unknown>) => {
-    setContent((prev) => ({
-      ...prev,
-      [activeLocale]: next,
-    }));
+    setContent((prev) => ({ ...prev, [activeLocale]: next }));
   };
 
   const handleSave = async () => {
@@ -116,12 +163,12 @@ export function BlockContentPage({ blockId }: BlockContentPageProps) {
     setSuccess(false);
 
     try {
-      // Always persist the definition alongside content so the DB becomes the
-      // source of truth even if this was the first load (seeded from registry).
       const payload: Record<string, unknown> = { content };
       if (definition !== null) {
         payload.contentDefinition = definition;
       }
+      // Always persist dataSource (even when collection is unset, to clear old values)
+      payload.dataSource = Object.keys(dataSource).length > 0 ? dataSource : null;
 
       const res = await fetch(`/api/admin/collections/blocks/${blockId}`, {
         method: 'PUT',
@@ -154,6 +201,7 @@ export function BlockContentPage({ blockId }: BlockContentPageProps) {
 
   return (
     <div className="space-y-6">
+      {/* ── Header ── */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Link href={`/admin/blocks/${blockId}`}>
@@ -170,6 +218,7 @@ export function BlockContentPage({ blockId }: BlockContentPageProps) {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Locale switcher */}
           <div className="flex items-center gap-1.5 rounded-md border border-input px-2 py-1">
             <span className="text-xs text-muted-foreground">Locale:</span>
             {locales.map((loc) => {
@@ -207,15 +256,35 @@ export function BlockContentPage({ blockId }: BlockContentPageProps) {
           </Button>
         </div>
       </div>
-      
 
+      {/* ── Content editor ── */}
       <div className="rounded-lg border bg-card p-6">
-        <h2 className="text-lg font-semibold">Content</h2>
+        <h2 className="text-lg font-semibold mb-4">Content</h2>
         <BlockContentEditor
           content={localeContent}
           definition={definition}
           locale={activeLocale}
           onChange={updateLocaleContent}
+        />
+      </div>
+
+      {/* ── Data Source builder — shown for all blocks ── */}
+      <div className="rounded-lg border bg-card p-6">
+        <div className="mb-4">
+          <h2 className="text-lg font-semibold">Data Source</h2>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Optionally fetch live data from a collection and inject it into this block at render time.
+            {dataSource.collection && (
+              <span className="ml-1 font-medium text-foreground">
+                Currently querying <code className="text-xs bg-muted px-1 py-0.5 rounded">{dataSource.collection}</code>.
+              </span>
+            )}
+          </p>
+        </div>
+        <DataSourceBuilder
+          key={blockId}
+          value={dataSource}
+          onChange={setDataSource}
         />
       </div>
     </div>

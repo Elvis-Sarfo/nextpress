@@ -1,5 +1,5 @@
 import { MetadataRoute } from 'next';
-import { getPages, getPosts, getNews, localeEngine } from '@/lib/cms';
+import { getPages, getPosts, localeEngine } from '@/lib/cms';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000';
@@ -18,67 +18,50 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   // Fetch all published content
-  const [pagesResult, postsResult, newsResult] = await Promise.all([
+  const [pagesResult, postsResult] = await Promise.all([
     getPages({ status: 'PUBLISHED', limit: 1000 }),
     getPosts({ status: 'PUBLISHED', limit: 1000 }),
-    getNews({ status: 'PUBLISHED', limit: 1000 }),
   ]);
 
-  // Add pages to sitemap
+  // Add pages to sitemap — pages use locale-first JSON slug: { en: '...', fr: '...' }
   for (const page of pagesResult.pages) {
-    for (const localeData of page.locales) {
-      // Build alternates for this content
-      const alternates: Record<string, string> = {};
-      for (const alt of page.locales) {
-        alternates[alt.locale] = `${baseUrl}/${alt.locale}/${alt.slug}`;
-      }
-
+    const slugMap = page.slug as Record<string, string> | null;
+    if (!slugMap) continue;
+    const alternates: Record<string, string> = {};
+    for (const [loc, slug] of Object.entries(slugMap)) {
+      if (slug) alternates[loc] = `${baseUrl}/${loc}/${slug}`;
+    }
+    for (const [loc, url] of Object.entries(alternates)) {
       entries.push({
-        url: `${baseUrl}/${localeData.locale}/${localeData.slug}`,
-        lastModified: page.publishedAt ?? page.updatedAt,
+        url,
+        lastModified: page.updatedAt,
         changeFrequency: 'weekly',
         priority: 0.8,
-        alternates:
-          Object.keys(alternates).length > 1 ? { languages: alternates } : undefined,
+        alternates: Object.keys(alternates).length > 1 ? { languages: alternates } : undefined,
       });
+      // Only emit one entry per page — let the first locale be canonical
+      void loc;
+      break;
     }
   }
 
-  // Add posts to sitemap
+  // Add posts to sitemap — same locale-first JSON pattern
   for (const post of postsResult.posts) {
-    for (const localeData of post.locales) {
-      const alternates: Record<string, string> = {};
-      for (const alt of post.locales) {
-        alternates[alt.locale] = `${baseUrl}/${alt.locale}/${alt.slug}`;
-      }
-
+    const slugMap = post.slug as Record<string, string> | null;
+    if (!slugMap) continue;
+    const alternates: Record<string, string> = {};
+    for (const [loc, slug] of Object.entries(slugMap)) {
+      if (slug) alternates[loc] = `${baseUrl}/${loc}/${slug}`;
+    }
+    for (const url of Object.values(alternates)) {
       entries.push({
-        url: `${baseUrl}/${localeData.locale}/${localeData.slug}`,
-        lastModified: post.publishedAt ?? post.updatedAt,
+        url,
+        lastModified: post.updatedAt,
         changeFrequency: 'weekly',
         priority: 0.7,
-        alternates:
-          Object.keys(alternates).length > 1 ? { languages: alternates } : undefined,
+        alternates: Object.keys(alternates).length > 1 ? { languages: alternates } : undefined,
       });
-    }
-  }
-
-  // Add news to sitemap
-  for (const news of newsResult.news) {
-    for (const localeData of news.locales) {
-      const alternates: Record<string, string> = {};
-      for (const alt of news.locales) {
-        alternates[alt.locale] = `${baseUrl}/${alt.locale}/${alt.slug}`;
-      }
-
-      entries.push({
-        url: `${baseUrl}/${localeData.locale}/${localeData.slug}`,
-        lastModified: news.publishedAt ?? news.updatedAt,
-        changeFrequency: 'daily',
-        priority: 0.6,
-        alternates:
-          Object.keys(alternates).length > 1 ? { languages: alternates } : undefined,
-      });
+      break;
     }
   }
 

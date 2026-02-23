@@ -1,6 +1,7 @@
-import { getBlocksByIds } from '@/lib/cms';
+import { getBlocksByIds, queryCollection } from '@/lib/cms';
 import { getLocale } from '@/lib/locale-utils';
-import { getBlockComponent } from '@/blocks/registry';
+import { getBlockComponent, getBlockManifest } from '@/blocks/registry';
+import type { BlockDataSourceSpec, CollectionQueryParams } from '@/blocks/types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -28,6 +29,38 @@ interface BlockRow {
   id: string;
   type: string;
   content: Record<string, Record<string, unknown>>;
+  dataSource?: unknown;
+}
+
+interface DataFetchEntry {
+  blockId: string;
+  collection: string;
+  params: CollectionQueryParams;
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v);
+}
+
+/**
+ * Merges a manifest's defaultParams with admin-stored params.
+ * Used as fallback when a block's dataSource was configured via the manifest spec
+ * rather than the DataSourceBuilder (no collection key in stored params).
+ */
+function buildManifestParams(
+  spec: BlockDataSourceSpec,
+  stored: Record<string, unknown> | null,
+): CollectionQueryParams {
+  const merged: CollectionQueryParams = { ...(spec.defaultParams ?? {}) };
+  if (!stored) return merged;
+
+  if (typeof stored.limit === 'number') merged.limit = stored.limit;
+  if (isRecord(stored.where)) merged.where = { ...(merged.where ?? {}), ...stored.where };
+  if (isRecord(stored.orderBy)) merged.orderBy = stored.orderBy as Record<string, 'asc' | 'desc'>;
+
+  return merged;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -35,6 +68,10 @@ interface BlockRow {
 /**
  * Renders a page's sections → columns → blocks.
  * Pre-loads all referenced blocks in a single DB query to avoid N+1.
+ *
+ * Data source resolution (in priority order):
+ *   1. block.dataSource.collection (DB-stored, set via DataSourceBuilder)
+ *   2. manifest.definition.dataSource.collection (manifest-declared, legacy)
  */
 export async function PageRenderer({
   sections,
@@ -53,6 +90,48 @@ export async function PageRenderer({
     blockRows.map((b: BlockRow) => [b.id, b])
   );
 
+  // Determine which blocks need live data fetching
+  const dataFetchEntries: DataFetchEntry[] = [];
+
+  for (const row of blockRows as BlockRow[]) {
+    const stored = isRecord(row.dataSource) ? row.dataSource : null;
+
+    // Priority 1: DataSourceBuilder — collection stored in DB record
+    if (typeof stored?.collection === 'string' && stored.collection) {
+      dataFetchEntries.push({
+        blockId: row.id,
+        collection: stored.collection,
+        params: {
+          limit: typeof stored.limit === 'number' ? stored.limit : undefined,
+          where: isRecord(stored.where) ? stored.where : undefined,
+          orderBy: isRecord(stored.orderBy) ? (stored.orderBy as Record<string, 'asc' | 'desc'>) : undefined,
+        },
+      });
+      continue;
+    }
+
+    // Priority 2: Manifest-declared dataSource (legacy / spec-constrained approach)
+    const manifest = getBlockManifest(row.type);
+    if (manifest?.definition.dataSource) {
+      dataFetchEntries.push({
+        blockId: row.id,
+        collection: manifest.definition.dataSource.collection,
+        params: buildManifestParams(manifest.definition.dataSource, stored),
+      });
+    }
+  }
+
+  // Run all data fetches in parallel
+  const dataMap = new Map<string, unknown[]>();
+  if (dataFetchEntries.length > 0) {
+    const results = await Promise.all(
+      dataFetchEntries.map(({ collection, params }) => queryCollection(collection, params))
+    );
+    dataFetchEntries.forEach(({ blockId }, i) => {
+      dataMap.set(blockId, results[i]);
+    });
+  }
+
   return (
     <>
       {sections.map((section) => (
@@ -66,9 +145,7 @@ export async function PageRenderer({
               {section.columns.map((column) => (
                 <div
                   key={column.id}
-                  className={[column.width, column.offset]
-                    .filter(Boolean)
-                    .join(' ')}
+                  className={[column.width, column.offset].filter(Boolean).join(' ')}
                 >
                   {column.blocks
                     .slice()
@@ -89,11 +166,11 @@ export async function PageRenderer({
                         );
                       }
 
-                      const content =
-                        getLocale(block.content, locale) ?? {};
+                      const content = getLocale(block.content, locale) ?? {};
+                      const data = dataMap.get(ref.blockId);
 
                       return (
-                        <Component key={ref.blockId} content={content} />
+                        <Component key={ref.blockId} content={content} data={data} />
                       );
                     })}
                 </div>

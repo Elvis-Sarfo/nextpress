@@ -56,10 +56,52 @@ export interface BlockDefinition {
     label: string;
     fields: BlockField[];
   };
+  /** Optional live data source — fetched at render time by PageRenderer */
+  dataSource?: BlockDataSourceSpec;
 }
 
 export type BlockContent = Record<string, unknown>;
-export type BlockComponent = ComponentType<{ content: BlockContent }>;
+export type BlockComponent = ComponentType<{ content: BlockContent; data?: unknown[] }>;
+
+// ─── Data Source Types ────────────────────────────────────────────────────────
+
+export type BlockDataSourceFieldType = 'number' | 'select' | 'relationship' | 'toggle';
+
+export interface BlockDataSourceField {
+  /** Key used to store the configured value in the block's dataSource JSON */
+  name: string;
+  type: BlockDataSourceFieldType;
+  label?: string;
+  /** Default value — applied when the admin has not yet configured this param */
+  default?: unknown;
+  /** For select fields */
+  options?: { label: string; value: string }[];
+  /** For relationship fields: the collection slug to query for picker items */
+  relationTo?: string;
+  /**
+   * Where to place the value in CollectionQueryParams:
+   * - 'root': directly on params (e.g. name='limit' → params.limit)
+   * - 'where': nested under params.where (e.g. name='categoryId' → params.where.categoryId)
+   * - 'orderBy': nested under params.orderBy
+   * Defaults to 'root' for number/toggle, 'where' for relationship/select.
+   */
+  scope?: 'root' | 'where' | 'orderBy';
+}
+
+export interface BlockDataSourceSpec {
+  /** Collection slug to query (must be registered in queryCollection in cms.ts) */
+  collection: string;
+  /** Fixed params always applied regardless of admin config (e.g. status: 'published') */
+  defaultParams?: CollectionQueryParams;
+  /** Fields the admin can configure per block instance */
+  fields: BlockDataSourceField[];
+}
+
+export interface CollectionQueryParams {
+  limit?: number;
+  where?: Record<string, unknown>;
+  orderBy?: Record<string, 'asc' | 'desc'>;
+}
 
 /**
  * A block manifest ties the canonical DB `type` key to both the admin editor

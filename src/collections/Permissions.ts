@@ -105,6 +105,7 @@ export const Permissions: CollectionConfig<'permissions'> = {
 
   versions: { enabled: false },
   localization: { locales: [], defaultLocale: 'en' },
+  queryable: false,
 
   indexes: [
     { fields: ['name'], unique: true },

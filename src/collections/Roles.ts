@@ -75,6 +75,7 @@ export const Roles: CollectionConfig<'roles'> = {
 
   versions: { enabled: false },
   localization: { locales: [], defaultLocale: 'en' },
+  queryable: false,
 
   indexes: [
     { fields: ['name'], unique: true },

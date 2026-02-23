@@ -243,7 +243,7 @@ export async function initializeNextPress(): Promise<void> {
   // Initialize collections from config
   Collections.initFromConfig(nextpressConfig);
 
-  console.log(`[NextPress] Initialized ${Collections.count()} collections:`);
+  // console.log(`[NextPress] Initialized ${Collections.count()} collections:`);
   for (const slug of Collections.getSlugs()) {
     console.log(`  - ${slug}`);
   }

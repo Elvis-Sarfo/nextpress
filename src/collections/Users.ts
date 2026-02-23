@@ -111,6 +111,7 @@ export const Users: CollectionConfig<'users'> = {
 
   versions: { enabled: false },
   localization: { locales: [], defaultLocale: 'en' },
+  queryable: false,
 
   indexes: [
     { fields: ['email'], unique: true },

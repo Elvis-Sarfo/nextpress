@@ -79,6 +79,8 @@ export const Menus: CollectionConfig<'menus'> = {
     } satisfies JSONField,
   ],
 
+  queryable: false,
+
   indexes: [
     { fields: ['location'] },
   ],
