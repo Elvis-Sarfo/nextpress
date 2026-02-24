@@ -4,6 +4,7 @@
  * The full auth config (with Credentials provider + bcrypt) lives in src/auth.ts.
  */
 import type { NextAuthConfig } from 'next-auth';
+import type { SerializedPermission } from '@/types/permissions';
 
 export const authConfig: NextAuthConfig = {
   trustHost: true,
@@ -18,9 +19,11 @@ export const authConfig: NextAuthConfig = {
       return token;
     },
     session({ session, token }) {
-      const jwt = token as { id: string; role: string };
+      const jwt = token as { id: string; role: string; isAdmin: boolean; perms: SerializedPermission[] };
       session.user.id = jwt.id;
       session.user.role = jwt.role;
+      session.user.isAdmin = jwt.isAdmin ?? false;
+      session.user.perms = jwt.perms ?? [];
       return session;
     },
   },

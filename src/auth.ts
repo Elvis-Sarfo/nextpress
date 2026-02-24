@@ -4,6 +4,24 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '@/adapters/prisma-adapter';
 import { Users } from '@/collections/Users';
 import type { CollectionAuth } from '@/core/collection/types';
+import { loadPrincipalFromDB } from '@/lib/rbac-service';
+import { RBACEngine } from '@/core/permissions/rbac-engine';
+import type { Permission } from '@/core/permissions/types';
+import type { SerializedPermission } from '@/types/permissions';
+
+const rbacEngine = new RBACEngine();
+
+function serializePermissions(perms: Permission[]): SerializedPermission[] {
+  return perms.map((p) => {
+    let s: string;
+    if (p.scope.type === 'contentType') {
+      s = `contentType:${p.scope.typeId}`;
+    } else {
+      s = p.scope.type; // 'all' or 'own'
+    }
+    return { r: p.resource, a: p.action, s } as SerializedPermission;
+  });
+}
 
 // Users.auth can be boolean | CollectionAuth — extract safely
 const authConfig: CollectionAuth =
@@ -91,18 +109,29 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
   ],
 
   callbacks: {
-    jwt({ token, user }) {
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id as string;
         token.role = (user as { role: string }).role;
+      }
+      // Always reload from DB (5-min cache in rbac-service handles performance)
+      if (token.id) {
+        const principal = await loadPrincipalFromDB(token.id as string);
+        const isAdmin = principal?.roles.some((r) => r.name === 'admin') ?? false;
+        token.isAdmin = isAdmin;
+        token.perms = isAdmin || !principal
+          ? []
+          : serializePermissions(rbacEngine.getEffectivePermissions(principal));
       }
       return token;
     },
 
     session({ session, token }) {
-      const jwt = token as { id: string; role: string };
+      const jwt = token as { id: string; role: string; isAdmin: boolean; perms: SerializedPermission[] };
       session.user.id = jwt.id;
       session.user.role = jwt.role;
+      session.user.isAdmin = jwt.isAdmin ?? false;
+      session.user.perms = jwt.perms ?? [];
       return session;
     },
   },
