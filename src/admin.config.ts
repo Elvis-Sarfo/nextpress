@@ -30,29 +30,29 @@ const adminConfig: NextPressAdminConfig = {
         order: 2,
       },
       {
-        key: 'user-management',
-        label: 'User Management',
-        icon: 'Users',
-        order: 3,
-      },
-      {
-        key: 'system',
-        label: 'System',
-        icon: 'Settings',
-        order: 4,
-      },
-      {
         key: 'data',
         label: 'Data',
         icon: 'Database',
-        order: 5,
+        order: 3,
       },
       {
         key: 'appearance',
         label: 'Appearance',
         icon: 'Palette',
+        order: 4,
+      },
+      {
+        key: 'user-management',
+        label: 'User Management',
+        icon: 'Users',
         order: 5,
       },
+      {
+        key: 'system',
+        label: 'System',
+        icon: 'Settings',
+        order: 6,
+      }
     ],
 
     // ── Per-collection overrides ──────────────────────────────────────────────
