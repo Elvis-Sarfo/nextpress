@@ -86,7 +86,7 @@ const adminConfig: NextPressAdminConfig = {
     // ── Footer links ──────────────────────────────────────────────────────────
     // Custom links shown at the bottom of the sidebar (alongside "View Site").
     footerLinks: [
-      { label: 'Documentation', href: '/docs', icon: 'BookOpen' },
+      { label: 'Documentation', href: '/docs', icon: 'BookOpen', external: true },
     ],
   },
 };

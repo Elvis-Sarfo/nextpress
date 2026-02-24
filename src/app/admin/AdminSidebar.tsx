@@ -561,6 +561,8 @@ export function AdminSidebar() {
           <div className="border-t border-border p-2 space-y-0.5">
             <Link
               href="/"
+              target="_blank"
+              rel="noreferrer"
               className="block rounded-md px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
             >
               View Site
