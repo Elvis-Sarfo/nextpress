@@ -2,6 +2,7 @@ import { CollectionConfig } from "@/core/types";
 
 export const Settings: CollectionConfig<'settings'> = {
   slug: 'settings',
+  labels: { singular: 'Settings', plural: 'Settings' },
   admin: {
     useAsTitle: 'siteName',
     defaultColumns: ['siteName', 'updatedAt'],
