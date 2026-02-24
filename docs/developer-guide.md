@@ -154,6 +154,8 @@ pnpm docs:generate    # Regenerate auto-generated doc fragments
 
 This is the single configuration file for the entire CMS. Changes here affect schema generation, localization, media storage, and migration behavior.
 
+> **Note:** Admin UI layout (sidebar groups, icons, custom links) is configured separately in `src/admin.config.ts` — see [Admin UI Configuration](#admin-ui-configuration) below.
+
 ```typescript
 const config = {
   // 1. Collections — import from src/collections/index.ts
@@ -246,6 +248,92 @@ CLOUDINARY_API_KEY=...
 CLOUDINARY_API_SECRET=...
 CLOUDINARY_FOLDER=nextpress-media
 ```
+
+### Admin UI Configuration
+
+Admin sidebar layout is configured in `src/admin.config.ts` — separate from `nextpress.config.ts` so it can be safely imported from both server and client components.
+
+```typescript
+// src/admin.config.ts
+import type { NextPressAdminConfig } from './core/types';
+
+const adminConfig: NextPressAdminConfig = {
+  sidebar: {
+    // ── Navigation groups ──────────────────────────────────────────
+    // Define groups in the order they appear in the sidebar.
+    // 'key' must match the value used in collection.admin.group.key.
+    groups: [
+      { key: 'content',         label: 'Content',         icon: 'FileText', order: 1 },
+      { key: 'media',           label: 'Media',           icon: 'Image',    order: 2 },
+      { key: 'data',            label: 'Data',            icon: 'Database', order: 3 },
+      { key: 'appearance',      label: 'Appearance',      icon: 'Palette',  order: 4 },
+      { key: 'user-management', label: 'User Management', icon: 'Users',    order: 5 },
+      { key: 'system',          label: 'System',          icon: 'Settings', order: 6 },
+    ],
+
+    // ── Per-collection overrides ───────────────────────────────────
+    // Keyed by collection slug. Only specify what you want to override.
+    collections: {
+      users:       { icon: 'Users' },
+      roles:       { icon: 'Shield' },
+      permissions: { icon: 'Key' },
+      media:       { icon: 'Image' },
+      pages:       { icon: 'LayoutTemplate' },
+      posts:       { icon: 'FileText', showAddNew: false },
+      // Nest categories inside the Posts menu item:
+      categories:  { icon: undefined, parent: 'posts', showAddNew: false },
+      comments:    { icon: 'MessageSquare' },
+      blocks:      { icon: 'SquareDashedBottom' },
+      menus:       { icon: 'MenuSquare' },
+      // Singleton — hide "Add New":
+      settings:    { icon: 'Settings2', showAddNew: false },
+    },
+
+    // ── Custom footer links ────────────────────────────────────────
+    footerLinks: [
+      { label: 'Documentation', href: '/docs', icon: 'BookOpen' },
+    ],
+
+    // ── Custom top links (after Dashboard) ────────────────────────
+    // topLinks: [
+    //   { label: 'Analytics', href: '/admin/analytics', icon: 'BarChart2' },
+    // ],
+  },
+};
+
+export default adminConfig;
+```
+
+This config is imported by `src/nextpress.config.ts` via `admin: adminConfig`.
+
+**Sidebar group config options (`NextPressAdminSidebarGroupConfig`):**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `key` | `string` | Matches `collection.admin.group.key` |
+| `label` | `string` | Display label in sidebar |
+| `icon` | `string` | Lucide icon name (PascalCase) |
+| `order` | `number` | Sort order — lower numbers appear higher |
+| `defaultCollapsed` | `boolean` | Whether the group starts collapsed (default: `false`) |
+
+**Per-collection override options (`NextPressAdminSidebarCollectionConfig`):**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `label` | `string` | Override the display label |
+| `icon` | `string \| null` | Lucide icon name; `undefined` keeps collection default |
+| `hidden` | `boolean` | Hide from sidebar entirely |
+| `showAddNew` | `boolean` | Show/hide the "Add New" sub-item (default: `true`) |
+| `parent` | `string` | Nest under another collection's menu item (e.g. `'posts'`) |
+
+**Custom link options (`NextPressAdminSidebarLinkConfig`):**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `label` | `string` | Display label |
+| `href` | `string` | Target URL |
+| `icon` | `string` | Lucide icon name |
+| `external` | `boolean` | Open in a new tab |
 
 ---
 
@@ -903,6 +991,63 @@ invalidatePrincipalCache(userId);
 
 This is already done automatically by the admin API when roles are updated.
 
+### PermissionGate (client component)
+
+`src/components/admin/PermissionGate/PermissionGate.tsx` conditionally renders children based on the current user's permissions. It reads permissions baked into the JWT at sign-in — no extra API round-trips.
+
+```typescript
+import { PermissionGate } from '@/components/admin/PermissionGate/PermissionGate';
+
+// Show delete button only to users with content:delete permission
+<PermissionGate action="delete" resource="content">
+  <Button onClick={handleDelete}>Delete</Button>
+</PermissionGate>
+
+// Scope to the resource owner only
+<PermissionGate action="update" resource="content" ownerId={post.authorId}>
+  <Button>Edit</Button>
+</PermissionGate>
+
+// Admin-only with a fallback
+<PermissionGate requireAdmin fallback={<span>Admins only</span>}>
+  <SettingsPanel />
+</PermissionGate>
+```
+
+**Props:**
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `action` | `Action` | Permission action (e.g. `'delete'`, `'update'`, `'publish'`) |
+| `resource` | `ResourceType` | Resource category (`content`, `schema`, `user`, `media`, `settings`) |
+| `ownerId` | `string` | For `'own'`-scoped permissions — the resource owner's user ID |
+| `typeId` | `string` | For `'contentType'`-scoped permissions |
+| `requireAdmin` | `boolean` | Shortcut: require admin role regardless of action/resource |
+| `children` | `ReactNode` | Rendered when permission is granted |
+| `fallback` | `ReactNode` | Rendered when permission is denied (default: `null`) |
+
+### `usePermission` hook
+
+For programmatic checks inside client components, use the `usePermission` hook directly:
+
+```typescript
+import { usePermission } from '@/hooks/usePermission';
+
+function MyComponent({ post }: { post: Post }) {
+  const canDelete = usePermission('delete', 'content');
+  const canEditOwn = usePermission('update', 'content', { ownerId: post.authorId });
+
+  return (
+    <div>
+      {canEditOwn && <EditButton />}
+      {canDelete && <DeleteButton />}
+    </div>
+  );
+}
+```
+
+The hook reads the `perms` array from the NextAuth JWT (`session.user.perms`). Admins (`session.user.isAdmin`) always return `true`. Returns `false` while the session is loading.
+
 ---
 
 ## 10. Admin UI
@@ -982,10 +1127,57 @@ A drag-and-drop editor for the `sections` JSON field on Pages. Lets editors:
 ### DataSourceBuilder
 
 Appears in `BlockContentPage` for all blocks. Allows configuring a live data query:
+
 - Select a queryable collection (posts, categories, etc.)
 - Set a limit
 - Add filter rows (field + operator + value)
 - Set sort field and direction
+
+### SettingsEditor
+
+`src/components/admin/SettingsEditor/SettingsEditor.tsx` is a specialized editor for singleton settings documents. It renders a tabbed UI driven entirely by the collection schema:
+
+- **Left sidebar**: one tab per `group` field + a "General" tab for top-level scalar fields.
+- **Right content**: `GroupFieldEditor` for the active group, or native inputs for the General tab.
+- Localized fields within a group respect the active locale from `AdminLocaleProvider`.
+
+It is used at `/admin/settings` and invoked by the settings page with the collection's `CollectionMeta` and the document `id`. You do not instantiate it directly — it is wired up by the settings admin page.
+
+To add new settings fields, edit `src/collections/Settings.ts`, re-run `pnpm schema:generate && pnpm db:push && pnpm db:generate`, and the `SettingsEditor` will pick them up automatically through `CollectionMeta`.
+
+### GroupFieldEditor
+
+`src/components/admin/GroupFieldEditor/GroupFieldEditor.tsx` renders a `group` field as a set of nested inputs. It is used by:
+
+- `SettingsEditor` — one `GroupFieldEditor` per group tab.
+- `CollectionEdit` — inline within the standard collection form.
+
+It handles `upload`, `text`, `textarea`, `checkbox`, `number`, `select`, and nested `array` fields within a group. Custom sub-field rendering (e.g. localized fields) follows the same `localizedAs` pattern as the top-level `CollectionEdit`.
+
+### RichtextEditor (Tiptap)
+
+`src/components/admin/RichtextEditor.tsx` wraps **Tiptap** to provide a `richText` field editor. Two editor variants are available:
+
+| Variant | Location | Description |
+|---------|----------|-------------|
+| `NotionEditor` | `src/components/admin/editors/NotionEditor.tsx` | Full Notion-style editor with slash commands and floating toolbar |
+| `SimpleEditor` | `src/components/admin/editors/SimpleEditor.tsx` | Lightweight inline editor for short-form rich text |
+
+The editor is automatically used by `CollectionEdit` whenever a field has `type: 'richText'`. Content is stored as a Tiptap/ProseMirror JSON object in the database (`Json` column).
+
+**Slash commands** (defined in `SlashCommandExtension.ts`) are triggered with `/` in the `NotionEditor`. Built-in commands include headings (H1–H3), bullet list, ordered list, blockquote, code block, and horizontal rule.
+
+To use the `NotionEditor` programmatically:
+
+```typescript
+import { NotionEditor } from '@/components/admin/editors/NotionEditor';
+
+<NotionEditor
+  content={value}                       // Tiptap JSON object or null
+  onChange={(json) => setField(json)}   // receives updated JSON on every change
+  placeholder="Start writing…"
+/>
+```
 
 ---
 
