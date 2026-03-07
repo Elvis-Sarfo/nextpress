@@ -18,6 +18,7 @@ import {
   FileSpreadsheet,
   Maximize2,
   Minimize2,
+  ExternalLink,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAdminLocale } from '@/components/providers/AdminLocaleProvider';
@@ -360,6 +361,16 @@ export function CollectionList({ collection }: CollectionListProps) {
   const closeEditor = () => {
     setEditorOpen(false);
     setEditorDocId(null);
+  };
+
+  const openEditorInPage = () => {
+    const href =
+      editorIntent === 'edit' && editorDocId
+        ? `/admin/${collection.slug}/${editorDocId}`
+        : `/admin/${collection.slug}/new`;
+
+    closeEditor();
+    router.push(href);
   };
 
   const handleDelete = async (id: string) => {
@@ -944,6 +955,16 @@ export function CollectionList({ collection }: CollectionListProps) {
                   <Button
                     type="button"
                     variant="ghost"
+                    size="sm"
+                    onClick={openEditorInPage}
+                    title="Open in page"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    <span className="sr-only">Open in page</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
                     size="icon"
                     onClick={() => setEditorExpanded((prev) => !prev)}
                     title={editorExpanded ? 'Restore size' : 'Expand size'}
@@ -982,6 +1003,16 @@ export function CollectionList({ collection }: CollectionListProps) {
                   {editorIntent === 'create' ? `Create ${collection.labels.singular}` : `Edit ${collection.labels.singular}`}
                 </h2>
                 <div className="flex items-center gap-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={openEditorInPage}
+                    title="Open in page"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    <span className="sr-only">Open in page</span>
+                  </Button>
                   <Button
                     type="button"
                     variant="ghost"
