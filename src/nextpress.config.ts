@@ -24,7 +24,7 @@ const config = {
 
   // Database configuration
   db: {
-    provider: 'postgres',
+    provider: 'mysql',
     url: process.env.DATABASE_URI || '',
   },
 
