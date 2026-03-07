@@ -114,7 +114,14 @@ export function AgbonProductNavProvider({
 
   return (
     <ProductNavContext.Provider
-      value={{ selectedCategory, searchQuery, setCategory, setSearch, resetFilters, navigateToProducts }}
+      value={{
+        selectedCategory,
+        searchQuery,
+        setCategory,
+        setSearch,
+        resetFilters,
+        navigateToProducts,
+      }}
     >
       {children}
     </ProductNavContext.Provider>

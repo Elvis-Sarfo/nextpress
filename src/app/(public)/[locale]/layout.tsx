@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { AgbonHeader, HeaderConfig } from '@/components/agbon/header'
 import { AgbonFooter, FooterConfig } from '@/components/agbon/footer'
+import { AgbonFloatingQuickInquiry } from '@/components/agbon/floating-quick-inquiry'
 import { AgbonProductNavProvider } from '@/contexts/agbon-product-nav-context'
 import { getSettings, localeEngine } from '@/lib/cms'
 import { buildLocalizedPath } from '@/lib/agbon-routes'
@@ -96,6 +97,7 @@ export default async function LocalePublicLayout({ children, params }: LocaleLay
       <AgbonProductNavProvider>
         <main className="flex-1">{children}</main>
       </AgbonProductNavProvider>
+      <AgbonFloatingQuickInquiry />
       <AgbonFooter config={footerConfig} locale={locale} />
     </div>
   )

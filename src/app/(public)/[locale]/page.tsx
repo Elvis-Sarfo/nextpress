@@ -68,13 +68,11 @@ export default async function LocaleHomePage({ params }: Props) {
     <>
       <AgbonHeroSection slides={heroSlides} />
       <div className="flex flex-col md:flex-row max-w-[90rem] mx-auto px-2 md:px-4 py-6 gap-4">
-        {/* Sidebar */}
         <div className="w-full md:w-56 lg:w-64 shrink-0">
           <AgbonProductNavProvider mode="filter" syncWithUrl={false} locale={locale}>
             <AgbonSidebarCategories categories={categories} locale={locale} />
           </AgbonProductNavProvider>
         </div>
-        {/* Main content */}
         <div className="flex-1 min-w-0">
           <AgbonProductNavProvider mode="filter" syncWithUrl={false} locale={locale}>
             <AgbonHappyFarmingBanner locale={locale} className="pt-0 pb-6" />
