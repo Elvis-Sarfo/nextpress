@@ -5,7 +5,6 @@
  * 
  * Output:
  * - Main table per collection
- * - Locale table per collection (if localization enabled)
  * - Version table per collection (if versioning enabled)
  */
 
@@ -47,7 +46,7 @@ export interface PrismaModel {
 export interface SchemaEngineOptions {
   /** Provider: postgresql, mysql, sqlite */
   provider?: 'postgresql' | 'mysql' | 'sqlite';
-  /** Enable localization tables */
+  /** Store localized fields as locale-keyed JSON on the main model */
   localization?: boolean;
   /** Enable version tables */
   versioning?: boolean;
@@ -60,6 +59,18 @@ export interface SchemaEngineOptions {
 // ============================================================================
 
 function mapFieldToPrisma(field: Field, options: SchemaEngineOptions): PrismaField {
+  // Localized fields are stored as locale-keyed JSON on the main table.
+  if (field.localized && options.localization !== false) {
+    return {
+      name: field.name,
+      type: 'Json',
+      isOptional: !field.required,
+      isList: false,
+      defaultValue: field.defaultValue !== undefined ? String(field.defaultValue) : undefined,
+      attributes: [],
+    };
+  }
+
   const isOptional = !field.required;
   
   let type: string;
@@ -134,7 +145,7 @@ function mapFieldToPrisma(field: Field, options: SchemaEngineOptions): PrismaFie
     }
   }
   
-  // Handle unique constraint
+  // JSON-localized fields cannot use a DB-level unique constraint.
   if (field.unique) {
     attributes.push('@unique');
   }
@@ -333,95 +344,6 @@ function generateMainModel(config: CollectionConfig, options: SchemaEngineOption
     indexes,
     uniqueConstraints: [],
     map: formatTableName(config.slug, options.tablePrefix),
-  };
-}
-
-// ============================================================================
-// LOCALE MODEL GENERATOR
-// ============================================================================
-
-function generateLocaleModel(config: CollectionConfig, options: SchemaEngineOptions): PrismaModel | null {
-  // Check if any fields are localized
-  const localizedFields = config.fields.filter(f => f.localized);
-  if (localizedFields.length === 0) {
-    return null;
-  }
-  
-  const fields: PrismaField[] = [];
-  const indexes: string[] = [];
-  
-  const modelName = formatModelName(config.slug) + 'Locale';
-  const tableName = formatTableName(config.slug, options.tablePrefix) + '_locale';
-  
-  // ID
-  fields.push({
-    name: 'id',
-    type: 'String',
-    isOptional: false,
-    isList: false,
-    attributes: ['@id', '@default(uuid())'],
-  });
-  
-  // Parent ID
-  const parentIdName = formatModelName(config.slug).charAt(0).toLowerCase() + formatModelName(config.slug).slice(1) + 'Id';
-  fields.push({
-    name: parentIdName,
-    type: 'String',
-    isOptional: false,
-    isList: false,
-    attributes: [],
-  });
-  
-  // Locale code
-  fields.push({
-    name: 'locale',
-    type: 'String',
-    isOptional: false,
-    isList: false,
-    attributes: ['@db.VarChar(10)'],
-  });
-  
-  // Add localized fields
-  for (const field of localizedFields) {
-    const prismaField = mapFieldToPrisma(field, options);
-    // Make all localized fields optional in locale table
-    prismaField.isOptional = true;
-    fields.push(prismaField);
-  }
-  
-  // Relation back to main model
-  fields.push({
-    name: formatModelName(config.slug),
-    type: formatModelName(config.slug),
-    isOptional: false,
-    isList: false,
-    attributes: [],
-    relation: {
-      name: formatModelName(config.slug),
-      model: formatModelName(config.slug),
-      fields: [parentIdName],
-      references: ['id'],
-      onDelete: 'Cascade',
-    },
-  });
-  
-  // Indexes
-  indexes.push(`@@unique([${parentIdName}, locale])`);
-  
-  // Check for slug field and add unique constraint
-  const slugField = localizedFields.find(f => f.name === 'slug');
-  if (slugField) {
-    indexes.push('@@unique([locale, slug])');
-  }
-  
-  indexes.push('@@index([locale])');
-  
-  return {
-    name: modelName,
-    fields,
-    indexes,
-    uniqueConstraints: [],
-    map: tableName,
   };
 }
 
@@ -645,11 +567,6 @@ export function generatePrismaSchema(
   for (const collection of collections) {
     allModels.push(generateMainModel(collection, options));
 
-    if (options.localization !== false) {
-      const localeModel = generateLocaleModel(collection, options);
-      if (localeModel) allModels.push(localeModel);
-    }
-
     if (options.versioning !== false) {
       const versionModel = generateVersionModel(collection, options);
       if (versionModel) allModels.push(versionModel);
@@ -688,15 +605,6 @@ export function generateModelSchema(config: CollectionConfig, options: SchemaEng
   const mainModel = generateMainModel(config, options);
   schema += generateModelString(mainModel);
   schema += '\n';
-  
-  // Locale model
-  if (options.localization !== false) {
-    const localeModel = generateLocaleModel(config, options);
-    if (localeModel) {
-      schema += generateModelString(localeModel);
-      schema += '\n';
-    }
-  }
   
   // Version model
   if (options.versioning !== false) {

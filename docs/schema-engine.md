@@ -12,7 +12,7 @@ The **schema engine** (`src/core/schema-engine/index.ts`) turns `CollectionConfi
 1. **Input**: Collections from `nextpress.config.ts` and options (provider, versioning, localization, tablePrefix).
 2. **Per collection**:
    - **Main model** – id, documentId (if versioning), status (if not in fields), config fields, relationship FK + relation fields, metadata (if not in fields), createdAt, updatedAt, createdBy, indexes.
-   - **Locale model** – only if localization enabled and the collection has localized fields.
+   - **Localized fields** – when `localized: true`, the field is stored on the main model as a locale-keyed `Json` column.
    - **Version model** – only if versioning enabled (e.g. `*Version` table).
 3. **Output**: Concatenated Prisma model blocks plus generator and datasource.
 
@@ -20,6 +20,7 @@ The **schema engine** (`src/core/schema-engine/index.ts`) turns `CollectionConfi
 
 | Collection type | Prisma | Notes |
 |-----------------|--------|-------|
+| localized: true | Json | Stored as `{ "en": "...", "fr": "..." }` on the main table |
 | text, email | String | @db.VarChar(255) or maxLength |
 | textarea | String | @db.Text |
 | number | Int | |

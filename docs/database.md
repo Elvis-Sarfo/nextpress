@@ -16,7 +16,7 @@
 
 - **Script**: `pnpm db:seed` runs `tsx src/adapters/prisma-adapter/prisma/seed.ts`.
 - **Prisma seed**: `prisma db seed` uses the same path via `package.json` `prisma.seed`.
-- The current seed file may target an older schema (Post, News, Menu, locale tables). If it fails, update it to match the current Prisma models (Users, Roles, Permissions, Media, Pages, Settings) or skip seeding.
+- The current seed file may target an older schema (Post, News, Menu, separate locale tables). If it fails, update it to match the current Prisma models and JSON-based localization layout, or skip seeding.
 
 ## Generate client
 

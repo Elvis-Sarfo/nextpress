@@ -25,6 +25,11 @@ import { Comments } from './Comments';
 // Settings
 import { Settings } from './Settings';
 
+// Catalogue (AGBON)
+import { HeroSlides } from './HeroSlides';
+import { ProductCategories } from './ProductCategories';
+import { Products } from './Products';
+
 export const collections: CollectionConfig[] = [
   // System
   Users,
@@ -42,4 +47,9 @@ export const collections: CollectionConfig[] = [
 
   // Settings
   Settings,
+
+  // Catalogue
+  HeroSlides,
+  ProductCategories,
+  Products,
 ];

@@ -696,3 +696,219 @@ export async function getSetting<T = unknown>(path: string): Promise<T | undefin
   }
   return current as T;
 }
+
+// ============================================================================
+// CATALOGUE — HERO SLIDES
+// ============================================================================
+
+export type HeroSlideRecord = {
+  id: string;
+  title: Record<string, string> | null;
+  subtitle: Record<string, string> | null;
+  mediaType: string;
+  imageId: string | null;
+  imageUrl?: string | null;
+  mobileImageUrl: string | null;
+  videoUrl: string | null;
+  youtubeId: string | null;
+  ctaText: Record<string, string> | null;
+  ctaLink: string | null;
+  textPosition: Record<string, string> | null;
+  textColor: string;
+  overlayOpacity: number;
+  order: number;
+  active: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export async function getActiveHeroSlides(): Promise<HeroSlideRecord[]> {
+  const rows = await prisma.heroSlides.findMany({
+    where: { active: true },
+    orderBy: { order: 'asc' },
+    include: { image: { select: { url: true } } },
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    title: r.title as Record<string, string> | null,
+    subtitle: r.subtitle as Record<string, string> | null,
+    mediaType: r.mediaType,
+    imageId: r.imageId ?? null,
+    imageUrl: (r as any).image?.url ?? null,
+    mobileImageUrl: r.mobileImageUrl ?? null,
+    videoUrl: r.videoUrl ?? null,
+    youtubeId: r.youtubeId ?? null,
+    ctaText: r.ctaText as Record<string, string> | null,
+    ctaLink: r.ctaLink ?? null,
+    textPosition: r.textPosition as Record<string, string> | null,
+    textColor: r.textColor,
+    overlayOpacity: r.overlayOpacity,
+    order: r.order,
+    active: r.active,
+    createdAt: r.createdAt,
+    updatedAt: r.updatedAt,
+  }));
+}
+
+// ============================================================================
+// CATALOGUE — PRODUCT CATEGORIES
+// ============================================================================
+
+export type ProductCategoryRecord = {
+  id: string;
+  name: Record<string, string>;
+  slug: string;
+  description: Record<string, string> | null;
+  imageUrl: string | null;
+  icon: string | null;
+  parentCategoryId: string | null;
+  order: number;
+  children?: ProductCategoryRecord[];
+};
+
+export async function getProductCategories(): Promise<ProductCategoryRecord[]> {
+  const rows = await prisma.productCategories.findMany({
+    orderBy: { order: 'asc' },
+    include: { image: { select: { url: true } } },
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name as Record<string, string>,
+    slug: r.slug,
+    description: r.description as Record<string, string> | null,
+    imageUrl: (r as any).image?.url ?? null,
+    icon: r.icon ?? null,
+    parentCategoryId: r.parentCategoryId ?? null,
+    order: r.order,
+  }));
+}
+
+export async function getProductCategoryBySlug(slug: string): Promise<ProductCategoryRecord | null> {
+  const row = await prisma.productCategories.findUnique({
+    where: { slug },
+    include: { image: { select: { url: true } } },
+  });
+  if (!row) return null;
+  return {
+    id: row.id,
+    name: row.name as Record<string, string>,
+    slug: row.slug,
+    description: row.description as Record<string, string> | null,
+    imageUrl: (row as any).image?.url ?? null,
+    icon: row.icon ?? null,
+    parentCategoryId: row.parentCategoryId ?? null,
+    order: row.order,
+  };
+}
+
+// ============================================================================
+// CATALOGUE — PRODUCTS
+// ============================================================================
+
+export type ProductRecord = {
+  id: string;
+  name: Record<string, string>;
+  model: Record<string, string> | null;
+  slug: string;
+  description: Record<string, string> | null;
+  shortDescription: Record<string, string> | null;
+  categoryId: string | null;
+  category: ProductCategoryRecord | null;
+  media: unknown;
+  specifications: unknown;
+  inStock: boolean;
+  featured: boolean;
+  order: number;
+  instructions: unknown;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export async function getProducts(options?: {
+  categoryId?: string;
+  search?: string;
+  featured?: boolean;
+  limit?: number;
+  page?: number;
+}): Promise<{ products: ProductRecord[]; total: number }> {
+  const { categoryId, search, featured, limit = 24, page = 1 } = options ?? {};
+
+  const where: Record<string, unknown> = {};
+  if (categoryId) where.categoryId = categoryId;
+  if (featured !== undefined) where.featured = featured;
+  if (search) {
+    // Basic search on slug (JSON name search not supported at DB level without raw query)
+    where.slug = { contains: search.toLowerCase() };
+  }
+
+  const [rows, total] = await Promise.all([
+    prisma.products.findMany({
+      where,
+      orderBy: { order: 'asc' },
+      take: limit,
+      skip: (page - 1) * limit,
+      include: {
+        category: {
+          include: { image: { select: { url: true } } },
+        },
+      },
+    }),
+    prisma.products.count({ where }),
+  ]);
+
+  return {
+    products: rows.map(mapProductRow),
+    total,
+  };
+}
+
+export async function getProduct(id: string): Promise<ProductRecord | null> {
+  const row = await prisma.products.findUnique({
+    where: { id },
+    include: {
+      category: {
+        include: { image: { select: { url: true } } },
+      },
+    },
+  });
+  if (!row) return null;
+  return mapProductRow(row);
+}
+
+export async function getFeaturedProducts(limit = 8): Promise<ProductRecord[]> {
+  const { products } = await getProducts({ featured: true, limit });
+  return products;
+}
+
+function mapProductRow(r: any): ProductRecord {
+  const cat = r.category;
+  return {
+    id: r.id,
+    name: r.name as Record<string, string>,
+    model: r.model as Record<string, string> | null,
+    slug: r.slug,
+    description: r.description as Record<string, string> | null,
+    shortDescription: r.shortDescription as Record<string, string> | null,
+    categoryId: r.categoryId ?? null,
+    category: cat
+      ? {
+          id: cat.id,
+          name: cat.name as Record<string, string>,
+          slug: cat.slug,
+          description: cat.description as Record<string, string> | null,
+          imageUrl: cat.image?.url ?? null,
+          icon: cat.icon ?? null,
+          parentCategoryId: cat.parentCategoryId ?? null,
+          order: cat.order,
+        }
+      : null,
+    media: r.media ?? [],
+    specifications: r.specifications ?? [],
+    inStock: r.inStock,
+    featured: r.featured,
+    order: r.order,
+    instructions: r.instructions ?? [],
+    createdAt: r.createdAt,
+    updatedAt: r.updatedAt,
+  };
+}

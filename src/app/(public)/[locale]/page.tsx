@@ -4,9 +4,21 @@ import {
   getPublishedPage,
   getPublishedPosts,
   localeEngine,
+  getActiveHeroSlides,
+  getProducts,
+  getProductCategories,
+  getFeaturedProducts,
 } from '@/lib/cms';
 import { getLocale } from '@/lib/locale-utils';
 import { PageRenderer } from '@/components/blocks/PageRenderer';
+import { AgbonHeroSection } from '@/components/agbon/hero-section';
+import { AgbonProductList } from '@/components/agbon/product-list';
+import { AgbonSidebarCategories } from '@/components/agbon/sidebar-categories';
+import { AgbonHappyFarmingBanner } from '@/components/agbon/happy-farming-banner';
+import { AgbonHomeFeatureCards } from '@/components/agbon/home-feature-cards';
+import { AgbonStatsBar } from '@/components/agbon/stats-bar';
+import { AgbonTestimonialStatsSection } from '@/components/agbon/testimonial-stats-section';
+import { AgbonProductNavProvider } from '@/contexts/agbon-product-nav-context';
 import type { Metadata } from 'next';
 
 interface Props {
@@ -44,64 +56,46 @@ export default async function LocaleHomePage({ params }: Props) {
     );
   }
 
-  // Fallback: posts listing
-  const posts = await getPublishedPosts(locale, { limit: 20 });
+  // Fallback: AGBON home page (catalogue + hero)
+  const [heroSlides, productsResult, categories, featuredProducts] = await Promise.all([
+    getActiveHeroSlides(),
+    getProducts({ limit: 24 }),
+    getProductCategories(),
+    getFeaturedProducts(4),
+  ]);
 
   return (
-    <div className="container mx-auto px-4 py-16">
-      <h1 className="text-4xl font-bold mb-4">Welcome</h1>
-      <p className="text-xl text-muted-foreground mb-8">Current locale: {locale}</p>
-
-      {/* Locale switcher */}
-      <div className="mb-8">
-        <span className="text-sm text-muted-foreground mr-2">Languages:</span>
-        {localeEngine.getSupportedLocales().map((loc) => (
-          <Link
-            key={loc}
-            href={`/${loc}`}
-            className={`inline-block px-3 py-1 mr-2 rounded ${
-              loc === locale
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-secondary hover:bg-secondary/80'
-            }`}
-          >
-            {loc.toUpperCase()}
-          </Link>
-        ))}
-      </div>
-
-      <h2 className="text-2xl font-semibold mb-4">Latest Posts</h2>
-      {posts.length === 0 ? (
-        <p className="text-muted-foreground">No published posts yet.</p>
-      ) : (
-        <div className="grid gap-4">
-          {posts.map((post) => {
-            const title = getLocale(post.title as Record<string, string> | null, locale);
-            const slug = getLocale(post.slug as Record<string, string> | null, locale);
-            const excerpt = getLocale(post.excerpt as Record<string, string> | null, locale);
-            if (!slug) return null;
-
-            return (
-              <Link
-                key={post.id}
-                href={`/${locale}/${slug}`}
-                className="block p-6 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors"
-              >
-                <p className="text-xs text-muted-foreground mb-1">Post</p>
-                <h3 className="font-semibold">{title}</h3>
-                {excerpt && (
-                  <p className="text-sm text-muted-foreground mt-2">{excerpt}</p>
-                )}
-                <p className="text-sm text-muted-foreground mt-2">
-                  Published{' '}
-                  {new Date(post.publishedAt ?? post.createdAt).toLocaleDateString()}
-                </p>
-              </Link>
-            );
-          })}
+    <>
+      <AgbonHeroSection slides={heroSlides} />
+      <div className="flex flex-col md:flex-row max-w-[90rem] mx-auto px-2 md:px-4 py-6 gap-4">
+        {/* Sidebar */}
+        <div className="w-full md:w-56 lg:w-64 shrink-0">
+          <AgbonProductNavProvider mode="filter" syncWithUrl={false} locale={locale}>
+            <AgbonSidebarCategories categories={categories} locale={locale} />
+          </AgbonProductNavProvider>
         </div>
-      )}
-    </div>
+        {/* Main content */}
+        <div className="flex-1 min-w-0">
+          <AgbonProductNavProvider mode="filter" syncWithUrl={false} locale={locale}>
+            <AgbonHappyFarmingBanner locale={locale} className="pt-0 pb-6" />
+            <AgbonProductList
+              products={productsResult.products}
+              categories={categories}
+              locale={locale}
+              itemsPerPage={8}
+              showHeader={true}
+              showFeatured={true}
+              featuredProducts={featuredProducts}
+              featuredTitle="Hot Selling Products"
+              gridColumns="grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+            />
+            <AgbonStatsBar locale={locale} className="my-10" backgroundImage="/images/section/light_gen.png" />
+            <AgbonHomeFeatureCards locale={locale} />
+            <AgbonTestimonialStatsSection />
+          </AgbonProductNavProvider>
+        </div>
+      </div>
+    </>
   );
 }
 

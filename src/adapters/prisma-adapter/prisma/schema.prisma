@@ -87,6 +87,8 @@ model Media {
   createdBy String? @db.VarChar(255)
   pages Pages[]
   posts Posts[]
+  heroSlides HeroSlides[]
+  productCategories ProductCategories[]
   @@index([status])
   @@unique([documentId, status])
   @@index([documentId])
@@ -123,25 +125,10 @@ model Pages {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   createdBy String? @db.VarChar(255)
-  pagesLocale PagesLocale[]
   @@index([status])
   @@unique([documentId, status])
   @@index([documentId])
   @@map("pages")
-}
-
-model PagesLocale {
-  id String @id @default(uuid())
-  pagesId String
-  locale String @db.VarChar(10)
-  title Json?
-  slug Json?
-  excerpt Json?
-  Pages Pages @relation(fields: [pagesId], references: [id], onDelete: Cascade)
-  @@unique([pagesId, locale])
-  @@unique([locale, slug])
-  @@index([locale])
-  @@map("pages_locale")
 }
 
 model PagesVersion {
@@ -169,20 +156,8 @@ model Blocks {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   createdBy String? @db.VarChar(255)
-  blocksLocale BlocksLocale[]
   @@index([status])
   @@map("blocks")
-}
-
-model BlocksLocale {
-  id String @id @default(uuid())
-  blocksId String
-  locale String @db.VarChar(10)
-  content Json?
-  Blocks Blocks @relation(fields: [blocksId], references: [id], onDelete: Cascade)
-  @@unique([blocksId, locale])
-  @@index([locale])
-  @@map("blocks_locale")
 }
 
 model Menus {
@@ -210,23 +185,9 @@ model Categories {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   createdBy String? @db.VarChar(255)
-  categoriesLocale CategoriesLocale[]
   posts Posts[]
   @@index([status])
   @@map("categories")
-}
-
-model CategoriesLocale {
-  id String @id @default(uuid())
-  categoriesId String
-  locale String @db.VarChar(10)
-  slug Json?
-  description Json?
-  Categories Categories @relation(fields: [categoriesId], references: [id], onDelete: Cascade)
-  @@unique([categoriesId, locale])
-  @@unique([locale, slug])
-  @@index([locale])
-  @@map("categories_locale")
 }
 
 model Posts {
@@ -250,26 +211,10 @@ model Posts {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   createdBy String? @db.VarChar(255)
-  postsLocale PostsLocale[]
   @@index([status])
   @@unique([documentId, status])
   @@index([documentId])
   @@map("posts")
-}
-
-model PostsLocale {
-  id String @id @default(uuid())
-  postsId String
-  locale String @db.VarChar(10)
-  title Json?
-  slug Json?
-  excerpt Json?
-  content Json?
-  Posts Posts @relation(fields: [postsId], references: [id], onDelete: Cascade)
-  @@unique([postsId, locale])
-  @@unique([locale, slug])
-  @@index([locale])
-  @@map("posts_locale")
 }
 
 model PostsVersion {
@@ -321,5 +266,75 @@ model Settings {
   createdBy String? @db.VarChar(255)
   @@index([status])
   @@map("settings")
+}
+
+model HeroSlides {
+  id String @id @default(uuid())
+  status String @db.VarChar(20)
+  title Json
+  subtitle Json?
+  mediaType String @db.VarChar(100) @default("image")
+  imageId String? @db.VarChar(100)
+  mobileImageUrl String? @db.VarChar(255)
+  videoUrl String? @db.VarChar(255)
+  youtubeId String? @db.VarChar(255)
+  ctaText Json?
+  ctaLink String? @db.VarChar(255)
+  textPosition Json?
+  textColor String @db.VarChar(100) @default("white")
+  overlayOpacity Int @default(30)
+  order Int @default(0)
+  active Boolean @default(true)
+  image Media? @relation(fields: [imageId], references: [id], onDelete: SetNull)
+  metadata Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String? @db.VarChar(255)
+  @@index([status])
+  @@map("hero_slides")
+}
+
+model ProductCategories {
+  id String @id @default(uuid())
+  status String @db.VarChar(20)
+  name Json
+  slug String @db.VarChar(255) @unique
+  description Json?
+  imageId String? @db.VarChar(100)
+  icon String? @db.VarChar(255)
+  parentCategoryId String? @db.VarChar(255)
+  order Int @default(0)
+  image Media? @relation(fields: [imageId], references: [id], onDelete: SetNull)
+  metadata Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String? @db.VarChar(255)
+  products Products[]
+  @@index([status])
+  @@map("product_categories")
+}
+
+model Products {
+  id String @id @default(uuid())
+  status String @db.VarChar(20)
+  name Json
+  model Json?
+  slug String @db.VarChar(255) @unique
+  description Json?
+  shortDescription Json?
+  categoryId String? @db.VarChar(100)
+  media Json?
+  specifications Json?
+  inStock Boolean @default(true)
+  featured Boolean @default(false)
+  order Int @default(0)
+  instructions Json?
+  category ProductCategories? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  metadata Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String? @db.VarChar(255)
+  @@index([status])
+  @@map("products")
 }
 

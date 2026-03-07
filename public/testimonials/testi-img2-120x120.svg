@@ -1,0 +1,6 @@
+<svg width="120" height="120" xmlns="http://www.w3.org/2000/svg">
+  <rect width="120" height="120" fill="#E5E7EB"/>
+  <circle cx="60" cy="45" r="20" fill="#9CA3AF"/>
+  <path d="M30 95 Q60 75 90 95" fill="#9CA3AF"/>
+  <text x="60" y="110" font-family="Arial" font-size="10" fill="#6B7280" text-anchor="middle">Person 2</text>
+</svg>

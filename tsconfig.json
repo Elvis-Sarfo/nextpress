@@ -37,6 +37,7 @@
   ],
   "exclude": [
     "node_modules",
-    "src/core/core/payload-types.ts"
+    "src/core/core/payload-types.ts",
+    "AGBON WESITE"
   ]
 }
