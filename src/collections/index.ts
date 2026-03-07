@@ -26,7 +26,6 @@ import { Comments } from './Comments';
 import { Settings } from './Settings';
 
 // Catalogue (AGBON)
-import { HeroSlides } from './HeroSlides';
 import { ProductCategories } from './ProductCategories';
 import { Products } from './Products';
 
@@ -49,7 +48,6 @@ export const collections: CollectionConfig[] = [
   Settings,
 
   // Catalogue
-  HeroSlides,
   ProductCategories,
   Products,
 ];
