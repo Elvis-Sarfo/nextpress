@@ -183,7 +183,7 @@ export async function getPublishedPage(
   return prisma.pages.findFirst({
     where: {
       status: 'published',
-      slug: { path: [locale], equals: slug },
+      slug: { path: `$.${locale}`, equals: slug },
     },
   });
 }
@@ -263,7 +263,7 @@ export async function getCategoryBySlug(
   slug: string
 ): Promise<Category | null> {
   return prisma.categories.findFirst({
-    where: { slug: { path: [locale], equals: slug } },
+    where: { slug: { path: `$.${locale}`, equals: slug } },
   }) as unknown as Category | null;
 }
 
@@ -321,7 +321,7 @@ export async function getPublishedPost(
   return prisma.posts.findFirst({
     where: {
       status: 'published',
-      slug: { path: [locale], equals: slug },
+      slug: { path: `$.${locale}`, equals: slug },
     },
     include: POST_INCLUDE,
   }) as unknown as PostWithLocales | null;

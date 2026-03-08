@@ -1,15 +1,16 @@
 /**
- * Prisma PostgreSQL Client
- * 
- * Singleton Prisma client with PostgreSQL adapter and connection pooling.
- * In development, stores in global to survive hot module replacement (HMR).
- * 
- * @module prisma-adapter/client
+ * Prisma client bootstrap.
+ *
+ * Uses the PostgreSQL driver adapter only when the generated Prisma schema is
+ * configured for a PostgreSQL-compatible provider. Other providers rely on the
+ * default Prisma engine.
  */
 
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 import pg from 'pg';
+import { getPrismaProvider, usesMariaDbAdapter, usesPostgresAdapter } from './provider';
 
 const { Pool } = pg;
 
@@ -30,21 +31,29 @@ function createPool(): pg.Pool {
 }
 
 /**
- * Singleton Prisma client with PostgreSQL adapter.
+ * Singleton Prisma client with provider-aware adapter configuration.
  * In development, stores in global to survive hot reload.
  */
 function createPrismaClient(): PrismaClient {
-  const pool = globalThis.__pool ?? createPool();
+  const provider = getPrismaProvider();
 
+  if (usesMariaDbAdapter(provider)) {
+    return new PrismaClient({
+      adapter: new PrismaMariaDb(process.env.DATABASE_URL!),
+    });
+  }
+
+  if (!usesPostgresAdapter(provider)) {
+    throw new Error(`Unsupported Prisma provider "${provider}" for the configured adapter bootstrap.`);
+  }
+
+  const pool = globalThis.__pool ?? createPool();
   if (process.env.NODE_ENV !== 'production') {
     globalThis.__pool = pool;
   }
 
   const adapter = new PrismaPg(pool);
-
-  const client = new PrismaClient({
-    adapter,
-  });
+  const client = new PrismaClient({ adapter });
 
   return client;
 }

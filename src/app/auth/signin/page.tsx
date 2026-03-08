@@ -1,4 +1,5 @@
 import { auth } from '@/auth';
+import { hasAdminUser } from '@/lib/admin-bootstrap';
 import { redirect } from 'next/navigation';
 import { SignInForm } from './SignInForm';
 import { Menu } from 'lucide-react';
@@ -19,6 +20,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
   const params = await searchParams;
   const callbackUrl = params.callbackUrl ?? '/admin';
   const error = params.error;
+  const adminExists = await hasAdminUser();
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -31,13 +33,19 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
 
         <div className="rounded-xl border border-border bg-card p-8 shadow-sm">
           <h1 className="text-xl font-semibold text-card-foreground">
-            Sign in to your account
+            {adminExists ? 'Sign in to your account' : 'Create the first admin account'}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Use your admin credentials to access the dashboard.
+            {adminExists
+              ? 'Use your admin credentials to access the dashboard.'
+              : 'No admin user exists yet. Create the initial administrator to unlock the dashboard.'}
           </p>
 
-          <SignInForm callbackUrl={callbackUrl} error={error} />
+          <SignInForm
+            adminSetupRequired={!adminExists}
+            callbackUrl={callbackUrl}
+            error={error}
+          />
         </div>
       </div>
     </div>

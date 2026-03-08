@@ -1,16 +1,26 @@
 import { PrismaClient } from '../prisma-client/index';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 import pg from 'pg';
 import dotenv from 'dotenv';
 import { randomUUID } from 'crypto';
 import bcrypt from 'bcryptjs';
+import { getPrismaProvider, usesMariaDbAdapter, usesPostgresAdapter } from '../provider';
 
 dotenv.config();
 
 const { Pool } = pg;
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
+const provider = getPrismaProvider();
+const pool = usesPostgresAdapter(provider)
+  ? new Pool({ connectionString: process.env.DATABASE_URL })
+  : null;
+const prisma = usesMariaDbAdapter(provider)
+  ? new PrismaClient({ adapter: new PrismaMariaDb(process.env.DATABASE_URL!) })
+  : pool
+    ? new PrismaClient({ adapter: new PrismaPg(pool) })
+    : (() => {
+        throw new Error(`Unsupported Prisma provider "${provider}" for seed script.`);
+      })();
 
 // ── Permission definitions ────────────────────────────────────────────────────
 // Each entry produces one row in the permissions table.
@@ -329,5 +339,7 @@ main()
   })
   .finally(async () => {
     await prisma.$disconnect();
-    await pool.end();
+    if (pool) {
+      await pool.end();
+    }
   });

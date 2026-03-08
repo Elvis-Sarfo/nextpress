@@ -256,9 +256,10 @@ export async function POST(
     const slugEntries = Object.entries(body.slug as Record<string, string>);
     for (const [locale, localeSlug] of slugEntries) {
       if (!localeSlug) continue;
+      const jsonPath = `$.${locale}`;
       const existing = collection === 'pages'
-        ? await prisma.pages.findFirst({ where: { slug: { path: [locale], equals: localeSlug } } })
-        : await prisma.posts.findFirst({ where: { slug: { path: [locale], equals: localeSlug } } });
+        ? await prisma.pages.findFirst({ where: { slug: { path: jsonPath, equals: localeSlug } } })
+        : await prisma.posts.findFirst({ where: { slug: { path: jsonPath, equals: localeSlug } } });
       if (existing) {
         return NextResponse.json(
           { error: `Slug "${localeSlug}" is already in use for locale "${locale}"` },

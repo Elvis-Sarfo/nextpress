@@ -22,7 +22,7 @@ export async function getPageInfoForPath(pathname: string): Promise<PageInfo | n
   try {
     const page = await prisma.pages.findFirst({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      where: { slug: { path: [locale], equals: slug } as any },
+      where: { slug: { path: `$.${locale}`, equals: slug } as any },
       select: { id: true, title: true },
     });
 
