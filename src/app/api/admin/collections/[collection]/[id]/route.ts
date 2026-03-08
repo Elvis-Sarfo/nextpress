@@ -64,6 +64,18 @@ function getPrismaModel(collection: string) {
   } | undefined;
 }
 
+async function clearOtherIndexPages(exceptId: string): Promise<void> {
+  await prisma.pages.updateMany({
+    where: {
+      isIndexPage: true,
+      id: { not: exceptId },
+    },
+    data: {
+      isIndexPage: false,
+    },
+  });
+}
+
 // ────────────────────────────────────────────────────────────────────────────
 // GET — fetch one document
 // ────────────────────────────────────────────────────────────────────────────
@@ -210,6 +222,10 @@ export async function PUT(
       data,
       include: INCLUDE_MAP[collection],
     });
+
+    if (collection === 'pages' && data.isIndexPage === true) {
+      await clearOtherIndexPages(id);
+    }
 
     // Invalidate RBAC cache so the next request picks up fresh roles
     if (collection === 'users') {

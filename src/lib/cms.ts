@@ -188,6 +188,16 @@ export async function getPublishedPage(
   });
 }
 
+export async function getPublishedIndexPage(): Promise<PageWithLocales | null> {
+  return prisma.pages.findFirst({
+    where: {
+      status: 'published',
+      isIndexPage: true,
+    },
+    orderBy: { updatedAt: 'desc' },
+  });
+}
+
 export async function getPageChildren(
   parentId: string,
   options?: { status?: ContentStatus }

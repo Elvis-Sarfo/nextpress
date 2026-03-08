@@ -113,6 +113,15 @@ export const Pages: CollectionConfig<'pages'> = {
       ],
     } satisfies SelectField,
     {
+      name: 'isIndexPage',
+      label: 'Use As Index Page',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        description: 'If enabled, this page will be used as the website home page.',
+      },
+    } satisfies CheckboxField,
+    {
       name: 'featuredImage',
       type: 'upload',
       relationTo: 'media',

@@ -116,6 +116,18 @@ function stripNullNumberFields(collection: string, body: Record<string, unknown>
   }
 }
 
+async function clearOtherIndexPages(exceptId?: string): Promise<void> {
+  await prisma.pages.updateMany({
+    where: {
+      isIndexPage: true,
+      ...(exceptId ? { id: { not: exceptId } } : {}),
+    },
+    data: {
+      isIndexPage: false,
+    },
+  });
+}
+
 function getPrismaModel(collection: string) {
   const db = prisma as unknown as Record<string, unknown>;
   return db[collection] as {
@@ -359,6 +371,10 @@ export async function POST(
       data,
       include: INCLUDE_MAP[collection],
     });
+
+    if (collection === 'pages' && data.isIndexPage === true) {
+      await clearOtherIndexPages((doc as { id?: string }).id);
+    }
 
     if (collection === 'users' && body.id) {
       invalidatePrincipalCache(body.id as string);

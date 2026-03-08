@@ -117,6 +117,7 @@ model Pages {
   parentId String? @db.VarChar(255)
   order Int @default(0)
   status String @db.VarChar(100) @default("draft")
+  isIndexPage Boolean @default(false)
   featuredImageId String? @db.VarChar(255)
   seo Json?
   featuredImage Media? @relation(fields: [featuredImageId], references: [id], onDelete: SetNull)

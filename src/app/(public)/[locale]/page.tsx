@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import {
   getPublishedPage,
+  getPublishedIndexPage,
   getPublishedPosts,
   localeEngine,
   getProducts,
@@ -30,8 +31,8 @@ export default async function LocaleHomePage({ params }: Props) {
     notFound();
   }
 
-  // Try to find a published page with slug "home" in this locale
-  const homePage = await getPublishedPage(locale, 'home');
+  // Prefer an explicit index page, then fall back to the historical "home" slug.
+  const homePage = (await getPublishedIndexPage()) ?? (await getPublishedPage(locale, 'home'));
 
   if (homePage) {
     const hasSections = Array.isArray(homePage.sections) && homePage.sections.length > 0;
@@ -98,7 +99,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (!localeEngine.isSupported(locale)) return {};
 
-  const homePage = await getPublishedPage(locale, 'home');
+  const homePage = (await getPublishedIndexPage()) ?? (await getPublishedPage(locale, 'home'));
   if (!homePage) return { title: 'Home' };
 
   const title = getLocale(homePage.title as Record<string, string> | null, locale);
