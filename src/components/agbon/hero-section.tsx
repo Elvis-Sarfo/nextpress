@@ -2,7 +2,19 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
-import { HeroSlideRecord } from '@/lib/cms'
+
+type HeroSlideRecord = {
+  title: Record<string, string> | null
+  subtitle: Record<string, string> | null
+  imageUrl?: string | null
+  mobileImageUrl: string | null
+  videoUrl: string | null
+  ctaText: Record<string, string> | null
+  ctaLink: string | null
+  textPosition: Record<string, string> | null
+  textColor: string
+  overlayOpacity: number
+}
 
 interface HeroSectionProps {
   slides?: HeroSlideRecord[]

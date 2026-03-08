@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/adapters/prisma-adapter';
+import { getPrismaProvider } from '@/adapters/prisma-adapter/provider';
 import bcrypt from 'bcryptjs';
 import { invalidatePrincipalCache } from '@/lib/rbac-service';
 
@@ -49,6 +50,11 @@ const SEARCH_FIELDS: Record<string, string[]> = {
   comments: ['authorName', 'authorEmail', 'content'],
 };
 
+function getJsonPath(locale: string): string | string[] {
+  const provider = getPrismaProvider();
+  return provider === 'mysql' ? `$.${locale}` : [locale];
+}
+
 function supportsBlocksContentDefinition(): boolean {
   const runtime = (prisma as unknown as {
     _runtimeDataModel?: {
@@ -71,6 +77,43 @@ function supportsBlocksDataSource(): boolean {
   const model = runtime?.models?.blocks ?? runtime?.models?.Blocks;
   if (!model?.fields) return true;
   return model.fields.some((field) => field.name === 'dataSource');
+}
+
+function modelHasField(collection: string, fieldName: string): boolean {
+  const runtime = (prisma as unknown as {
+    _runtimeDataModel?: {
+      models?: Record<string, { fields?: Array<{ name?: string }> }>;
+    };
+  })._runtimeDataModel;
+
+  const pascalCollection = collection.charAt(0).toUpperCase() + collection.slice(1);
+  const model = runtime?.models?.[collection] ?? runtime?.models?.[pascalCollection];
+  if (!model?.fields) return false;
+  return model.fields.some((field) => field.name === fieldName);
+}
+
+function createDocumentId(): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function stripNullNumberFields(collection: string, body: Record<string, unknown>): void {
+  const runtime = (prisma as unknown as {
+    _runtimeDataModel?: {
+      models?: Record<string, { fields?: Array<{ name?: string; type?: string }> }>;
+    };
+  })._runtimeDataModel;
+
+  const pascalCollection = collection.charAt(0).toUpperCase() + collection.slice(1);
+  const model = runtime?.models?.[collection] ?? runtime?.models?.[pascalCollection];
+  if (!model?.fields) return;
+
+  for (const field of model.fields) {
+    if (!field.name) continue;
+    if (field.type !== 'Int' && field.type !== 'Float') continue;
+    if (body[field.name] === null) {
+      delete body[field.name];
+    }
+  }
 }
 
 function getPrismaModel(collection: string) {
@@ -256,7 +299,7 @@ export async function POST(
     const slugEntries = Object.entries(body.slug as Record<string, string>);
     for (const [locale, localeSlug] of slugEntries) {
       if (!localeSlug) continue;
-      const jsonPath = `$.${locale}`;
+      const jsonPath = getJsonPath(locale);
       const existing = collection === 'pages'
         ? await prisma.pages.findFirst({ where: { slug: { path: jsonPath, equals: localeSlug } } })
         : await prisma.posts.findFirst({ where: { slug: { path: jsonPath, equals: localeSlug } } });
@@ -285,6 +328,16 @@ export async function POST(
     body.passwordHash = await bcrypt.hash(body.password, 12);
   }
   delete body.password;
+
+  if (modelHasField(collection, 'documentId')) {
+    body.documentId = typeof body.documentId === 'string' && body.documentId.trim().length > 0
+      ? body.documentId
+      : createDocumentId();
+  } else {
+    delete body.documentId;
+  }
+
+  stripNullNumberFields(collection, body);
 
   // Build Prisma data object
   const data: Record<string, unknown> = {

@@ -4,14 +4,12 @@ import {
   getPublishedPage,
   getPublishedPosts,
   localeEngine,
-  getActiveHeroSlides,
   getProducts,
   getProductCategories,
   getFeaturedProducts,
 } from '@/lib/cms';
 import { getLocale } from '@/lib/locale-utils';
 import { PageRenderer } from '@/components/blocks/PageRenderer';
-import { AgbonHeroSection } from '@/components/agbon/hero-section';
 import { AgbonProductList } from '@/components/agbon/product-list';
 import { AgbonSidebarCategories } from '@/components/agbon/sidebar-categories';
 import { AgbonHappyFarmingBanner } from '@/components/agbon/happy-farming-banner';
@@ -56,9 +54,8 @@ export default async function LocaleHomePage({ params }: Props) {
     );
   }
 
-  // Fallback: AGBON home page (catalogue + hero)
-  const [heroSlides, productsResult, categories, featuredProducts] = await Promise.all([
-    getActiveHeroSlides(),
+  // Fallback: AGBON home page (catalogue)
+  const [productsResult, categories, featuredProducts] = await Promise.all([
     getProducts({ limit: 24 }),
     getProductCategories(),
     getFeaturedProducts(4),
@@ -66,7 +63,6 @@ export default async function LocaleHomePage({ params }: Props) {
 
   return (
     <>
-      <AgbonHeroSection slides={heroSlides} />
       <div className="flex flex-col md:flex-row max-w-[90rem] mx-auto px-2 md:px-4 py-6 gap-4">
         <div className="w-full md:w-56 lg:w-64 shrink-0">
           <AgbonProductNavProvider mode="filter" syncWithUrl={false} locale={locale}>

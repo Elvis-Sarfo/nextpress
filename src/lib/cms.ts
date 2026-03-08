@@ -698,59 +698,6 @@ export async function getSetting<T = unknown>(path: string): Promise<T | undefin
 }
 
 // ============================================================================
-// CATALOGUE — HERO SLIDES
-// ============================================================================
-
-export type HeroSlideRecord = {
-  id: string;
-  title: Record<string, string> | null;
-  subtitle: Record<string, string> | null;
-  mediaType: string;
-  imageId: string | null;
-  imageUrl?: string | null;
-  mobileImageUrl: string | null;
-  videoUrl: string | null;
-  youtubeId: string | null;
-  ctaText: Record<string, string> | null;
-  ctaLink: string | null;
-  textPosition: Record<string, string> | null;
-  textColor: string;
-  overlayOpacity: number;
-  order: number;
-  active: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-};
-
-export async function getActiveHeroSlides(): Promise<HeroSlideRecord[]> {
-  const rows = await prisma.heroSlides.findMany({
-    where: { active: true },
-    orderBy: { order: 'asc' },
-    include: { image: { select: { url: true } } },
-  });
-  return rows.map((r) => ({
-    id: r.id,
-    title: r.title as Record<string, string> | null,
-    subtitle: r.subtitle as Record<string, string> | null,
-    mediaType: r.mediaType,
-    imageId: r.imageId ?? null,
-    imageUrl: (r as any).image?.url ?? null,
-    mobileImageUrl: r.mobileImageUrl ?? null,
-    videoUrl: r.videoUrl ?? null,
-    youtubeId: r.youtubeId ?? null,
-    ctaText: r.ctaText as Record<string, string> | null,
-    ctaLink: r.ctaLink ?? null,
-    textPosition: r.textPosition as Record<string, string> | null,
-    textColor: r.textColor,
-    overlayOpacity: r.overlayOpacity,
-    order: r.order,
-    active: r.active,
-    createdAt: r.createdAt,
-    updatedAt: r.updatedAt,
-  }));
-}
-
-// ============================================================================
 // CATALOGUE — PRODUCT CATEGORIES
 // ============================================================================
 

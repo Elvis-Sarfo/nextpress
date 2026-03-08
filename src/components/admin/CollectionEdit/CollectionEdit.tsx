@@ -386,7 +386,10 @@ export function CollectionEdit({
             type="number"
             id={field.name}
             value={(value as number) ?? ''}
-            onChange={(e) => updateField(field.name, e.target.valueAsNumber)}
+            onChange={(e) => {
+              const nextValue = e.target.value === '' ? null : e.target.valueAsNumber;
+              updateField(field.name, Number.isNaN(nextValue) ? null : nextValue);
+            }}
             required={field.required}
             className={baseInput}
           />
