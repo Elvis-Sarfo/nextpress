@@ -3,16 +3,23 @@
  *
  * Uses the PostgreSQL driver adapter only when the generated Prisma schema is
  * configured for a PostgreSQL-compatible provider. Other providers rely on the
- * default Prisma engine.
+ * matching driver adapter.
  */
 
+import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
-import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaMariaDb } from '@prisma/adapter-mariadb';
+import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
 import { getPrismaProvider, usesMariaDbAdapter, usesPostgresAdapter } from './provider';
 
 const { Pool } = pg;
+
+dotenv.config();
+
+function getDatabaseUrl(): string | undefined {
+  return process.env.DATABASE_URL ?? process.env.DATABASE_URI;
+}
 
 declare global {
   // eslint-disable-next-line no-var
@@ -26,7 +33,7 @@ declare global {
  */
 function createPool(): pg.Pool {
   return new Pool({
-    connectionString: process.env.DATABASE_URL,
+    connectionString: getDatabaseUrl(),
   });
 }
 
@@ -38,8 +45,13 @@ function createPrismaClient(): PrismaClient {
   const provider = getPrismaProvider();
 
   if (usesMariaDbAdapter(provider)) {
+    const url = getDatabaseUrl();
+    if (!url) {
+      throw new Error('Missing DATABASE_URL or DATABASE_URI for the MariaDB Prisma adapter.');
+    }
+
     return new PrismaClient({
-      adapter: new PrismaMariaDb(process.env.DATABASE_URL!),
+      adapter: new PrismaMariaDb(url),
     });
   }
 

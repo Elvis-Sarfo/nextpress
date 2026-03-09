@@ -146,7 +146,7 @@ model PagesVersion {
 model Blocks {
   id String @id @default(uuid())
   name String @db.VarChar(255) @unique
-  type String @db.VarChar(100)
+  label String @db.VarChar(255)
   templateName String? @db.VarChar(255)
   contentDefinition Json?
   dataSource Json?

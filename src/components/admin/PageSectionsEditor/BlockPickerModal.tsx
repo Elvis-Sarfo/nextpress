@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 interface BlockDoc {
   id: string;
   name: string;
-  type: string;
+  label?: string;
 }
 
 interface BlockPickerModalProps {
@@ -46,7 +46,7 @@ export function BlockPickerModal({ open, onClose, onSelect }: BlockPickerModalPr
     ? blocks.filter(
         (b) =>
           b.name.toLowerCase().includes(query.toLowerCase()) ||
-          b.type.toLowerCase().includes(query.toLowerCase())
+          (b.label?.toLowerCase().includes(query.toLowerCase()) ?? false)
       )
     : blocks;
 
@@ -70,7 +70,7 @@ export function BlockPickerModal({ open, onClose, onSelect }: BlockPickerModalPr
               autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by name or type…"
+              placeholder="Search by name or label…"
               className="w-full rounded-md border bg-background py-2 pl-9 pr-3 text-sm"
             />
           </div>
@@ -90,8 +90,8 @@ export function BlockPickerModal({ open, onClose, onSelect }: BlockPickerModalPr
               {filtered.map((block) => (
                 <li key={block.id} className="flex items-center justify-between px-4 py-3 hover:bg-muted/40">
                   <div>
-                    <p className="text-sm font-medium">{block.name}</p>
-                    <p className="text-xs text-muted-foreground">{block.type}</p>
+                    <p className="text-sm font-medium">{block.label || block.name}</p>
+                    <p className="text-xs text-muted-foreground">{block.name}</p>
                   </div>
                   <Button
                     size="sm"

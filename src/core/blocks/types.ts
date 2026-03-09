@@ -1,8 +1,8 @@
 /**
- * Block Type Schema Types
+ * Block Schema Types
  *
- * These types describe the schema for block type definitions.
- * Each block type declares its content fields (rendered once per locale)
+ * These types describe the schema for block definitions.
+ * Each block definition declares its content fields (rendered once per locale)
  * and optional repeatable element fields.
  */
 
@@ -30,9 +30,9 @@ export interface BlockField {
   size?: string;
 }
 
-export interface BlockTypeDefinition {
-  /** Matches the `type` select value in the Blocks collection */
-  type: string;
+export interface BlockContractDefinition {
+  /** Unique contract key for the block definition and renderer lookup */
+  name: string;
   /** Display name shown in the admin UI */
   label: string;
   /** lucide-react icon name (reserved for future block picker gallery) */
@@ -46,6 +46,9 @@ export interface BlockTypeDefinition {
     fields: BlockField[];
   };
 }
+
+/** @deprecated Use BlockContractDefinition instead. */
+export type BlockTypeDefinition = BlockContractDefinition;
 
 /** Content schema portion of a block manifest (editor fields only) */
 export interface BlockDefinition {
@@ -104,16 +107,17 @@ export interface CollectionQueryParams {
 }
 
 /**
- * A block manifest ties the canonical DB `type` key to both the admin editor
+ * A block manifest ties the canonical DB `name` key to both the admin editor
  * schema (definition) and the public-facing React component (component).
- * It is the single source of truth for a block type — adding a new block type
- * only requires creating a manifest and registering it.
+ * It is the single source of truth for a block contract.
  */
 export interface BlockManifest {
-  /** Canonical key stored as blocks.type in the database */
-  type: string;
+  /** Canonical contract key stored as blocks.name in the database */
+  name: string;
   /** Human-readable label shown in the admin UI */
   label: string;
+  /** Optional grouping/category field for admin organization */
+  category?: string;
   /** lucide-react icon name */
   icon?: string;
   /** Admin editor field schema */
@@ -165,16 +169,16 @@ function coerceField(input: unknown): BlockField | null {
 }
 
 /**
- * Converts unknown JSON into a valid BlockTypeDefinition when possible.
+ * Converts unknown JSON into a valid block contract definition when possible.
  * Returns null if the payload does not match the expected definition shape.
  */
 export function coerceBlockTypeDefinition(
   input: unknown,
-  fallbackType?: string,
+  fallbackName?: string,
 ): BlockTypeDefinition | null {
   if (typeof input === 'string') {
     try {
-      return coerceBlockTypeDefinition(JSON.parse(input), fallbackType);
+      return coerceBlockTypeDefinition(JSON.parse(input), fallbackName);
     } catch {
       return null;
     }
@@ -182,7 +186,11 @@ export function coerceBlockTypeDefinition(
 
   if (!isRecord(input)) return null;
 
-  const type = typeof input.type === 'string' ? input.type : (fallbackType ?? 'custom');
+  const name = typeof input.name === 'string'
+    ? input.name
+    : typeof input.type === 'string'
+      ? input.type
+      : (fallbackName ?? 'custom');
 
   const label = typeof input.label === 'string' ? input.label : 'Block';
   const icon = typeof input.icon === 'string' ? input.icon : undefined;
@@ -203,7 +211,7 @@ export function coerceBlockTypeDefinition(
   if (elements && elements.fields.length === 0) return null;
 
   return {
-    type,
+    name,
     label,
     icon,
     content,

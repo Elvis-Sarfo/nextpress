@@ -27,7 +27,7 @@ interface Section {
 
 interface BlockRow {
   id: string;
-  type: string;
+  name: string;
   content: Record<string, Record<string, unknown>>;
   dataSource?: unknown;
 }
@@ -111,7 +111,7 @@ export async function PageRenderer({
     }
 
     // Priority 2: Manifest-declared dataSource (legacy / spec-constrained approach)
-    const manifest = getBlockManifest(row.type);
+    const manifest = getBlockManifest(row.name);
     if (manifest?.definition.dataSource) {
       dataFetchEntries.push({
         blockId: row.id,
@@ -154,14 +154,14 @@ export async function PageRenderer({
                       const block = blockMap.get(ref.blockId);
                       if (!block) return null;
 
-                      const Component = getBlockComponent(block.type);
+                      const Component = getBlockComponent(block.name);
                       if (!Component) {
                         return (
                           <div
                             key={ref.blockId}
                             className="p-4 border border-destructive text-destructive text-sm rounded"
                           >
-                            Unknown block type: <code>{block.type}</code>
+                            Unknown block: <code>{block.name}</code>
                           </div>
                         );
                       }

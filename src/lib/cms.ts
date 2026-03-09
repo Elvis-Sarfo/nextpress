@@ -219,15 +219,15 @@ export async function getPageChildren(
 export type BlockRecord = any;
 
 export async function getBlocks(options?: {
-  type?: string;
+  name?: string;
   status?: string;
 }): Promise<BlockRecord[]> {
   return prisma.blocks.findMany({
     where: {
-      ...(options?.type   ? { type:   options.type   } : {}),
+      ...(options?.name   ? { name:   options.name   } : {}),
       ...(options?.status ? { status: options.status } : {}),
     },
-    orderBy: { name: 'asc' },
+    orderBy: { label: 'asc' },
   });
 }
 

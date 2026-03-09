@@ -22,6 +22,7 @@
     "db:seed": "tsx src/adapters/prisma-adapter/prisma/seed.ts",
     "db:reset": "prisma migrate reset --force",
     "db:backfill:block-definitions": "tsx src/scripts/backfill-block-content-definitions.ts",
+    "blocks:sync": "tsx src/scripts/sync-blocks.ts",
     "db:migration:run": "tsx src/scripts/run-migration.ts",
     "schema:generate": "tsx src/scripts/generate-schema.ts",
     "docs:generate": "tsx src/scripts/generate-docs.ts"

@@ -1,6 +1,4 @@
 import type { BlockManifest } from '@/core/blocks/types';
-import { toBlockTypeOption } from '@/core/blocks/define';
+import { primaryHeroSectionBlock } from './primary-hero-section';
 
-export const blocks: BlockManifest[] = [];
-
-export const blockTypeOptions = blocks.map(toBlockTypeOption);
+export const blocks: BlockManifest[] = [primaryHeroSectionBlock];

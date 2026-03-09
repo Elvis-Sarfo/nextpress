@@ -14,7 +14,6 @@ import {
   SelectField,
   JSONField,
 } from '../core/collection';
-import { blockTypeOptions } from '@/blocks';
 
 export const Blocks: CollectionConfig<'blocks'> = {
   slug: 'blocks',
@@ -25,8 +24,8 @@ export const Blocks: CollectionConfig<'blocks'> = {
   },
 
   admin: {
-    useAsTitle: 'name',
-    defaultColumns: ['name', 'type', 'templateName', 'status', 'updatedAt'],
+    useAsTitle: 'label',
+    defaultColumns: ['label', 'name', 'status', 'updatedAt'],
     group: 'appearance',
   },
 
@@ -47,18 +46,17 @@ export const Blocks: CollectionConfig<'blocks'> = {
       required: true,
       unique: true,
       admin: {
-        description: 'Unique internal identifier, e.g. "hero-home", "cta-footer"',
+        description: 'Unique contract key, e.g. "hero.banner.primary", "content.cta.footer"',
       },
     } satisfies CollectionTextField,
     {
-      name: 'type',
-      type: 'select',
+      name: 'label',
+      type: 'text',
       required: true,
-      options: [...blockTypeOptions],
       admin: {
-        description: 'Block type determines the renderer component used on the public site',
+        description: 'Human-readable block title shown in the admin UI',
       },
-    } satisfies SelectField,
+    } satisfies CollectionTextField,
     {
       name: 'templateName',
       type: 'text',
@@ -106,7 +104,6 @@ export const Blocks: CollectionConfig<'blocks'> = {
 
   indexes: [
     { fields: ['name'], unique: true },
-    { fields: ['type'] },
     { fields: ['status'] },
   ],
 };

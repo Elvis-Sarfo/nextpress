@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { useAdminLocale } from '@/components/providers/AdminLocaleProvider';
 import { BlockContentEditor } from '@/components/admin/BlockContentEditor';
 import { DataSourceBuilder, type DataSourceValue } from '@/components/admin/DataSourceBuilder/DataSourceBuilder';
-import { getBlockManifest, getBlockType } from '@/core/blocks/registry';
+import { getBlockDefinition, getBlockManifest } from '@/core/blocks/registry';
 import type { BlockManifest } from '@/core/blocks/types';
 
 type LocalizedContent = Record<string, Record<string, unknown>>;
@@ -16,7 +16,7 @@ type LocalizedContent = Record<string, Record<string, unknown>>;
 interface BlockDoc {
   id: string;
   name: string;
-  type: string;
+  label?: string;
   content?: unknown;
   contentDefinition?: unknown;
   dataSource?: unknown;
@@ -41,7 +41,7 @@ export function BlockContentPage({ blockId }: BlockContentPageProps) {
   const [success, setSuccess] = useState(false);
 
   const [blockName, setBlockName] = useState('');
-  const [blockType, setBlockType] = useState('');
+  const [blockLabel, setBlockLabel] = useState('');
   const [definition, setDefinition] = useState<unknown>(null);
   const [content, setContent] = useState<LocalizedContent>({});
   const [blockManifest, setBlockManifest] = useState<BlockManifest | null>(null);
@@ -67,17 +67,17 @@ export function BlockContentPage({ blockId }: BlockContentPageProps) {
 
         const doc = data.doc as BlockDoc;
         setBlockName(doc.name || 'Block');
-        setBlockType(doc.type || '');
+        setBlockLabel(doc.label || '');
 
-        // Resolve manifest for this block type
-        const manifest = doc.type ? getBlockManifest(doc.type) ?? null : null;
+        // Resolve manifest for this block contract.
+        const manifest = doc.name ? getBlockManifest(doc.name) ?? null : null;
         setBlockManifest(manifest);
 
         // Use DB contentDefinition if present, otherwise seed from static registry
         if (doc.contentDefinition != null) {
           setDefinition(doc.contentDefinition);
-        } else if (doc.type) {
-          setDefinition(getBlockType(doc.type) ?? null);
+        } else if (doc.name) {
+          setDefinition(getBlockDefinition(doc.name) ?? null);
         } else {
           setDefinition(null);
         }
@@ -212,7 +212,7 @@ export function BlockContentPage({ blockId }: BlockContentPageProps) {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Block Content</h1>
             <p className="text-muted-foreground mt-1">
-              {blockName}{blockType ? ` (${blockType})` : ''}
+              {blockLabel || blockName}{blockLabel && blockName ? ` (${blockName})` : ''}
             </p>
           </div>
         </div>

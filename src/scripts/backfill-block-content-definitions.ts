@@ -1,5 +1,5 @@
 /**
- * Backfill `blocks.contentDefinition` from static registry by block `type`.
+ * Backfill `blocks.contentDefinition` from static registry by block `name`.
  *
  * - Idempotent: only updates rows where contentDefinition is null.
  * - Safe by default: dry-run unless `--write` is provided.
@@ -10,11 +10,11 @@
  */
 
 import { prisma, disconnect } from '../adapters/prisma-adapter';
-import { getBlockType } from '../core/blocks/registry';
+import { getBlockDefinition } from '../core/blocks/registry';
 
 type BlockRow = {
   id: string;
-  type: string;
+  name: string;
   contentDefinition?: unknown | null;
 };
 
@@ -31,7 +31,7 @@ async function main() {
       update: (args: unknown) => Promise<unknown>;
     };
   }).blocks.findMany({
-    select: { id: true, type: true, contentDefinition: true },
+    select: { id: true, name: true, contentDefinition: true },
   });
 
   const candidates = blocks.filter((b) => !hasDefinition(b.contentDefinition));
@@ -40,7 +40,7 @@ async function main() {
   let skippedNoStaticDefinition = 0;
 
   for (const block of candidates) {
-    const def = getBlockType(block.type);
+    const def = getBlockDefinition(block.name);
     if (!def) {
       skippedNoStaticDefinition += 1;
       continue;
@@ -62,7 +62,7 @@ async function main() {
   console.log(`Blocks total: ${blocks.length}`);
   console.log(`Candidates (null contentDefinition): ${candidates.length}`);
   console.log(`${shouldWrite ? 'Updated' : 'Would update'}: ${updated}`);
-  console.log(`Skipped (no static definition for type): ${skippedNoStaticDefinition}`);
+  console.log(`Skipped (no static definition for name): ${skippedNoStaticDefinition}`);
 }
 
 main()

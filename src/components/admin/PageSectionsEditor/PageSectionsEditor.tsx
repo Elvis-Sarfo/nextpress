@@ -54,7 +54,7 @@ interface PageSectionsEditorProps {
 
 export function PageSectionsEditor({ value, onChange }: PageSectionsEditorProps) {
   const [sections, setSections] = useState<Section[]>(() => parseSections(value));
-  const [blockNames, setBlockNames] = useState<Map<string, { name: string; type: string }>>(new Map());
+  const [blockNames, setBlockNames] = useState<Map<string, { name: string; label?: string }>>(new Map());
   const [pickerSectionId, setPickerSectionId] = useState<string | null>(null);
   const [pickerColumnId, setPickerColumnId] = useState<string | null>(null);
 
@@ -63,9 +63,9 @@ export function PageSectionsEditor({ value, onChange }: PageSectionsEditorProps)
     fetch('/api/admin/collections/blocks?limit=200')
       .then((r) => r.json())
       .then((data) => {
-        const map = new Map<string, { name: string; type: string }>();
-        for (const b of (data.docs as Array<{ id: string; name: string; type: string }>) ?? []) {
-          map.set(b.id, { name: b.name, type: b.type });
+        const map = new Map<string, { name: string; label?: string }>();
+        for (const b of (data.docs as Array<{ id: string; name: string; label?: string }>) ?? []) {
+          map.set(b.id, { name: b.name, label: b.label });
         }
         setBlockNames(map);
       })
@@ -325,8 +325,8 @@ export function PageSectionsEditor({ value, onChange }: PageSectionsEditorProps)
                         <p className="truncate text-xs font-medium">
                           {meta?.name ?? blockRef.blockId}
                         </p>
-                        {meta?.type && (
-                          <p className="text-xs text-muted-foreground">{meta.type}</p>
+                        {meta?.label && (
+                          <p className="text-xs text-muted-foreground">{meta.label}</p>
                         )}
                       </div>
                       <button
