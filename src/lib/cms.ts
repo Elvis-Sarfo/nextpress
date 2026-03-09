@@ -598,6 +598,7 @@ const SPECIFIC_HANDLERS: Partial<
   Record<string, (p: CollectionQueryParams) => Promise<unknown[]>>
 > = {
   posts: (p) => queryPostsDirect(p),
+  'product-categories': async () => getProductCategories(),
   pages: (p) =>
     prisma.pages.findMany({
       where: { status: 'published', ...(p.where ?? {}) },
