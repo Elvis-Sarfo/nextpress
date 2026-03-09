@@ -1,7 +1,7 @@
-import type { BlockManifest } from '../types';
+import { defineBlock } from './define';
 import { SubscribeBlock } from '@/components/blocks/SubscribeBlock';
 
-export const subscribeManifest: BlockManifest = {
+export const subscribeManifest = defineBlock({
   type: 'subscribe',
   label: 'Subscribe Section',
   icon: 'Bell',
@@ -12,4 +12,4 @@ export const subscribeManifest: BlockManifest = {
     ],
   },
   component: SubscribeBlock,
-};
+});

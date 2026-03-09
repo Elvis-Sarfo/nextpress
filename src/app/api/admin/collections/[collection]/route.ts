@@ -9,7 +9,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/adapters/prisma-adapter';
-import { getPrismaProvider } from '@/adapters/prisma-adapter/provider';
 import bcrypt from 'bcryptjs';
 import { invalidatePrincipalCache } from '@/lib/rbac-service';
 
@@ -49,11 +48,6 @@ const SEARCH_FIELDS: Record<string, string[]> = {
   posts: [],
   comments: ['authorName', 'authorEmail', 'content'],
 };
-
-function getJsonPath(locale: string): string | string[] {
-  const provider = getPrismaProvider();
-  return provider === 'mysql' ? `$.${locale}` : [locale];
-}
 
 function supportsBlocksContentDefinition(): boolean {
   const runtime = (prisma as unknown as {
@@ -311,10 +305,9 @@ export async function POST(
     const slugEntries = Object.entries(body.slug as Record<string, string>);
     for (const [locale, localeSlug] of slugEntries) {
       if (!localeSlug) continue;
-      const jsonPath = getJsonPath(locale);
       const existing = collection === 'pages'
-        ? await prisma.pages.findFirst({ where: { slug: { path: jsonPath, equals: localeSlug } } })
-        : await prisma.posts.findFirst({ where: { slug: { path: jsonPath, equals: localeSlug } } });
+        ? await prisma.pages.findFirst({ where: { slug: { path: `$.${locale}`, equals: localeSlug } } })
+        : await prisma.posts.findFirst({ where: { slug: { path: `$.${locale}`, equals: localeSlug } } });
       if (existing) {
         return NextResponse.json(
           { error: `Slug "${localeSlug}" is already in use for locale "${locale}"` },

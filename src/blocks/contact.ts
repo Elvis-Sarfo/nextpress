@@ -1,7 +1,7 @@
-import type { BlockManifest } from '../types';
+import { defineBlock } from './define';
 import { ContactBlock } from '@/components/blocks/ContactBlock';
 
-export const contactManifest: BlockManifest = {
+export const contactManifest = defineBlock({
   type: 'contact',
   label: 'Contact Us',
   icon: 'Mail',
@@ -17,4 +17,4 @@ export const contactManifest: BlockManifest = {
     ],
   },
   component: ContactBlock,
-};
+});

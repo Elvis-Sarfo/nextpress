@@ -1,7 +1,7 @@
-import type { BlockManifest } from '../types';
+import { defineBlock } from './define';
 import { TestimonialBlock } from '@/components/blocks/TestimonialBlock';
 
-export const testimonialManifest: BlockManifest = {
+export const testimonialManifest = defineBlock({
   type: 'testimonial',
   label: 'Testimonial Section',
   icon: 'Quote',
@@ -33,4 +33,4 @@ export const testimonialManifest: BlockManifest = {
     },
   },
   component: TestimonialBlock,
-};
+});

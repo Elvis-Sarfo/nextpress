@@ -1,7 +1,7 @@
-import type { BlockManifest } from '../types';
+import { defineBlock } from './define';
 import { ShowcaseBlock } from '@/components/blocks/ShowcaseBlock';
 
-export const showcaseManifest: BlockManifest = {
+export const showcaseManifest = defineBlock({
   type: 'showcase',
   label: 'Showcase Section',
   icon: 'Layers',
@@ -24,4 +24,4 @@ export const showcaseManifest: BlockManifest = {
     },
   },
   component: ShowcaseBlock,
-};
+});

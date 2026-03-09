@@ -5,43 +5,16 @@
  * the admin editor schema (definition) and the public React component (component).
  *
  * To add a new block type:
- *   1. Create `src/blocks/manifests/<your-type>.ts` exporting a `BlockManifest`
- *   2. Import it here and add it to the `BUILT_IN_MANIFESTS` array
+ *   1. Create `src/blocks/<your-type>.ts` exporting a block definition
+ *   2. Register it in `src/blocks/index.ts`
  */
 
-import type { BlockManifest, BlockComponent, BlockTypeDefinition } from './types';
-
-import { heroManifest }          from './manifests/hero';
-import { bannerManifest }        from './manifests/banner';
-import { aboutManifest }         from './manifests/about';
-import { faqManifest }           from './manifests/faq';
-import { galleryManifest }       from './manifests/gallery';
-import { serviceManifest }       from './manifests/service';
-import { testimonialManifest }   from './manifests/testimonial';
-import { contactManifest }       from './manifests/contact';
-import { subscribeManifest }     from './manifests/subscribe';
-import { featuredRoomsManifest } from './manifests/featured-rooms';
-import { showcaseManifest }      from './manifests/showcase';
-import { postListManifest }      from './manifests/post-list';
-
-const BUILT_IN_MANIFESTS: BlockManifest[] = [
-  heroManifest,
-  bannerManifest,
-  aboutManifest,
-  faqManifest,
-  galleryManifest,
-  serviceManifest,
-  testimonialManifest,
-  contactManifest,
-  subscribeManifest,
-  featuredRoomsManifest,
-  showcaseManifest,
-  postListManifest,
-];
+import type { BlockManifest, BlockComponent, BlockTypeDefinition } from '@/blocks/types';
+import { blocks } from '@/blocks';
 
 const registry = new Map<string, BlockManifest>();
 
-BUILT_IN_MANIFESTS.forEach((manifest) => registry.set(manifest.type, manifest));
+blocks.forEach((manifest) => registry.set(manifest.type, manifest));
 
 /** Register a custom block manifest at runtime (for project-specific blocks). */
 export function registerManifest(manifest: BlockManifest): void {

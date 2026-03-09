@@ -14,21 +14,7 @@ import {
   SelectField,
   JSONField,
 } from '../core/collection';
-
-export const BLOCK_TYPES = [
-  { label: 'Hero',            value: 'hero' },
-  { label: 'Banner Section',  value: 'banner' },
-  { label: 'About Us',        value: 'about' },
-  { label: 'FAQ Section',     value: 'faq' },
-  { label: 'Gallery',         value: 'gallery' },
-  { label: 'Service Section', value: 'service' },
-  { label: 'Testimonial',     value: 'testimonial' },
-  { label: 'Contact Us',      value: 'contact' },
-  { label: 'Subscribe',       value: 'subscribe' },
-  { label: 'Featured Rooms',  value: 'featured_rooms' },
-  { label: 'Showcase',        value: 'showcase' },
-  { label: 'Post List',       value: 'post-list' },
-] as const;
+import { blockTypeOptions } from '@/blocks';
 
 export const Blocks: CollectionConfig<'blocks'> = {
   slug: 'blocks',
@@ -68,7 +54,7 @@ export const Blocks: CollectionConfig<'blocks'> = {
       name: 'type',
       type: 'select',
       required: true,
-      options: [...BLOCK_TYPES],
+      options: [...blockTypeOptions],
       admin: {
         description: 'Block type determines the renderer component used on the public site',
       },

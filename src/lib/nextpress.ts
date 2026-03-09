@@ -8,6 +8,7 @@ import nextpressConfig from '../nextpress.config';
 import { Collections } from '../core/collection';
 import { generatePrismaSchema } from '../core/schema-engine';
 import type {
+  NextPressDatabaseProvider,
   NextPressSchemaConfig,
   NextPressSchemaStateBackend,
   NextPressSchemaStrategy,
@@ -186,6 +187,16 @@ function generateConfigHash(): string {
   return crypto.createHash('md5').update(json).digest('hex');
 }
 
+function normalizePrismaProvider(
+  provider: NextPressDatabaseProvider | undefined,
+): Exclude<NextPressDatabaseProvider, 'postgres'> | 'postgresql' {
+  if (provider === 'postgres') {
+    return 'postgresql';
+  }
+
+  return provider ?? 'postgresql';
+}
+
 // ============================================================================
 // INITIALIZATION STRATEGIES
 // ============================================================================
@@ -263,12 +274,12 @@ export async function initializeNextPress(): Promise<void> {
  */
 export async function generateSchema(): Promise<void> {
   const collections = nextpressConfig.collections;
-  const dbProvider = nextpressConfig.db?.provider;
+  const dbProvider: NextPressDatabaseProvider | undefined = nextpressConfig.db?.provider;
 
   console.log(`[NextPress] Generating Prisma schema for ${collections.length} collections...`);
 
   const schema = generatePrismaSchema(collections, {
-    provider: dbProvider === 'postgres' ? 'postgresql' : (dbProvider || 'postgresql'),
+    provider: normalizePrismaProvider(dbProvider),
     localization: true,
     versioning: true,
   });

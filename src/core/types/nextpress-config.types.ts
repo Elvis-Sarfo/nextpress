@@ -1,4 +1,5 @@
 import type { CollectionConfig } from '../collection';
+import type { BlockManifest } from '@/blocks/types';
 
 export type NextPressSchemaStrategy = 'once' | 'hash' | 'always';
 export type NextPressSchemaStateBackend = 'memory' | 'file';
@@ -173,6 +174,7 @@ export interface NextPressAdminConfig {
 
 export interface NextPressConfig {
   collections: CollectionConfig[];
+  blocks?: BlockManifest[];
   secret?: string;
   typescript?: NextPressTypeScriptConfig;
   db?: NextPressDbConfig;

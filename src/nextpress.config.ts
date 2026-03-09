@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url'
 import type { NextPressConfig } from './core/types'
 import { collections } from './collections/index'
 import adminConfig from './admin.config'
+import { blocks } from './blocks'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -10,6 +11,7 @@ const dirname = path.dirname(filename)
 const config = {
   // Collections to register — edit src/collections/index.ts to add/remove collections
   collections,
+  blocks,
 
   // Admin UI configuration — edit src/admin.config.ts to customize the sidebar
   admin: adminConfig,

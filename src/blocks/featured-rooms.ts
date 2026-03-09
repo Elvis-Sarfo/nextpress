@@ -1,7 +1,7 @@
-import type { BlockManifest } from '../types';
+import { defineBlock } from './define';
 import { FeaturedRoomsBlock } from '@/components/blocks/FeaturedRoomsBlock';
 
-export const featuredRoomsManifest: BlockManifest = {
+export const featuredRoomsManifest = defineBlock({
   type: 'featured_rooms',
   label: 'Featured Rooms',
   icon: 'BedDouble',
@@ -21,4 +21,4 @@ export const featuredRoomsManifest: BlockManifest = {
     },
   },
   component: FeaturedRoomsBlock,
-};
+});

@@ -1,7 +1,7 @@
-import type { BlockManifest } from '../types';
+import { defineBlock } from './define';
 import { PostListBlock } from '@/components/blocks/PostListBlock';
 
-export const postListManifest: BlockManifest = {
+export const postListManifest = defineBlock({
   type: 'post-list',
   label: 'Post List',
   icon: 'List',
@@ -43,4 +43,4 @@ export const postListManifest: BlockManifest = {
     },
   },
   component: PostListBlock,
-};
+});

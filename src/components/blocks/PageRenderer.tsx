@@ -1,6 +1,6 @@
 import { getBlocksByIds, queryCollection } from '@/lib/cms';
 import { getLocale } from '@/lib/locale-utils';
-import { getBlockComponent, getBlockManifest } from '@/blocks/registry';
+import { getBlockComponent, getBlockManifest } from '@/lib/blocks-registry';
 import type { BlockDataSourceSpec, CollectionQueryParams } from '@/blocks/types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────

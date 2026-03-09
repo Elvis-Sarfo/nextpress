@@ -1,7 +1,7 @@
-import type { BlockManifest } from '../types';
+import { defineBlock } from './define';
 import { BannerBlock } from '@/components/blocks/BannerBlock';
 
-export const bannerManifest: BlockManifest = {
+export const bannerManifest = defineBlock({
   type: 'banner',
   label: 'Banner Section',
   icon: 'Image',
@@ -32,4 +32,4 @@ export const bannerManifest: BlockManifest = {
     ],
   },
   component: BannerBlock,
-};
+});

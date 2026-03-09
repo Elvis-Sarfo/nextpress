@@ -1,7 +1,7 @@
-import type { BlockManifest } from '../types';
+import { defineBlock } from './define';
 import { FAQBlock } from '@/components/blocks/FAQBlock';
 
-export const faqManifest: BlockManifest = {
+export const faqManifest = defineBlock({
   type: 'faq',
   label: 'FAQ Section',
   icon: 'HelpCircle',
@@ -20,4 +20,4 @@ export const faqManifest: BlockManifest = {
     },
   },
   component: FAQBlock,
-};
+});

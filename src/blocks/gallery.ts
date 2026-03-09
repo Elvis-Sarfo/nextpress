@@ -1,7 +1,7 @@
-import type { BlockManifest } from '../types';
+import { defineBlock } from './define';
 import { GalleryBlock } from '@/components/blocks/GalleryBlock';
 
-export const galleryManifest: BlockManifest = {
+export const galleryManifest = defineBlock({
   type: 'gallery',
   label: 'Gallery',
   icon: 'Images',
@@ -15,4 +15,4 @@ export const galleryManifest: BlockManifest = {
     },
   },
   component: GalleryBlock,
-};
+});

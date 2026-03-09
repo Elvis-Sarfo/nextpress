@@ -1,7 +1,7 @@
-import type { BlockManifest } from '../types';
+import { defineBlock } from './define';
 import { ServiceBlock } from '@/components/blocks/ServiceBlock';
 
-export const serviceManifest: BlockManifest = {
+export const serviceManifest = defineBlock({
   type: 'service',
   label: 'Service Section',
   icon: 'Star',
@@ -21,4 +21,4 @@ export const serviceManifest: BlockManifest = {
     },
   },
   component: ServiceBlock,
-};
+});
