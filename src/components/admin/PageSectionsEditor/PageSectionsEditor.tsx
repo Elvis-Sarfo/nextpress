@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Pencil, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BlockPickerModal } from './BlockPickerModal';
 
@@ -39,7 +39,8 @@ function parseSections(value: unknown): Section[] {
 }
 
 const WIDTH_OPTIONS = [
-  { label: 'Full', value: 'w-full' },
+  { label: 'Full Width', value: 'full-bleed' },
+  { label: 'Contained Full', value: 'w-full' },
   { label: '1/2', value: 'w-1/2' },
   { label: '1/3', value: 'w-1/3' },
   { label: '2/3', value: 'w-2/3' },
@@ -347,6 +348,16 @@ export function PageSectionsEditor({ value, onChange }: PageSectionsEditorProps)
                       >
                         <ChevronDown className="h-3 w-3" />
                       </button>
+                      <a
+                        href={`/admin/blocks/${blockRef.blockId}/content`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-muted-foreground hover:text-foreground"
+                        title="Edit block content"
+                        aria-label="Edit block content"
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </a>
                       <button
                         type="button"
                         onClick={() => removeBlock(section.id, column.id, blockIndex)}

@@ -353,6 +353,8 @@ export function CollectionEdit({
     const value = formData[field.name] ?? null;
     const baseInput =
       'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+    const isReadOnly = Boolean(field.readOnly);
+    const isDisabled = Boolean(field.disabled);
 
     switch (field.type) {
       case 'text':
@@ -364,6 +366,8 @@ export function CollectionEdit({
             value={(value as string) || ''}
             onChange={(e) => updateField(field.name, e.target.value)}
             required={field.required}
+            readOnly={isReadOnly}
+            disabled={isDisabled}
             className={baseInput}
           />
         );
@@ -375,6 +379,8 @@ export function CollectionEdit({
             value={(value as string) || ''}
             onChange={(e) => updateField(field.name, e.target.value)}
             required={field.required}
+            readOnly={isReadOnly}
+            disabled={isDisabled}
             rows={4}
             className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
@@ -391,6 +397,8 @@ export function CollectionEdit({
               updateField(field.name, Number.isNaN(nextValue) ? null : nextValue);
             }}
             required={field.required}
+            readOnly={isReadOnly}
+            disabled={isDisabled}
             className={baseInput}
           />
         );
@@ -403,6 +411,7 @@ export function CollectionEdit({
               id={field.name}
               checked={(value as boolean) || false}
               onChange={(e) => updateField(field.name, e.target.checked)}
+              disabled={isDisabled || isReadOnly}
               className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
             />
             <label htmlFor={field.name} className="text-sm text-muted-foreground">
@@ -419,6 +428,7 @@ export function CollectionEdit({
             value={(value as string) || ''}
             onChange={(e) => updateField(field.name, e.target.value)}
             required={field.required}
+            disabled={isDisabled || isReadOnly}
             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           >
             <option value="">— Select —</option>

@@ -44,6 +44,15 @@ function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
 
+function isFullBleedColumn(column: Column): boolean {
+  return column.width === 'full-bleed';
+}
+
+function getColumnClassName(column: Column): string {
+  const width = isFullBleedColumn(column) ? 'w-full' : column.width;
+  return [width, column.offset].filter(Boolean).join(' ');
+}
+
 /**
  * Merges a manifest's defaultParams with admin-stored params.
  * Used as fallback when a block's dataSource was configured via the manifest spec
@@ -135,18 +144,11 @@ export async function PageRenderer({
   return (
     <>
       {sections.map((section) => (
-        <section
-          key={section.id}
-          data-section={section.name}
-          data-template={section.templateName}
-        >
-          <div className="container mx-auto px-4">
+        <section key={section.id} data-section={section.name} data-template={section.templateName}>
+          {section.columns.every(isFullBleedColumn) ? (
             <div className="flex flex-wrap">
               {section.columns.map((column) => (
-                <div
-                  key={column.id}
-                  className={[column.width, column.offset].filter(Boolean).join(' ')}
-                >
+                <div key={column.id} className={getColumnClassName(column)}>
                   {column.blocks
                     .slice()
                     .sort((a, b) => a.order - b.order)
@@ -176,7 +178,42 @@ export async function PageRenderer({
                 </div>
               ))}
             </div>
-          </div>
+          ) : (
+            <div className="container mx-auto px-4">
+              <div className="flex flex-wrap">
+                {section.columns.map((column) => (
+                  <div key={column.id} className={getColumnClassName(column)}>
+                    {column.blocks
+                      .slice()
+                      .sort((a, b) => a.order - b.order)
+                      .map((ref) => {
+                        const block = blockMap.get(ref.blockId);
+                        if (!block) return null;
+
+                        const Component = getBlockComponent(block.name);
+                        if (!Component) {
+                          return (
+                            <div
+                              key={ref.blockId}
+                              className="p-4 border border-destructive text-destructive text-sm rounded"
+                            >
+                              Unknown block: <code>{block.name}</code>
+                            </div>
+                          );
+                        }
+
+                        const content = getLocale(block.content, locale) ?? {};
+                        const data = dataMap.get(ref.blockId);
+
+                        return (
+                          <Component key={ref.blockId} content={content} data={data} />
+                        );
+                      })}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </section>
       ))}
     </>

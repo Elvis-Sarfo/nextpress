@@ -33,6 +33,10 @@ export interface CollectionFieldMeta {
   hasMany?: boolean;
   /** Whether this field is hidden in the admin UI */
   hidden?: boolean;
+  /** Whether this field is visible but not editable in the admin UI */
+  readOnly?: boolean;
+  /** Whether this field is disabled in the admin UI */
+  disabled?: boolean;
   /** Whether this field stores locale-first JSON: { "en": ..., "fr": ... } */
   localized?: boolean;
   /** Input type rendered inside each locale tab (default: 'text') */
@@ -97,6 +101,8 @@ function mapField(f: Field): CollectionFieldMeta {
     required: f.required,
     label: f.label,
     hidden: typeof f.admin?.hidden === 'boolean' ? f.admin.hidden : false,
+    readOnly: Boolean(f.admin?.readOnly),
+    disabled: Boolean(f.admin?.disabled),
     localized: f.localized ?? false,
     localizedAs: (f.admin as { localizedAs?: CollectionFieldMeta['localizedAs'] })?.localizedAs,
     adminComponent: (f.admin as { component?: string })?.component,

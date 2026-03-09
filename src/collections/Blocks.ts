@@ -47,6 +47,7 @@ export const Blocks: CollectionConfig<'blocks'> = {
       unique: true,
       admin: {
         description: 'Unique contract key, e.g. "hero.banner.primary", "content.cta.footer"',
+        readOnly: true,
       },
     } satisfies CollectionTextField,
     {
@@ -62,6 +63,7 @@ export const Blocks: CollectionConfig<'blocks'> = {
       type: 'text',
       admin: {
         description: 'Template variant, e.g. "hero-full-width", "cta-centered"',
+        hidden: true,
       },
     } satisfies CollectionTextField,
     {
@@ -69,6 +71,7 @@ export const Blocks: CollectionConfig<'blocks'> = {
       type: 'json',
       admin: {
         description: 'Schema-like block definition (DB source of truth for block editor fields)',
+        hidden: true,
       },
     } satisfies JSONField,
     {
@@ -76,6 +79,7 @@ export const Blocks: CollectionConfig<'blocks'> = {
       type: 'json',
       admin: {
         description: 'Admin-configured query params for the block\'s data source (limit, filters, etc.)',
+        hidden: true,
       },
     } satisfies JSONField,
     {
@@ -86,6 +90,7 @@ export const Blocks: CollectionConfig<'blocks'> = {
       admin: {
         localizedAs: 'json',
         description: 'Block values (locale-first optional) — { "en": { "heading": "..." }, "fr": { ... } }',
+        hidden: true,
       },
     } satisfies JSONField,
     {
