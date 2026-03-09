@@ -577,7 +577,7 @@ export async function getPostCount(): Promise<number> {
 // GENERIC COLLECTION QUERY (used by PageRenderer for block data sources)
 // ============================================================================
 
-import type { CollectionQueryParams } from '@/blocks/types';
+import type { CollectionQueryParams } from '@/core/blocks/types';
 
 async function queryPostsDirect(params: CollectionQueryParams) {
   const where = params.where ?? {};

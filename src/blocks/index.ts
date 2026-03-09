@@ -1,5 +1,5 @@
-import type { BlockManifest } from './types';
-import { toBlockTypeOption } from './define';
+import type { BlockManifest } from '@/core/blocks/types';
+import { toBlockTypeOption } from '@/core/blocks/define';
 
 export const blocks: BlockManifest[] = [];
 

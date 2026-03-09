@@ -1,6 +1,6 @@
 'use client';
 
-import type { BlockField } from '@/blocks/types';
+import type { BlockField } from '@/core/blocks/types';
 import { cn } from '@/lib/utils';
 import { MediaSelector } from '@/components/admin/MediaSelector';
 import { RichtextEditor } from '@/components/admin/RichtextEditor';

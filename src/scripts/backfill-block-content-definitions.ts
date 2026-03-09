@@ -10,7 +10,7 @@
  */
 
 import { prisma, disconnect } from '../adapters/prisma-adapter';
-import { getBlockType } from '../lib/blocks-registry';
+import { getBlockType } from '../core/blocks/registry';
 
 type BlockRow = {
   id: string;

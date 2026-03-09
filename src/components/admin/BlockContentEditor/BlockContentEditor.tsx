@@ -1,6 +1,6 @@
 'use client';
 
-import { coerceBlockTypeDefinition, type BlockTypeDefinition } from '@/blocks/types';
+import { coerceBlockTypeDefinition, type BlockTypeDefinition } from '@/core/blocks/types';
 import { BlockFieldInput, getFieldLabel } from './BlockFieldInput';
 import { BlockElementsEditor } from './BlockElementsEditor';
 

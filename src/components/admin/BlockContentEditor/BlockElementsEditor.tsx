@@ -3,7 +3,7 @@
 import { Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import type { BlockField } from '@/blocks/types';
+import type { BlockField } from '@/core/blocks/types';
 import { BlockFieldInput, getFieldLabel } from './BlockFieldInput';
 
 interface BlockElementsEditorProps {

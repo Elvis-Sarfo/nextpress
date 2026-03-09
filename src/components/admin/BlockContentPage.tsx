@@ -8,8 +8,8 @@ import { cn } from '@/lib/utils';
 import { useAdminLocale } from '@/components/providers/AdminLocaleProvider';
 import { BlockContentEditor } from '@/components/admin/BlockContentEditor';
 import { DataSourceBuilder, type DataSourceValue } from '@/components/admin/DataSourceBuilder/DataSourceBuilder';
-import { getBlockManifest, getBlockType } from '@/lib/blocks-registry';
-import type { BlockManifest } from '@/blocks/types';
+import { getBlockManifest, getBlockType } from '@/core/blocks/registry';
+import type { BlockManifest } from '@/core/blocks/types';
 
 type LocalizedContent = Record<string, Record<string, unknown>>;
 

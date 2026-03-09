@@ -9,7 +9,7 @@
  *   2. Register it in `src/blocks/index.ts`
  */
 
-import type { BlockManifest, BlockComponent, BlockTypeDefinition } from '@/blocks/types';
+import type { BlockManifest, BlockComponent, BlockTypeDefinition } from '@/core/blocks/types';
 import { blocks } from '@/blocks';
 
 const registry = new Map<string, BlockManifest>();

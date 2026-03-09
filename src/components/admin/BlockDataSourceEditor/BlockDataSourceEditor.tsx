@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { BlockDataSourceSpec } from '@/blocks/types';
+import type { BlockDataSourceSpec } from '@/core/blocks/types';
 
 interface BlockDataSourceEditorProps {
   spec: BlockDataSourceSpec;

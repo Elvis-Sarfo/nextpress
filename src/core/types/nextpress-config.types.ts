@@ -1,5 +1,5 @@
 import type { CollectionConfig } from '../collection';
-import type { BlockManifest } from '@/blocks/types';
+import type { BlockManifest } from '@/core/blocks/types';
 
 export type NextPressSchemaStrategy = 'once' | 'hash' | 'always';
 export type NextPressSchemaStateBackend = 'memory' | 'file';
