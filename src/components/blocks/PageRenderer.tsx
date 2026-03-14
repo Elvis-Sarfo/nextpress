@@ -150,7 +150,10 @@ function renderCatalogSection(
         <div className="flex items-start gap-2 md:gap-4">
           {sidebarColumn && (
             <div
-              className={getColumnClassName(sidebarColumn, 'w-20 md:w-64 lg:w-72 shrink-0')}
+              className={getColumnClassName(
+                sidebarColumn,
+                'w-20 md:w-64 lg:w-72 shrink-0 sticky top-5 self-start',
+              )}
               style={getColumnStyle(sidebarColumn)}
             >
               {renderColumnBlocks(sidebarColumn, blockMap, locale, dataMap)}
