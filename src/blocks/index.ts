@@ -5,6 +5,7 @@ import { agbonContactFormBlock } from './agbon-contact-form';
 import { agbonHappyFarmingBannerBlock } from './agbon-happy-farming-banner';
 import { agbonHomeFeatureCardsBlock } from './agbon-home-feature-cards';
 import { agbonPageBannerBlock } from './agbon-page-banner';
+import { agbonProductListBlock } from './agbon-product-list';
 import { agbonServiceAreasSectionBlock } from './agbon-service-areas-section';
 import { agbonStatsBarBlock } from './agbon-stats-bar';
 import { agbonTestimonialStatsSectionBlock } from './agbon-testimonial-stats-section';
@@ -14,6 +15,7 @@ import { productCategorySidebarBlock } from './product-category-sidebar';
 
 export const blocks: BlockManifest[] = [
   agbonPageBannerBlock,
+  agbonProductListBlock,
   agbonContactFormBlock,
   agbonCommitmentSectionBlock,
   agbonServiceAreasSectionBlock,
