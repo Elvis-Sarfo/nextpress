@@ -204,6 +204,15 @@ export async function PUT(
     }
   }
 
+  if (collection === 'products' && Object.prototype.hasOwnProperty.call(body, 'category')) {
+    const cat = body.category;
+    body.categoryId = cat === null || cat === undefined ? null
+      : typeof cat === 'string' ? cat
+      : typeof cat === 'object' && 'id' in (cat as Record<string, unknown>) ? (cat as Record<string, unknown>).id
+      : null;
+    delete body.category;
+  }
+
   // Extract many-to-many arrays
   const rolesIds = body.roles as string[] | undefined;
   const permissionsIds = body.permissions as string[] | undefined;

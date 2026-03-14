@@ -318,6 +318,15 @@ export async function POST(
     }
   }
 
+  if (collection === 'products' && Object.prototype.hasOwnProperty.call(body, 'category')) {
+    const cat = body.category;
+    body.categoryId = cat === null || cat === undefined ? null
+      : typeof cat === 'string' ? cat
+      : typeof cat === 'object' && 'id' in (cat as Record<string, unknown>) ? (cat as Record<string, unknown>).id
+      : null;
+    delete body.category;
+  }
+
   // Enforce per-locale slug uniqueness for pages and posts (Json column can't use DB unique index)
   if ((collection === 'pages' || collection === 'posts') && body.slug && typeof body.slug === 'object') {
     const slugEntries = Object.entries(body.slug as Record<string, string>);

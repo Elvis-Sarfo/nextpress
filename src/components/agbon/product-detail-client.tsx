@@ -29,6 +29,16 @@ function isValidImageUrl(url: unknown): url is string {
   return url.startsWith('http') || url.startsWith('/')
 }
 
+function stripHtml(html: string): string {
+  return html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\n{2,}/g, '\n')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 export function AgbonProductDetailClient({
   product,
   relatedProducts = [],
@@ -55,9 +65,7 @@ export function AgbonProductDetailClient({
   const productModel = product.model ? getLocalized(product.model, locale) : ''
   const productDescription = product.description ? getLocalized(product.description, locale) : ''
 
-  const specifications: Array<{ key: unknown; value: unknown }> = Array.isArray(product.specifications)
-    ? product.specifications
-    : []
+  const specificationsHtml = product.specifications ? getLocalized(product.specifications, locale) : ''
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect()
@@ -165,26 +173,24 @@ export function AgbonProductDetailClient({
               Description
               <div className="absolute bottom-0 left-0 h-1 w-20 bg-gradient-to-r from-[#FF6B35] via-amber-500 to-transparent rounded-full" />
             </h3>
-            <p className="text-gray-700 leading-relaxed">{productDescription}</p>
+            <div
+              className="prose prose-sm max-w-none text-gray-700 prose-p:text-gray-700 prose-li:text-gray-700"
+              dangerouslySetInnerHTML={{ __html: productDescription }}
+            />
           </div>
         )}
 
         {/* Specifications */}
-        {specifications.length > 0 && (
+        {specificationsHtml && (
           <div className="relative bg-gray-50 p-4 rounded-lg mb-8">
             <h3 className="text-lg font-bold mb-3 relative">
               Product Specifications
               <div className="absolute bottom-0 left-0 h-1 w-20 bg-gradient-to-r from-[#FF6B35] via-amber-500 to-transparent rounded-full" />
             </h3>
-            <ul className="space-y-2 text-sm text-gray-700 mt-4">
-              {specifications.map((spec: any, i) => {
-                const key = getLocalized(spec.key, locale)
-                const value = getLocalized(spec.value, locale)
-                return (
-                  <li key={i}>✓ <strong>{key}:</strong> {value}</li>
-                )
-              })}
-            </ul>
+            <div
+              className="prose prose-sm mt-4 max-w-none text-gray-700 prose-p:text-gray-700 prose-li:text-gray-700"
+              dangerouslySetInnerHTML={{ __html: specificationsHtml }}
+            />
           </div>
         )}
 

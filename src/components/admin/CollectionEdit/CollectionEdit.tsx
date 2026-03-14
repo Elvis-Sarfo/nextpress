@@ -31,6 +31,7 @@ import { MenuItemsEditor, type MenuItem } from '@/components/admin/MenuItemsEdit
 import { DataSourceBuilder, type DataSourceValue } from '@/components/admin/DataSourceBuilder/DataSourceBuilder';
 import { RichtextEditor } from '@/components/admin/RichtextEditor';
 import { GroupFieldEditor } from '@/components/admin/GroupFieldEditor/GroupFieldEditor';
+import { ProductMediaEditor } from '@/components/admin/ProductMediaEditor';
 
 interface CollectionEditProps {
   collection: CollectionMeta;
@@ -82,6 +83,7 @@ export function CollectionEdit({
 
   const isPageCollection = collection.slug === 'pages';
   const isPostCollection = collection.slug === 'posts';
+  const isProductCollection = collection.slug === 'products';
   const isPageMode = mode === 'page';
 
 
@@ -352,6 +354,16 @@ export function CollectionEdit({
       );
     }
 
+    if (localizedAs === 'richText') {
+      return (
+        <RichtextEditor
+          value={typeof localeValue === 'string' ? localeValue : ''}
+          onChange={(html) => updateLocalizedField(field.name, activeLocale, html)}
+          placeholder="Start writing..."
+        />
+      );
+    }
+
     // localizedAs === 'json'
     return (
       <JsonCodeEditor
@@ -546,6 +558,15 @@ export function CollectionEdit({
               key={documentId ?? 'new'}
               value={(value as DataSourceValue) ?? {}}
               onChange={(v) => updateField(field.name, v as FieldValue)}
+            />
+          );
+        }
+
+        if (collection.slug === 'products' && field.name === 'media') {
+          return (
+            <ProductMediaEditor
+              value={value}
+              onChange={(items) => updateField(field.name, items as unknown as FieldValue)}
             />
           );
         }
@@ -762,16 +783,22 @@ export function CollectionEdit({
     'seo',
   ];
 
+  const PRODUCT_SIDEBAR_FIELDS = ['category', 'featured', 'order'];
+
   const mainFields = isPageCollection
     ? visibleFields.filter((f) => !PAGE_SIDEBAR_FIELDS.includes(f.name))
     : isPostCollection
     ? visibleFields.filter((f) => !POST_SIDEBAR_FIELDS.includes(f.name))
+    : isProductCollection
+    ? visibleFields.filter((f) => !PRODUCT_SIDEBAR_FIELDS.includes(f.name))
     : visibleFields;
 
   const sidebarFields = isPageCollection
     ? PAGE_SIDEBAR_FIELDS.map((name) => visibleFields.find((f) => f.name === name)).filter(Boolean) as typeof visibleFields
     : isPostCollection
     ? POST_SIDEBAR_FIELDS.map((name) => visibleFields.find((f) => f.name === name)).filter(Boolean) as typeof visibleFields
+    : isProductCollection
+    ? PRODUCT_SIDEBAR_FIELDS.map((name) => visibleFields.find((f) => f.name === name)).filter(Boolean) as typeof visibleFields
     : [];
 
   // ── Preview URL (pages only) ─────────────────────────────────────────────
@@ -895,9 +922,9 @@ export function CollectionEdit({
       </div>
 
       {/* Fields */}
-      <div className={isPostCollection ? 'flex gap-8' : 'grid gap-8 lg:grid-cols-3'}>
+      <div className={isPostCollection || isProductCollection ? 'flex gap-8' : 'grid gap-8 lg:grid-cols-3'}>
         {/* Main Content Area */}
-        <div className={isPostCollection ? 'flex-1 min-w-0' : 'lg:col-span-2 space-y-6'}>
+        <div className={isPostCollection || isProductCollection ? 'flex-1 min-w-0' : 'lg:col-span-2 space-y-6'}>
           {isPostCollection ? (
             // WordPress-style layout for Posts: stacked with larger rich text editor
             <div className="space-y-6">
@@ -926,6 +953,26 @@ export function CollectionEdit({
                 </div>
               ))}
             </div>
+          ) : isProductCollection ? (
+            <div className="space-y-6">
+              {mainFields.map((field) => (
+                <div key={field.name} className="space-y-2">
+                  <label
+                    htmlFor={field.localized ? undefined : field.name}
+                    className="text-sm font-medium leading-none"
+                  >
+                    {getFieldLabel(field)}
+                    {field.required && <span className="text-red-500 ml-1">*</span>}
+                    {field.localized && (
+                      <span className="ml-2 text-xs text-muted-foreground font-normal">
+                        — {activeLocale.toUpperCase()}
+                      </span>
+                    )}
+                  </label>
+                  {renderField(field)}
+                </div>
+              ))}
+            </div>
           ) : (
             // Default layout for other collections
             <div className="space-y-6">
@@ -951,10 +998,41 @@ export function CollectionEdit({
         </div>
 
         {/* Sidebar */}
-        <div className={isPostCollection ? 'w-80 flex-shrink-0 space-y-4' : 'space-y-4'}>
+        <div className={isPostCollection || isProductCollection ? 'w-80 flex-shrink-0 space-y-4' : 'space-y-4'}>
           {/* Post metadata sidebar - organized in collapsible sections */}
           {sidebarFields.length > 0 && (
             <div className="rounded-lg border bg-card divide-y">
+              {isProductCollection && (
+                <>
+                  {sidebarFields.find((f) => f.name === 'category') && (
+                    <div className="p-4 space-y-3">
+                      <h3 className="font-semibold text-sm">Category</h3>
+                      {renderField(sidebarFields.find((f) => f.name === 'category')!)}
+                    </div>
+                  )}
+
+                  {(sidebarFields.find((f) => f.name === 'featured') || sidebarFields.find((f) => f.name === 'order')) && (
+                    <div className="p-4 space-y-3">
+                      <h3 className="font-semibold text-sm">Display</h3>
+                      {sidebarFields.find((f) => f.name === 'featured') && (
+                        <div className="space-y-1.5">
+                          <label className="text-xs text-muted-foreground">Featured</label>
+                          {renderField(sidebarFields.find((f) => f.name === 'featured')!)}
+                        </div>
+                      )}
+                      {sidebarFields.find((f) => f.name === 'order') && (
+                        <div className="space-y-1.5">
+                          <label className="text-xs text-muted-foreground">Order</label>
+                          {renderField(sidebarFields.find((f) => f.name === 'order')!)}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {!isProductCollection && (
+                <>
               {/* Status Section */}
               {sidebarFields.find((f) => f.name === 'status') && (
                 <div className="p-4 space-y-3">
@@ -1018,6 +1096,8 @@ export function CollectionEdit({
                   </h3>
                   {renderField(sidebarFields.find((f) => f.name === 'seo')!)}
                 </div>
+              )}
+                </>
               )}
             </div>
           )}

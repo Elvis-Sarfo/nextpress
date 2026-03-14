@@ -40,7 +40,7 @@ export interface CollectionFieldMeta {
   /** Whether this field stores locale-first JSON: { "en": ..., "fr": ... } */
   localized?: boolean;
   /** Input type rendered inside each locale tab (default: 'text') */
-  localizedAs?: 'text' | 'textarea' | 'json';
+  localizedAs?: 'text' | 'textarea' | 'json' | 'richText';
   /** Custom admin component to render for this field (e.g. 'menu-items') */
   adminComponent?: string;
   /** Sub-fields for group and array types — drives recursive UI rendering */

@@ -5,8 +5,9 @@ export const Products: CollectionConfig = {
   labels: { singular: 'Product', plural: 'Products' },
   admin: {
     useAsTitle: 'name',
-    defaultColumns: ['name', 'model', 'category', 'inStock', 'featured'],
+    defaultColumns: ['name', 'model', 'category', 'featured'],
     group: { key: 'catalogue', label: 'Catalogue', order: 2 },
+    editorView: 'page',
   },
   fields: [
     {
@@ -42,7 +43,7 @@ export const Products: CollectionConfig = {
       type: 'json',
       localized: true,
       admin: {
-        localizedAs: 'textarea',
+        localizedAs: 'richText',
         description: 'Full product description per locale',
       },
     },
@@ -51,7 +52,7 @@ export const Products: CollectionConfig = {
       type: 'json',
       localized: true,
       admin: {
-        localizedAs: 'text',
+        hidden: true,
         description: 'Brief description for product cards per locale',
       },
     },
@@ -64,25 +65,29 @@ export const Products: CollectionConfig = {
       },
     },
     {
-      // Stores array of { type, source, mediaFileId, videoUrl, videoCoverId, isCover, alt }
       name: 'media',
       type: 'json',
       admin: {
-        description: 'Product images and videos. Array of { type: "image"|"video", source: "upload"|"external", mediaFileId, videoUrl, videoCoverId, isCover, alt }',
+        component: 'product-media',
+        description: 'Product gallery items. Add images and videos in display order.',
       },
     },
     {
-      // Stores array of { key: { en, fr }, value: { en, fr } }
       name: 'specifications',
       type: 'json',
+      localized: true,
       admin: {
-        description: 'Technical specifications. Array of { key: LocalizedText, value: LocalizedText }',
+        localizedAs: 'richText',
+        description: 'Technical specifications per locale.',
       },
     },
     {
       name: 'inStock',
       type: 'checkbox',
       defaultValue: true,
+      admin: {
+        hidden: true,
+      },
     },
     {
       name: 'featured',
@@ -101,10 +106,10 @@ export const Products: CollectionConfig = {
       },
     },
     {
-      // Stores array of { stepNumber, title: LocalizedText, description: LocalizedText, imageId, videos[] }
       name: 'instructions',
       type: 'json',
       admin: {
+        hidden: true,
         description: 'Usage instructions. Array of { stepNumber, title, description, imageId, videos[] }',
       },
     },

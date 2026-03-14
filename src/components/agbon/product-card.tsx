@@ -24,6 +24,16 @@ function isValidImageUrl(url: unknown): url is string {
   return url.startsWith('http') || url.startsWith('/')
 }
 
+function stripHtml(html: string): string {
+  return html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\n{2,}/g, '\n')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 export function AgbonProductCard({ product, locale = 'en', showSpecs = true }: ProductCardProps) {
   // Get first image from media JSON
   const mediaItems: Array<{ url?: string; isCover?: boolean }> = Array.isArray(product.media)
@@ -36,18 +46,13 @@ export function AgbonProductCard({ product, locale = 'en', showSpecs = true }: P
   const productName = getLocalized(product.name, locale) || 'Product'
   const productModel = product.model ? getLocalized(product.model, locale) : ''
 
-  const specs: string[] = []
-  if (Array.isArray(product.specifications)) {
-    product.specifications.forEach((spec: any) => {
-      if (typeof spec === 'string') {
-        specs.push(spec)
-      } else if (spec?.key && spec?.value) {
-        const k = getLocalized(spec.key, locale)
-        const v = getLocalized(spec.value, locale)
-        specs.push(`${k}:${v}`)
-      }
-    })
-  }
+  const specsHtml = product.specifications ? getLocalized(product.specifications, locale) : ''
+  const specs = specsHtml
+    ? stripHtml(specsHtml)
+        .split(/\n|•/)
+        .map((spec) => spec.trim())
+        .filter(Boolean)
+    : []
 
   return (
     <Link href={`/${locale}/product/${product.id}`}>

@@ -208,7 +208,7 @@ export interface FieldAdminConfig {
   style?: Record<string, string>;
   className?: string;
   /** For localized fields: controls the input type rendered inside each locale tab */
-  localizedAs?: 'text' | 'textarea' | 'json';
+  localizedAs?: 'text' | 'textarea' | 'json' | 'richText';
   /** Custom admin component name to render for this field instead of the default input */
   component?: string;
 }
