@@ -43,6 +43,28 @@ interface CollectionEditProps {
 
 type FieldValue = string | number | boolean | string[] | Record<string, unknown> | null;
 
+function getOptionLabel(
+  doc: Record<string, unknown>,
+  locale: string
+): string {
+  const candidates = [doc.displayName, doc.name, doc.email, doc.id];
+
+  for (const candidate of candidates) {
+    if (typeof candidate === 'string' && candidate.trim()) {
+      return candidate;
+    }
+    if (candidate && typeof candidate === 'object' && !Array.isArray(candidate)) {
+      const localized = candidate as Record<string, unknown>;
+      const value = localized[locale] ?? localized.en ?? Object.values(localized).find((item) => typeof item === 'string');
+      if (typeof value === 'string' && value.trim()) {
+        return value;
+      }
+    }
+  }
+
+  return String(doc.id ?? 'Untitled');
+}
+
 export function CollectionEdit({
   collection,
   documentId,
@@ -132,13 +154,13 @@ export function CollectionEdit({
         .then((data) => {
           const options = ((data.docs as Array<Record<string, unknown>>) ?? []).map((doc) => ({
             id: doc.id as string,
-            label: (doc.displayName ?? doc.name ?? doc.email ?? doc.id) as string,
+            label: getOptionLabel(doc, activeLocale),
           }));
           setRelationOptions((prev) => ({ ...prev, [field.name]: options }));
         })
         .catch((e) => console.error(`Failed to load options for ${target}`, e));
     }
-  }, [collection.fields]);
+  }, [activeLocale, collection.fields]);
 
   // ── Save ───────────────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {

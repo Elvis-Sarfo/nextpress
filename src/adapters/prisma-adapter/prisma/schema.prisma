@@ -274,7 +274,7 @@ model ProductCategories {
   name Json
   slug String @db.VarChar(255) @unique
   description Json?
-  imageId String? @db.VarChar(100)
+  imageId String? @db.VarChar(255)
   icon String? @db.VarChar(255)
   parentCategoryId String? @db.VarChar(255)
   order Int @default(0)

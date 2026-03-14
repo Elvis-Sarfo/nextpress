@@ -37,6 +37,33 @@ type EditorIntent = 'create' | 'edit';
 
 const IGNORED_COLUMN = '__ignore__';
 
+function getDisplayText(value: unknown, locale: string): string {
+  if (value === null || value === undefined) return '—';
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => getDisplayText(item, locale)).join(', ') || '—';
+  }
+  if (typeof value === 'object') {
+    const item = value as Record<string, unknown>;
+    const direct = item.displayName ?? item.email ?? item.id;
+    if (typeof direct === 'string' && direct.trim()) {
+      return direct;
+    }
+    const localizedName = item.name;
+    if (localizedName && typeof localizedName === 'object' && !Array.isArray(localizedName)) {
+      const localized = localizedName as Record<string, unknown>;
+      const text = localized[locale] ?? localized.en ?? Object.values(localized).find((entry) => typeof entry === 'string');
+      if (typeof text === 'string' && text.trim()) {
+        return text;
+      }
+    }
+    return String(direct ?? '—');
+  }
+  return String(value);
+}
+
 function labelFor(field: CollectionFieldMeta): string {
   return field.label || field.name;
 }
@@ -268,14 +295,7 @@ export function CollectionList({ collection }: CollectionListProps) {
     }
 
     if (Array.isArray(val)) {
-      return (
-        val
-          .map((v: unknown) => {
-            const item = v as Record<string, unknown>;
-            return item.displayName ?? item.name ?? item.email ?? item.id ?? String(v);
-          })
-          .join(', ') || '—'
-      );
+      return val.map((v: unknown) => getDisplayText(v, locale)).join(', ') || '—';
     }
     if (typeof val === 'boolean') return val ? 'Yes' : 'No';
     if (field.type === 'date' || field.name.endsWith('At')) {
@@ -283,8 +303,7 @@ export function CollectionList({ collection }: CollectionListProps) {
       return Number.isNaN(dt.valueOf()) ? String(val) : dt.toLocaleDateString();
     }
     if (typeof val === 'object' && val !== null) {
-      const item = val as Record<string, unknown>;
-      return String(item.displayName ?? item.name ?? item.email ?? item.id ?? '—');
+      return getDisplayText(val, locale);
     }
     return String(val);
   };

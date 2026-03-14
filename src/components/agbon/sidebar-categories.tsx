@@ -36,7 +36,7 @@ export function AgbonSidebarCategories({
   const sorted = [...categories].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
   const renderCompactSearchCard = compactOnMobile
   const compactItemBase =
-    'relative flex w-full flex-col items-center justify-center gap-3 px-1 py-1 text-center text-white transition md:flex-row md:items-center md:justify-start md:gap-3 md:px-3 md:py-3 md:text-left';
+    'relative flex w-full flex-col items-center justify-center gap-1 px-1 py-1 text-center text-white transition md:flex-row md:items-center md:justify-start md:gap-3 md:px-3 md:py-3 md:text-left';
   const compactInactive = 'bg-transparent hover:bg-white/[0.04]';
   const compactActive = 'bg-black md:bg-[#1a1a1a]';
   const compactLabel = 'text-[0.62rem] leading-tight font-semibold tracking-[0.01em]';

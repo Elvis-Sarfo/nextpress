@@ -16,6 +16,10 @@ const INCLUDE_MAP: Record<string, object> = {
   users: { roles: { select: { id: true, name: true, displayName: true } } },
   roles: { permissions: { select: { id: true, name: true, resource: true, action: true, scope: true } } },
   pages: { featuredImage: { select: { id: true, url: true, altText: true } } },
+  'product-categories': { image: { select: { id: true, url: true, altText: true } } },
+  products: {
+    category: { select: { id: true, name: true, slug: true } },
+  },
   posts: {
     category: { select: { id: true, name: true, color: true } },
     featuredImage: { select: { id: true, url: true, altText: true } },
@@ -28,7 +32,7 @@ const INCLUDE_MAP: Record<string, object> = {
 
 const ALLOWED = new Set([
   'users', 'roles', 'permissions', 'media', 'pages', 'settings', 'blocks', 'menus',
-  'categories', 'posts', 'comments',
+  'categories', 'posts', 'comments', 'product-categories', 'products',
 ]);
 
 function supportsBlocksContentDefinition(): boolean {
@@ -57,7 +61,11 @@ function supportsBlocksDataSource(): boolean {
 
 function getPrismaModel(collection: string) {
   const db = prisma as unknown as Record<string, unknown>;
-  return db[collection] as {
+  const delegateMap: Record<string, string> = {
+    'product-categories': 'productCategories',
+  };
+  const delegate = delegateMap[collection] ?? collection;
+  return db[delegate] as {
     findUnique: (args: unknown) => Promise<unknown>;
     update: (args: unknown) => Promise<unknown>;
     delete: (args: unknown) => Promise<unknown>;
@@ -156,7 +164,7 @@ export async function PUT(
     }
   }
 
-  // Remap relation object/id to scalar FK for pages and posts
+  // Remap upload objects/ids to scalar FKs
   for (const col of ['pages', 'posts'] as const) {
     if (collection === col && Object.prototype.hasOwnProperty.call(body, 'featuredImage')) {
       const fi = body.featuredImage;
@@ -166,6 +174,14 @@ export async function PUT(
         : null;
       delete body.featuredImage;
     }
+  }
+  if (collection === 'product-categories' && Object.prototype.hasOwnProperty.call(body, 'image')) {
+    const image = body.image;
+    body.imageId = image === null || image === undefined ? null
+      : typeof image === 'string' ? image
+      : typeof image === 'object' && 'id' in (image as Record<string, unknown>) ? (image as Record<string, unknown>).id
+      : null;
+    delete body.image;
   }
 
   // Posts: remap category and author relation objects to scalar FKs

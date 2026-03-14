@@ -39,7 +39,7 @@ export const ProductCategories: CollectionConfig = {
     },
     {
       name: 'image',
-      type: 'relationship',
+      type: 'upload',
       relationTo: 'media',
       admin: {
         description: 'Category icon / image',
@@ -57,6 +57,7 @@ export const ProductCategories: CollectionConfig = {
       name: 'parentCategoryId',
       type: 'text',
       admin: {
+        hidden: true,
         description: 'Parent category ID — leave empty for top-level categories',
       },
     },
