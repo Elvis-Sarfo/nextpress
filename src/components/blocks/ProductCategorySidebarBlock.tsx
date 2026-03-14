@@ -17,12 +17,15 @@ export function ProductCategorySidebarBlock({
   const categories = Array.isArray(data) ? (data as ProductCategoryRecord[]) : [];
   const showSearchButton =
     content.showSearchButton === true || content.showSearchButton === 'true';
+  const compactOnMobile =
+    content.compactOnMobile !== false && content.compactOnMobile !== 'false';
 
   return (
     <AgbonSidebarCategories
       categories={categories}
       locale={locale}
       showSearchButton={showSearchButton}
+      compactOnMobile={compactOnMobile}
     />
   );
 }

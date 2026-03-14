@@ -75,7 +75,7 @@ export const Pages: CollectionConfig<'pages'> = {
       name: 'sections',
       type: 'json',
       admin: {
-        description: 'Page sections containing columns and block references. Structure: [{ id, name, templateName, settings, columns: [{ id, width, offset, blocks: [{ blockId, order }] }] }]',
+        description: 'Page sections containing columns and block references. Structure: [{ id, name, templateName, customClassName, customStyle, settings, columns: [{ id, width, customClassName, customStyle, offset, blocks: [{ blockId, order }] }] }]',
       },
     } satisfies JSONField,
     {

@@ -2,6 +2,7 @@ import { getBlocksByIds, queryCollection } from '@/lib/cms';
 import { getLocale } from '@/lib/locale-utils';
 import { getBlockComponent, getBlockManifest } from '@/core/blocks/registry';
 import type { BlockDataSourceSpec, CollectionQueryParams } from '@/core/blocks/types';
+import { AgbonProductNavProvider } from '@/contexts/agbon-product-nav-context';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -13,6 +14,8 @@ interface BlockRef {
 interface Column {
   id: string;
   width?: string;
+  customClassName?: string;
+  customStyle?: string;
   offset?: string;
   blocks: BlockRef[];
 }
@@ -21,6 +24,8 @@ interface Section {
   id: string;
   name: string;
   templateName?: string;
+  customClassName?: string;
+  customStyle?: string;
   settings?: Record<string, unknown>;
   columns: Column[];
 }
@@ -45,12 +50,133 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 }
 
 function isFullBleedColumn(column: Column): boolean {
-  return column.width === 'full-bleed';
+  return !column.customClassName && column.width === 'full-bleed';
 }
 
-function getColumnClassName(column: Column): string {
-  const width = isFullBleedColumn(column) ? 'w-full' : column.width;
-  return [width, column.offset].filter(Boolean).join(' ');
+function parseInlineStyle(style: string | undefined): Record<string, string> | undefined {
+  if (!style?.trim()) return undefined;
+
+  const entries = style
+    .split(';')
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => {
+      const idx = part.indexOf(':');
+      if (idx === -1) return null;
+      const key = part.slice(0, idx).trim();
+      const value = part.slice(idx + 1).trim();
+      if (!key || !value) return null;
+      const camelKey = key.replace(/-([a-z])/g, (_, char: string) => char.toUpperCase());
+      return [camelKey, value] as const;
+    })
+    .filter((entry): entry is readonly [string, string] => entry !== null);
+
+  return entries.length > 0 ? Object.fromEntries(entries) : undefined;
+}
+
+function getColumnClassName(column: Column, fallbackClassName?: string): string | undefined {
+  if (column.customClassName) return column.customClassName;
+  return [fallbackClassName, isFullBleedColumn(column) ? 'w-full' : column.width, column.offset]
+    .filter(Boolean)
+    .join(' ');
+}
+
+function getColumnStyle(column: Column): Record<string, string> | undefined {
+  return parseInlineStyle(column.customStyle);
+}
+
+function getSectionClassName(section: Section, fallbackClassName?: string): string | undefined {
+  return section.customClassName || fallbackClassName;
+}
+
+function getSectionStyle(section: Section): Record<string, string> | undefined {
+  return parseInlineStyle(section.customStyle);
+}
+
+function renderColumnBlocks(
+  column: Column,
+  blockMap: Map<string, BlockRow>,
+  locale: string,
+  dataMap: Map<string, unknown[]>,
+) {
+  return column.blocks
+    .slice()
+    .sort((a, b) => a.order - b.order)
+    .map((ref) => {
+      const block = blockMap.get(ref.blockId);
+      if (!block) return null;
+
+      const Component = getBlockComponent(block.name);
+      if (!Component) {
+        return (
+          <div
+            key={ref.blockId}
+            className="p-4 border border-destructive text-destructive text-sm rounded"
+          >
+            Unknown block: <code>{block.name}</code>
+          </div>
+        );
+      }
+
+      const content = getLocale(block.content, locale) ?? {};
+      const data = dataMap.get(ref.blockId);
+
+      return <Component key={ref.blockId} content={content} data={data} />;
+    });
+}
+
+function renderCatalogSection(
+  section: Section,
+  blockMap: Map<string, BlockRow>,
+  locale: string,
+  dataMap: Map<string, unknown[]>,
+) {
+  const sidebarColumn = section.columns[0];
+  const mainColumns = section.columns.slice(1);
+  const productNavMode =
+    section.settings?.productNavMode === 'navigation' ? 'navigation' : 'filter';
+  const syncWithUrl = Boolean(section.settings?.syncWithUrl);
+
+  return (
+    <AgbonProductNavProvider
+      mode={productNavMode}
+      syncWithUrl={syncWithUrl}
+      locale={locale}
+    >
+      <div
+        className={getSectionClassName(section, 'max-w-[90rem] mx-auto px-2 md:px-4 py-6')}
+        style={getSectionStyle(section)}
+      >
+        <div className="flex items-start gap-2 md:gap-4">
+          {sidebarColumn && (
+            <div
+              className={getColumnClassName(sidebarColumn, 'w-20 md:w-64 lg:w-72 shrink-0')}
+              style={getColumnStyle(sidebarColumn)}
+            >
+              {renderColumnBlocks(sidebarColumn, blockMap, locale, dataMap)}
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            {mainColumns.length <= 1 ? (
+              mainColumns[0] ? renderColumnBlocks(mainColumns[0], blockMap, locale, dataMap) : null
+            ) : (
+              <div className="flex flex-wrap gap-4">
+                {mainColumns.map((column) => (
+                  <div
+                    key={column.id}
+                    className={getColumnClassName(column, 'w-full')}
+                    style={getColumnStyle(column)}
+                  >
+                    {renderColumnBlocks(column, blockMap, locale, dataMap)}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </AgbonProductNavProvider>
+  );
 }
 
 /**
@@ -145,70 +271,36 @@ export async function PageRenderer({
     <>
       {sections.map((section) => (
         <section key={section.id} data-section={section.name} data-template={section.templateName}>
-          {section.columns.every(isFullBleedColumn) ? (
-            <div className="flex flex-wrap">
+          {section.templateName === 'agbon-catalog' ? (
+            renderCatalogSection(section, blockMap, locale, dataMap)
+          ) : section.columns.every(isFullBleedColumn) ? (
+            <div
+              className={getSectionClassName(section, 'flex flex-wrap')}
+              style={getSectionStyle(section)}
+            >
               {section.columns.map((column) => (
-                <div key={column.id} className={getColumnClassName(column)}>
-                  {column.blocks
-                    .slice()
-                    .sort((a, b) => a.order - b.order)
-                    .map((ref) => {
-                      const block = blockMap.get(ref.blockId);
-                      if (!block) return null;
-
-                      const Component = getBlockComponent(block.name);
-                      if (!Component) {
-                        return (
-                          <div
-                            key={ref.blockId}
-                            className="p-4 border border-destructive text-destructive text-sm rounded"
-                          >
-                            Unknown block: <code>{block.name}</code>
-                          </div>
-                        );
-                      }
-
-                      const content = getLocale(block.content, locale) ?? {};
-                      const data = dataMap.get(ref.blockId);
-
-                      return (
-                        <Component key={ref.blockId} content={content} data={data} />
-                      );
-                    })}
+                <div
+                  key={column.id}
+                  className={getColumnClassName(column)}
+                  style={getColumnStyle(column)}
+                >
+                  {renderColumnBlocks(column, blockMap, locale, dataMap)}
                 </div>
               ))}
             </div>
           ) : (
-            <div className="container mx-auto px-4">
+            <div
+              className={getSectionClassName(section, 'container mx-auto px-4')}
+              style={getSectionStyle(section)}
+            >
               <div className="flex flex-wrap">
                 {section.columns.map((column) => (
-                  <div key={column.id} className={getColumnClassName(column)}>
-                    {column.blocks
-                      .slice()
-                      .sort((a, b) => a.order - b.order)
-                      .map((ref) => {
-                        const block = blockMap.get(ref.blockId);
-                        if (!block) return null;
-
-                        const Component = getBlockComponent(block.name);
-                        if (!Component) {
-                          return (
-                            <div
-                              key={ref.blockId}
-                              className="p-4 border border-destructive text-destructive text-sm rounded"
-                            >
-                              Unknown block: <code>{block.name}</code>
-                            </div>
-                          );
-                        }
-
-                        const content = getLocale(block.content, locale) ?? {};
-                        const data = dataMap.get(ref.blockId);
-
-                        return (
-                          <Component key={ref.blockId} content={content} data={data} />
-                        );
-                      })}
+                  <div
+                    key={column.id}
+                    className={getColumnClassName(column)}
+                    style={getColumnStyle(column)}
+                  >
+                    {renderColumnBlocks(column, blockMap, locale, dataMap)}
                   </div>
                 ))}
               </div>

@@ -13,6 +13,11 @@ export const productCategorySidebarBlock = defineBlock({
         type: 'toggle',
         label: 'Show Search Button',
       },
+      {
+        name: 'compactOnMobile',
+        type: 'toggle',
+        label: 'Compact On Mobile',
+      },
     ],
     dataSource: {
       collection: 'product-categories',

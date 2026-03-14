@@ -14,6 +14,8 @@ interface BlockRef {
 interface Column {
   id: string;
   width?: string;
+  customClassName?: string;
+  customStyle?: string;
   offset?: string;
   blocks: BlockRef[];
 }
@@ -22,6 +24,9 @@ interface Section {
   id: string;
   name?: string;
   templateName?: string;
+  customClassName?: string;
+  customStyle?: string;
+  settings?: Record<string, unknown>;
   columns: Column[];
 }
 
@@ -45,6 +50,11 @@ const WIDTH_OPTIONS = [
   { label: '1/3', value: 'w-1/3' },
   { label: '2/3', value: 'w-2/3' },
   { label: '1/4', value: 'w-1/4' },
+];
+
+const SECTION_TEMPLATE_OPTIONS = [
+  { label: 'Standard', value: '' },
+  { label: 'Agbon Catalog', value: 'agbon-catalog' },
 ];
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -109,6 +119,52 @@ export function PageSectionsEditor({ value, onChange }: PageSectionsEditorProps)
     update(sections.map((s) => (s.id === sectionId ? { ...s, name } : s)));
   };
 
+  const updateSectionTemplate = (sectionId: string, templateName: string) => {
+    update(
+      sections.map((section) => {
+        if (section.id !== sectionId) return section;
+
+        const nextTemplateName = templateName || undefined;
+        const nextSettings =
+          templateName === 'agbon-catalog'
+            ? {
+                productNavMode:
+                  section.settings?.productNavMode === 'navigation' ? 'navigation' : 'filter',
+                syncWithUrl: Boolean(section.settings?.syncWithUrl),
+              }
+            : undefined;
+
+        const nextColumns =
+          templateName === 'agbon-catalog' && section.columns.length < 2
+            ? [...section.columns, { id: uid(), width: 'w-full', blocks: [] }]
+            : section.columns;
+
+        return {
+          ...section,
+          templateName: nextTemplateName,
+          settings: nextSettings,
+          columns: nextColumns,
+        };
+      }),
+    );
+  };
+
+  const updateSectionSetting = (sectionId: string, key: string, value: unknown) => {
+    update(
+      sections.map((section) =>
+        section.id === sectionId
+          ? {
+              ...section,
+              settings: {
+                ...(section.settings ?? {}),
+                [key]: value,
+              },
+            }
+          : section,
+      ),
+    );
+  };
+
   // ── Column operations ────────────────────────────────────────────────────────
   const addColumn = (sectionId: string) => {
     update(
@@ -140,6 +196,25 @@ export function PageSectionsEditor({ value, onChange }: PageSectionsEditorProps)
             }
           : s
       )
+    );
+  };
+
+  const updateColumnConfig = (
+    sectionId: string,
+    columnId: string,
+    patch: Partial<Column>,
+  ) => {
+    update(
+      sections.map((section) =>
+        section.id === sectionId
+          ? {
+              ...section,
+              columns: section.columns.map((column) =>
+                column.id === columnId ? { ...column, ...patch } : column,
+              ),
+            }
+          : section,
+      ),
     );
   };
 
@@ -280,6 +355,88 @@ export function PageSectionsEditor({ value, onChange }: PageSectionsEditorProps)
             </Button>
           </div>
 
+          <div className="grid gap-3 border-b px-4 py-3 md:grid-cols-2">
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Section Template</label>
+              <select
+                aria-label="Section template"
+                value={section.templateName ?? ''}
+                onChange={(e) => updateSectionTemplate(section.id, e.target.value)}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                {SECTION_TEMPLATE_OPTIONS.map((opt) => (
+                  <option key={opt.value || 'default'} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {section.templateName === 'agbon-catalog' && (
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">Catalog Mode</label>
+                  <select
+                    aria-label="Catalog mode"
+                    value={
+                      section.settings?.productNavMode === 'navigation' ? 'navigation' : 'filter'
+                    }
+                    onChange={(e) =>
+                      updateSectionSetting(section.id, 'productNavMode', e.target.value)
+                    }
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  >
+                    <option value="filter">Filter In Section</option>
+                    <option value="navigation">Navigate To Products</option>
+                  </select>
+                </div>
+                <label className="flex items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(section.settings?.syncWithUrl)}
+                    onChange={(e) =>
+                      updateSectionSetting(section.id, 'syncWithUrl', e.target.checked)
+                    }
+                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                  />
+                  Sync filters with URL
+                </label>
+              </div>
+            )}
+          </div>
+          <div className="grid gap-3 border-b px-4 py-3 md:grid-cols-2">
+            <input
+              type="text"
+              value={section.customClassName ?? ''}
+              onChange={(e) =>
+                update(
+                  sections.map((item) =>
+                    item.id === section.id
+                      ? { ...item, customClassName: e.target.value || undefined }
+                      : item,
+                  ),
+                )
+              }
+              placeholder="Section CSS class override"
+              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+            />
+            <input
+              type="text"
+              value={section.customStyle ?? ''}
+              onChange={(e) =>
+                update(
+                  sections.map((item) =>
+                    item.id === section.id
+                      ? { ...item, customStyle: e.target.value || undefined }
+                      : item,
+                  ),
+                )
+              }
+              placeholder="Section inline style override"
+              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+            />
+          </div>
+
           {/* Columns */}
           <div className="flex flex-wrap gap-3 p-4">
             {section.columns.map((column) => (
@@ -287,6 +444,11 @@ export function PageSectionsEditor({ value, onChange }: PageSectionsEditorProps)
                 key={column.id}
                 className="min-w-[200px] flex-1 rounded-md border border-dashed bg-muted/20 p-3 space-y-2"
               >
+                {section.templateName === 'agbon-catalog' && (
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                    {section.columns.indexOf(column) === 0 ? 'Sidebar' : 'Main Content'}
+                  </p>
+                )}
                 {/* Column controls */}
                 <div className="flex items-center gap-2">
                   <select
@@ -309,6 +471,30 @@ export function PageSectionsEditor({ value, onChange }: PageSectionsEditorProps)
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   )}
+                </div>
+                <div className="grid gap-2 md:grid-cols-2">
+                  <input
+                    type="text"
+                    value={column.customClassName ?? ''}
+                    onChange={(e) =>
+                      updateColumnConfig(section.id, column.id, {
+                        customClassName: e.target.value || undefined,
+                      })
+                    }
+                    placeholder="Column CSS class override"
+                    className="rounded border border-input bg-background px-2 py-1 text-xs"
+                  />
+                  <input
+                    type="text"
+                    value={column.customStyle ?? ''}
+                    onChange={(e) =>
+                      updateColumnConfig(section.id, column.id, {
+                        customStyle: e.target.value || undefined,
+                      })
+                    }
+                    placeholder="Column inline style override"
+                    className="rounded border border-input bg-background px-2 py-1 text-xs"
+                  />
                 </div>
 
                 {/* Blocks */}

@@ -21,6 +21,7 @@ interface SidebarCategoriesProps {
   locale?: string
   onSearchButtonClick?: () => void
   showSearchButton?: boolean
+  compactOnMobile?: boolean
 }
 
 export function AgbonSidebarCategories({
@@ -28,26 +29,38 @@ export function AgbonSidebarCategories({
   locale = 'en',
   onSearchButtonClick,
   showSearchButton = false,
+  compactOnMobile = false,
 }: SidebarCategoriesProps) {
   const { selectedCategory, searchQuery, setCategory, setSearch, resetFilters } = useAgbonProductNav()
 
   const sorted = [...categories].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+  const renderCompactSearchCard = compactOnMobile
+  const compactItemBase =
+    'relative flex w-full flex-col items-center justify-center gap-3 px-1 py-1 text-center text-white transition md:flex-row md:items-center md:justify-start md:gap-3 md:px-3 md:py-3 md:text-left';
+  const compactInactive = 'bg-transparent hover:bg-white/[0.04]';
+  const compactActive = 'bg-black md:bg-[#1a1a1a]';
+  const compactLabel = 'text-[0.62rem] leading-tight font-semibold tracking-[0.01em]';
+
+  const searchCardClass = compactOnMobile
+    ? `${compactItemBase} ${compactInactive} rounded-none md:rounded md:border md:border-gray-300 md:bg-white md:text-gray-900 md:hover:border-orange-500`
+    : 'w-full flex items-center gap-2 px-1 py-1 bg-white text-gray-900 border border-gray-300 hover:border-orange-500 transition';
 
   return (
-    <aside className="bg-[#1a1a1a] text-white rounded-lg overflow-hidden h-fit">
-      <div className="p-2 md:p-6">
+    <aside className="h-fit overflow-hidden rounded-[.3rem] bg-[#2b2d35] text-white md:rounded-lg md:bg-[#1a1a1a]">
+      <div className="py-2 px-0 md:p-6">
         {/* Search */}
-        {showSearchButton ? (
-          <div className="mb-3 md:mb-4">
+        {showSearchButton || renderCompactSearchCard ? (
+          <div className="mb-2 md:mb-4">
             <button
               onClick={onSearchButtonClick}
-              className="w-full flex items-center gap-2 px-3 py-2 bg-white text-gray-900 rounded border border-gray-300 hover:border-orange-500 transition"
+              className={searchCardClass}
             >
-              <Search size={16} className="text-gray-600" />
-              <span className="text-xs md:text-sm text-gray-600">
-                {agbonT('search.openSearch', locale)}
+              <Search size={compactOnMobile ? 29 : 16} className={`${compactOnMobile ? 'text-white md:text-gray-600' : 'text-gray-600 md:h-4 md:w-4'}`} />
+              <span className={`${compactOnMobile ? `${compactLabel} md:text-sm md:font-medium md:text-gray-600` : 'font-medium text-gray-600 text-xs md:text-sm'}`}>
+                {compactOnMobile ? 'Search Products' : agbonT('search.openSearch', locale)}
               </span>
             </button>
+            {compactOnMobile && <div className="mx-4 h-px bg-[#14315f] md:hidden" />}
           </div>
         ) : (
           <div className="mb-3 md:mb-4">
@@ -58,7 +71,7 @@ export function AgbonSidebarCategories({
                 placeholder={agbonT('header.searchPlaceholder', locale)}
                 value={searchQuery}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-white text-gray-900 text-xs md:text-sm rounded border border-gray-300 focus:border-orange-500 focus:outline-none transition placeholder:text-gray-500"
+                className="w-full pl-9 pr-3 py-2 bg-white text-gray-900 text-xs md:text-sm border border-gray-300 focus:border-orange-500 focus:outline-none transition placeholder:text-gray-500"
               />
             </div>
           </div>
@@ -68,17 +81,24 @@ export function AgbonSidebarCategories({
         <button
           type="button"
           onClick={() => resetFilters()}
-          className={`w-full flex items-center gap-2 md:gap-3 p-2 md:p-3 mb-2 md:mb-4 transition text-left rounded ${
-            selectedCategory === null ? 'bg-[#1a1a1a] text-white' : 'bg-gray-800 hover:bg-gray-700 text-white'
-          }`}
+          className={
+            compactOnMobile
+              ? `${compactItemBase} ${selectedCategory === null ? compactActive : compactInactive}`
+              : `w-full transition rounded ${
+                  selectedCategory === null ? 'bg-[#1a1a1a] text-white' : 'bg-gray-800 hover:bg-gray-700 text-white'
+                } flex items-center gap-2 md:gap-3 p-2 md:p-3 text-left`
+          }
         >
-          <span className="text-base md:text-xl shrink-0">🏠</span>
-          <span className="text-xs md:text-sm font-semibold">
+          {compactOnMobile && selectedCategory === null && (
+            <span className="absolute inset-y-0 left-0 w-1 bg-[#ff8a2a] md:hidden" />
+          )}
+          <span className={`shrink-0 ${compactOnMobile ? 'text-xl md:text-base lg:text-xl' : 'text-base md:text-xl'}`}>🏠</span>
+          <span className={compactOnMobile ? `${compactLabel} md:text-sm` : 'text-xs md:text-sm font-semibold'}>
             {agbonT('common.allProducts', locale)}
           </span>
         </button>
 
-        <h3 className="font-bold text-xs md:text-lg mb-2 md:mb-4">
+        <h3 className={`font-bold text-xs md:text-lg mb-2 md:mb-4 ${compactOnMobile ? 'hidden md:block' : ''}`}>
           {agbonT('common.categories', locale)}
         </h3>
 
@@ -92,20 +112,29 @@ export function AgbonSidebarCategories({
                 type="button"
                 key={cat.id}
                 onClick={() => setCategory(selectedCategory === cat.id ? null : cat.id)}
-                className={`w-full flex items-center gap-2 md:gap-3 p-2 md:p-3 transition text-left border-b border-gray-800 last:border-b-0 ${
-                  selectedCategory === cat.id
-                    ? 'bg-[#1a1a1a] text-white'
-                    : 'hover:bg-gray-900 text-white'
-                }`}
+                className={
+                  compactOnMobile
+                    ? `${compactItemBase} ${selectedCategory === cat.id ? compactActive : compactInactive}`
+                    : `w-full transition border-b border-gray-800 last:border-b-0 ${
+                        selectedCategory === cat.id
+                          ? 'bg-[#1a1a1a] text-white'
+                          : 'hover:bg-gray-900 text-white'
+                      } flex items-center gap-2 md:gap-3 p-2 md:p-3 text-left`
+                }
               >
+                {compactOnMobile && selectedCategory === cat.id && (
+                  <span className="absolute inset-y-0 left-0 w-1 bg-[#ff8a2a] md:hidden" />
+                )}
                 {imageUrl ? (
                   <div className="relative w-5 h-5 md:w-6 md:h-6 shrink-0">
                     <Image src={imageUrl} alt={name} fill className="object-contain" unoptimized />
                   </div>
                 ) : (
-                  <span className="text-base md:text-xl shrink-0">{cat.icon || '📦'}</span>
+                  <span className={`shrink-0 ${compactOnMobile ? 'text-2xl md:text-base lg:text-xl' : 'text-base md:text-xl'}`}>{cat.icon || '📦'}</span>
                 )}
-                <span className="text-xs md:text-sm whitespace-normal flex-1">{name}</span>
+                <span className={`whitespace-normal ${compactOnMobile ? `${compactLabel} md:text-sm md:flex-1` : 'text-xs md:text-sm flex-1'}`}>
+                  {name}
+                </span>
               </button>
             )
           })}
