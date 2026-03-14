@@ -96,7 +96,7 @@ function createDocumentId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-function stripNullNumberFields(collection: string, body: Record<string, unknown>): void {
+function stripNullScalarDefaultFields(collection: string, body: Record<string, unknown>): void {
   const runtime = (prisma as unknown as {
     _runtimeDataModel?: {
       models?: Record<string, { fields?: Array<{ name?: string; type?: string }> }>;
@@ -109,7 +109,7 @@ function stripNullNumberFields(collection: string, body: Record<string, unknown>
 
   for (const field of model.fields) {
     if (!field.name) continue;
-    if (field.type !== 'Int' && field.type !== 'Float') continue;
+    if (field.type !== 'Int' && field.type !== 'Float' && field.type !== 'Boolean') continue;
     if (body[field.name] === null) {
       delete body[field.name];
     }
@@ -369,7 +369,7 @@ export async function POST(
     delete body.documentId;
   }
 
-  stripNullNumberFields(collection, body);
+  stripNullScalarDefaultFields(collection, body);
 
   // Build Prisma data object
   const data: Record<string, unknown> = {

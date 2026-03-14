@@ -47,9 +47,11 @@ function getDisplayText(value: unknown, locale: string): string {
   }
   if (typeof value === 'object') {
     const item = value as Record<string, unknown>;
-    const direct = item.displayName ?? item.email ?? item.id;
-    if (typeof direct === 'string' && direct.trim()) {
-      return direct;
+    if (typeof item.displayName === 'string' && item.displayName.trim()) {
+      return item.displayName;
+    }
+    if (typeof item.name === 'string' && item.name.trim()) {
+      return item.name;
     }
     const localizedName = item.name;
     if (localizedName && typeof localizedName === 'object' && !Array.isArray(localizedName)) {
@@ -59,7 +61,13 @@ function getDisplayText(value: unknown, locale: string): string {
         return text;
       }
     }
-    return String(direct ?? '—');
+    if (typeof item.email === 'string' && item.email.trim()) {
+      return item.email;
+    }
+    if (typeof item.id === 'string' && item.id.trim()) {
+      return item.id;
+    }
+    return '—';
   }
   return String(value);
 }
