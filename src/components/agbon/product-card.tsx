@@ -26,11 +26,13 @@ function isValidImageUrl(url: unknown): url is string {
 
 function stripHtml(html: string): string {
   return html
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/p>/gi, '\n')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/\n{2,}/g, '\n')
-    .replace(/\s+/g, ' ')
+    .replace(/<(br|\/p|\/div|\/li|\/ul|\/ol)\s*\/?>/gi, '\n')
+    .replace(/<li[^>]*>/gi, '• ')
+    .replace(/<p[^>]*>/gi, '')
+    .replace(/<div[^>]*>/gi, '')
+    .replace(/<ul[^>]*>/gi, '')
+    .replace(/<ol[^>]*>/gi, '')
+    .replace(/<[^>]+>/g, '')
     .trim()
 }
 
@@ -49,43 +51,39 @@ export function AgbonProductCard({ product, locale = 'en', showSpecs = true }: P
   const specsHtml = product.specifications ? getLocalized(product.specifications, locale) : ''
   const specs = specsHtml
     ? stripHtml(specsHtml)
-        .split(/\n|•/)
-        .map((spec) => spec.trim())
-        .filter(Boolean)
+      .split(/\n+/)
+      .map((spec) => spec.trim())
+      .filter(Boolean)
     : []
 
   return (
     <Link href={`/${locale}/product/${product.id}`}>
-      <div className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer h-full flex flex-col border border-gray-200 hover:border-[#FF6B35]/50 hover:scale-[1.02]">
-        <div className="relative w-full aspect-square bg-gradient-to-br from-gray-50 to-gray-100 p-4">
-          <Image src={imageUrl} alt={productName} fill className="object-contain p-2" />
+      <div className="bg-white rounded-[8px] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer h-full flex flex-col border-2 border-[#e7e9ef] hover:border-[#FF6B35]/40 hover:scale-[1.01]">
+        <div className="relative w-full aspect-[4/3] bg-[#f6f7fb]">
+          <Image src={imageUrl} alt={productName} fill className="object-cover" />
         </div>
 
-        <div className="p-3 md:p-4 flex-1 flex flex-col bg-white">
-          <div className="h-14 md:h-16 overflow-hidden">
-            <h3 className="font-bold text-[#FF6B35] text-sm leading-snug max-h-10 md:max-h-12 overflow-hidden">
-              <span className="line-clamp-1" title={productName}>{productName}</span>
+        <div className="p-2 md:p-5 flex-1 flex flex-col bg-white">
+          <div className="overflow-hidden">
+            <h3 className="font-bold text-[#FF6B35] text-sm md:text-base leading-snug overflow-hidden">
+              <span className="line-clamp-2" title={productName}>{productName}</span>
             </h3>
-            <h4 className="font-semibold text-[#686c6e] text-xs min-h-5 md:min-h-6">
+            <h4 className="font-semibold text-[#686c6e] text-xs md:text-sm min-h-5 md:min-h-6">
               {productModel || '\u00A0'}
             </h4>
           </div>
 
           {showSpecs && specs.length > 0 && (
             <>
-              <hr className="border-t border-gray-200 my-2" />
+              <hr className="border-t border-[#d8dee8] my-0" />
               <div className="flex-1 flex flex-col">
-                <div className="text-[10px] text-[#FF6B35] mb-1 tracking-wide uppercase">
+                <div className="text-[10px] text-[#FF6B35] mb-1.5 tracking-[0.16em] uppercase">
                   {agbonT('common.technicalDescription', locale)}
                 </div>
-                <div className="space-y-0.5">
-                  {specs.slice(0, 4).map((spec, i) => (
-                    <div key={i} className="text-[10px] text-gray-600 leading-relaxed line-clamp-1 flex items-start">
-                      <span className="text-gray-400 mr-1.5">•</span>
-                      <span className="flex-1">{spec}</span>
-                    </div>
-                  ))}
-                </div>
+                <div
+                  className="text-[10px]"
+                  dangerouslySetInnerHTML={{ __html: specsHtml || '' }}
+                />
               </div>
             </>
           )}
