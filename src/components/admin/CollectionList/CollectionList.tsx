@@ -7,6 +7,7 @@ import {
   Search,
   PencilLine,
   Pencil,
+  Copy,
   Trash2,
   Loader2,
   AlertTriangle,
@@ -185,6 +186,7 @@ export function CollectionList({ collection }: CollectionListProps) {
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [duplicateId, setDuplicateId] = useState<string | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
@@ -415,6 +417,30 @@ export function CollectionList({ collection }: CollectionListProps) {
       }
     } finally {
       setDeleteId(null);
+    }
+  };
+
+  const handleDuplicate = async (id: string) => {
+    setDuplicateId(id);
+    try {
+      const res = await fetch(`/api/admin/collections/${collection.slug}/${id}/duplicate`, {
+        method: 'POST',
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(data.error ?? 'Duplicate failed');
+        return;
+      }
+
+      const newId = data.doc?.id;
+      await fetchDocs();
+
+      if (typeof newId === 'string' && newId.length > 0) {
+        router.push(`/admin/${collection.slug}/${newId}`);
+      }
+    } finally {
+      setDuplicateId(null);
     }
   };
 
@@ -912,6 +938,21 @@ export function CollectionList({ collection }: CollectionListProps) {
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
+                        {collection.slug === 'pages' && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDuplicate(String(doc.id))}
+                            disabled={duplicateId === String(doc.id)}
+                            title="Duplicate"
+                          >
+                            {duplicateId === String(doc.id) ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Copy className="h-4 w-4" />
+                            )}
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="icon"

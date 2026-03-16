@@ -161,7 +161,11 @@ function renderCatalogSection(
           )}
           <div className="flex-1 min-w-0">
             {mainColumns.length <= 1 ? (
-              mainColumns[0] ? renderColumnBlocks(mainColumns[0], blockMap, locale, dataMap) : null
+              mainColumns[0] ? (
+                <div className="flex flex-col space-y-6 md:space-y-8">
+                  {renderColumnBlocks(mainColumns[0], blockMap, locale, dataMap)}
+                </div>
+              ) : null
             ) : (
               <div className="flex flex-wrap gap-4">
                 {mainColumns.map((column) => (
@@ -170,7 +174,9 @@ function renderCatalogSection(
                     className={getColumnClassName(column, 'w-full')}
                     style={getColumnStyle(column)}
                   >
-                    {renderColumnBlocks(column, blockMap, locale, dataMap)}
+                    <div className="flex flex-col space-y-6 md:space-y-8">
+                      {renderColumnBlocks(column, blockMap, locale, dataMap)}
+                    </div>
                   </div>
                 ))}
               </div>

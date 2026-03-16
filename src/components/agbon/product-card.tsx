@@ -77,11 +77,11 @@ export function AgbonProductCard({ product, locale = 'en', showSpecs = true }: P
             <>
               <hr className="border-t border-[#d8dee8] my-0" />
               <div className="flex-1 flex flex-col">
-                <div className="text-[10px] text-[#FF6B35] mb-1.5 tracking-[0.16em] uppercase">
+                <div className="text-[10px] text-[#FF6B35] mb-0 tracking-[0.16em] uppercase">
                   {agbonT('common.technicalDescription', locale)}
                 </div>
                 <div
-                  className="text-[10px]"
+                  className="text-[10px] text-black"
                   dangerouslySetInnerHTML={{ __html: specsHtml || '' }}
                 />
               </div>
