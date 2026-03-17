@@ -8,6 +8,10 @@ export function buildLocalizedPath(locale: string, path: string = ''): string {
   return `/${locale}${normalizedPath}`
 }
 
+export function buildProductPath(locale: string, slug: string): string {
+  return buildLocalizedPath(locale, `/products/${slug}`)
+}
+
 export function replaceLocaleInPath(pathname: string, locale: string): string {
   const nextPath = pathname.replace(/^\/(en|fr|zh)(?=\/|$)/, `/${locale}`)
   return nextPath === pathname ? buildLocalizedPath(locale, pathname) : nextPath

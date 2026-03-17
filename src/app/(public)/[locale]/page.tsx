@@ -11,7 +11,7 @@ import {
 } from '@/lib/cms';
 import { getLocale } from '@/lib/locale-utils';
 import { PageRenderer } from '@/components/blocks/PageRenderer';
-import { AgbonProductList } from '@/components/agbon/product-list';
+import { AgbonProductList, DEFAULT_AGBON_PRODUCT_GRID_COLUMNS } from '@/components/agbon/product-list';
 import { AgbonSidebarCategories } from '@/components/agbon/sidebar-categories';
 import { AgbonHappyFarmingBanner } from '@/components/agbon/happy-farming-banner';
 import { AgbonHomeFeatureCards } from '@/components/agbon/home-feature-cards';
@@ -82,7 +82,7 @@ export default async function LocaleHomePage({ params }: Props) {
               showFeatured={true}
               featuredProducts={featuredProducts}
               featuredTitle="Hot Selling Products"
-              gridColumns="grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+              gridColumns={DEFAULT_AGBON_PRODUCT_GRID_COLUMNS}
             />
             <AgbonStatsBar locale={locale} className="my-10" backgroundImage="/images/section/light_gen.png" />
             <AgbonHomeFeatureCards locale={locale} />

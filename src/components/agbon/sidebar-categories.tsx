@@ -31,10 +31,10 @@ export function AgbonSidebarCategories({
   showSearchButton = false,
   compactOnMobile = false,
 }: SidebarCategoriesProps) {
-  const { selectedCategory, searchQuery, setCategory, setSearch, resetFilters } = useAgbonProductNav()
+  const { selectedCategory, searchQuery, setCategory, setSearch, resetFilters, navigateToProducts } = useAgbonProductNav()
 
   const sorted = [...categories].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-  const renderCompactSearchCard = compactOnMobile
+  const renderCompactSearchCard = compactOnMobile && !!onSearchButtonClick
   const compactItemBase =
     'relative flex w-full flex-col items-center justify-center gap-1 px-1 py-1 text-center text-white transition md:flex-row md:items-center md:justify-start md:gap-3 md:px-1 md:py-1 md:text-left';
   const compactInactive = 'bg-transparent hover:bg-white/[0.04]';
@@ -44,6 +44,14 @@ export function AgbonSidebarCategories({
   const searchCardClass = compactOnMobile
     ? `${compactItemBase} ${compactInactive} rounded-none md:rounded md:border md:border-gray-300 md:bg-white md:text-gray-900 md:hover:border-orange-500`
     : 'w-full flex items-center gap-2 px-1 py-1 bg-white text-gray-900 border border-gray-300 hover:border-orange-500 transition';
+
+  const submitSearch = () => {
+    if (onSearchButtonClick) {
+      onSearchButtonClick()
+      return
+    }
+    navigateToProducts(searchQuery ? { search: searchQuery } : undefined, locale)
+  }
 
   return (
     <aside className="h-fit overflow-hidden rounded-[.3rem] bg-[#2b2d35] text-white md:rounded-lg md:bg-[#1a1a1a]">
@@ -71,6 +79,12 @@ export function AgbonSidebarCategories({
                 placeholder={agbonT('header.searchPlaceholder', locale)}
                 value={searchQuery}
                 onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    submitSearch()
+                  }
+                }}
                 className="w-full pl-9 pr-3 py-2 bg-white text-gray-900 text-xs md:text-sm border border-gray-300 focus:border-orange-500 focus:outline-none transition placeholder:text-gray-500"
               />
             </div>

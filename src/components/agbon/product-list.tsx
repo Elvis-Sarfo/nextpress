@@ -6,6 +6,8 @@ import { AgbonProductCard } from './product-card'
 import { t as agbonT } from '@/lib/agbon-translations'
 import { useAgbonProductNav } from '@/contexts/agbon-product-nav-context'
 
+export const DEFAULT_AGBON_PRODUCT_GRID_COLUMNS = 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
+
 interface AgbonProductListProps {
   products: ProductRecord[]
   categories?: ProductCategoryRecord[]
@@ -35,7 +37,7 @@ export function AgbonProductList({
   categories = [],
   locale = 'en',
   itemsPerPage = 12,
-  gridColumns = 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
+  gridColumns = DEFAULT_AGBON_PRODUCT_GRID_COLUMNS,
   showHeader = true,
   title,
   showPagination = true,

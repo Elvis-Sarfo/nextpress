@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { AgbonProductList } from '@/components/agbon/product-list';
+import { AgbonProductList, DEFAULT_AGBON_PRODUCT_GRID_COLUMNS } from '@/components/agbon/product-list';
 import type { ProductCategoryRecord, ProductRecord } from '@/lib/cms';
 import type { BlockContent } from '@/core/blocks/types';
 
@@ -49,7 +49,7 @@ export function AgbonProductListBlock({
       categories={categories}
       locale={locale}
       itemsPerPage={asNumber(content.itemsPerPage, 12)}
-      gridColumns={asString(content.gridColumns, 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4')}
+      gridColumns={asString(content.gridColumns, DEFAULT_AGBON_PRODUCT_GRID_COLUMNS)}
       showHeader={asBoolean(content.showHeader, true)}
       title={asString(content.title)}
       showPagination={asBoolean(content.showPagination, true)}

@@ -1,6 +1,6 @@
-import { notFound } from 'next/navigation';
-import { localeEngine, getProduct, getProducts } from '@/lib/cms';
-import { AgbonProductDetailClient } from '@/components/agbon/product-detail-client';
+import { notFound, redirect } from 'next/navigation';
+import { localeEngine, getProduct } from '@/lib/cms';
+import { buildProductPath } from '@/lib/agbon-routes';
 import type { Metadata } from 'next';
 
 interface Props {
@@ -16,28 +16,7 @@ export default async function ProductDetailPage({ params }: Props) {
 
   const product = await getProduct(id);
   if (!product) notFound();
-
-  // Related products from same category
-  const categoryId = typeof product.category === 'string'
-    ? product.category
-    : (product.category as any)?.id;
-
-  const relatedResult = await getProducts({
-    categoryId: categoryId || undefined,
-    limit: 5,
-  });
-
-  const relatedProducts = relatedResult.products.filter((p) => p.id !== id).slice(0, 4);
-
-  return (
-    <div className="max-w-[90rem] mx-auto px-2 md:px-4 py-6">
-      <AgbonProductDetailClient
-        product={product}
-        relatedProducts={relatedProducts}
-        locale={locale}
-      />
-    </div>
-  );
+  redirect(buildProductPath(locale, product.slug));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

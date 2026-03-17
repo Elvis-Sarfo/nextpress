@@ -2,6 +2,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { ProductRecord } from '@/lib/cms'
 import { t as agbonT } from '@/lib/agbon-translations'
+import { buildProductPath } from '@/lib/agbon-routes'
 
 interface ProductCardProps {
   product: ProductRecord
@@ -57,7 +58,7 @@ export function AgbonProductCard({ product, locale = 'en', showSpecs = true }: P
     : []
 
   return (
-    <Link href={`/${locale}/product/${product.id}`}>
+    <Link href={buildProductPath(locale, product.slug)}>
       <div className="bg-white rounded-[8px] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer h-full flex flex-col border-2 border-[#e7e9ef] hover:border-[#FF6B35]/40 hover:scale-[1.01]">
         <div className="relative w-full aspect-[4/3] bg-[#f6f7fb]">
           <Image src={imageUrl} alt={productName} fill className="object-cover" />

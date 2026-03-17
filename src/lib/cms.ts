@@ -833,6 +833,19 @@ export async function getProduct(id: string): Promise<ProductRecord | null> {
   return mapProductRow(row);
 }
 
+export async function getProductBySlug(slug: string): Promise<ProductRecord | null> {
+  const row = await prisma.products.findFirst({
+    where: { slug },
+    include: {
+      category: {
+        include: { image: { select: { url: true } } },
+      },
+    },
+  });
+  if (!row) return null;
+  return mapProductRow(row);
+}
+
 export async function getFeaturedProducts(limit = 8): Promise<ProductRecord[]> {
   const { products } = await getProducts({ featured: true, limit });
   return products;

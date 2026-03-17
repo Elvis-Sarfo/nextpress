@@ -154,6 +154,9 @@ const translations: Record<Locale, Record<string, string>> = {
     'commitment.button': 'Learn More About Our Service',
     'commitment.imageAlt': 'Agbon after-sales support team with farmers',
     'commitment.badgeAlt': 'Agbon Service Guarantee',
+    'product.description': 'Product Description',
+    'product.specifications': 'Product Specifications',
+    
   },
   fr: {
     // Home Feature Cards

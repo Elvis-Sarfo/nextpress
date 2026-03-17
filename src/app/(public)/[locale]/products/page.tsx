@@ -4,9 +4,8 @@ import {
   getProducts,
   getProductCategories,
 } from '@/lib/cms';
-import { AgbonProductList } from '@/components/agbon/product-list';
-import { AgbonSidebarCategories } from '@/components/agbon/sidebar-categories';
-import { AgbonProductNavProvider } from '@/contexts/agbon-product-nav-context';
+import { AgbonProductList, DEFAULT_AGBON_PRODUCT_GRID_COLUMNS } from '@/components/agbon/product-list';
+import { ProductPageShell } from '@/components/agbon/product-page-shell';
 import type { Metadata } from 'next';
 
 interface Props {
@@ -35,27 +34,17 @@ export default async function ProductsPage({ params, searchParams }: Props) {
   ]);
 
   return (
-    <div className="flex flex-col md:flex-row max-w-[90rem] mx-auto px-2 md:px-4 py-6 gap-4">
-      <div className="w-full md:w-56 lg:w-64 shrink-0">
-        <AgbonProductNavProvider mode="filter" syncWithUrl={true} locale={locale}>
-          <AgbonSidebarCategories categories={categories} locale={locale} />
-        </AgbonProductNavProvider>
-      </div>
-
-      <div className="flex-1 min-w-0">
-        <AgbonProductNavProvider mode="filter" syncWithUrl={true} locale={locale}>
-          <AgbonProductList
-            products={productsResult.products}
-            categories={categories}
-            locale={locale}
-            itemsPerPage={24}
-            showHeader={true}
-            showPagination={true}
-            gridColumns="grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
-          />
-        </AgbonProductNavProvider>
-      </div>
-    </div>
+    <ProductPageShell locale={locale} categories={categories} sidebarMode="filter" syncWithUrl>
+      <AgbonProductList
+        products={productsResult.products}
+        categories={categories}
+        locale={locale}
+        itemsPerPage={24}
+        showHeader={true}
+        showPagination={true}
+        gridColumns={DEFAULT_AGBON_PRODUCT_GRID_COLUMNS}
+      />
+    </ProductPageShell>
   );
 }
 
