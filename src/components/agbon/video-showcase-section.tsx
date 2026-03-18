@@ -152,6 +152,7 @@ export function AgbonVideoShowcaseSection({
             </button>
             {selected.youtubeUrl ? (
               <iframe
+                title={selected.title}
                 src={getYouTubeEmbedUrl(selected.youtubeUrl)}
                 className="w-full h-full"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

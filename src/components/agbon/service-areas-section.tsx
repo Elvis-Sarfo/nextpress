@@ -86,7 +86,7 @@ export function AgbonServiceAreasSection({
                       {country.flag.startsWith('http') || country.flag.startsWith('/') ? (
                         <Image src={country.flag} alt={country.name} width={40} height={40} className="object-cover w-full h-full rounded-full" />
                       ) : (
-                        <span className="text-2xl" role="img">{country.flag}</span>
+                        <span title={country.name} className="text-2xl" role="img">{country.flag}</span>
                       )}
                     </div>
                   )}

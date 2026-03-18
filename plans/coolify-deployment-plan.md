@@ -73,7 +73,7 @@ Create two services in the same Coolify project:
 
 Optional third service:
 
-3. `nextpress-redis`
+1. `nextpress-redis`
    - Only needed later if caching/queues are introduced
    - Not required for the current codebase
 

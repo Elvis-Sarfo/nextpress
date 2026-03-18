@@ -11,6 +11,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/adapters/prisma-adapter';
 import bcrypt from 'bcryptjs';
 import { invalidatePrincipalCache } from '@/lib/rbac-service';
+import { getCollection } from '@/lib/collections-data';
 
 // Collections that have many-to-many relations we want to include in responses
 const INCLUDE_MAP: Record<string, object> = {
@@ -90,6 +91,54 @@ function modelHasField(collection: string, fieldName: string): boolean {
   const model = runtime?.models?.[collection] ?? runtime?.models?.[pascalCollection];
   if (!model?.fields) return false;
   return model.fields.some((field) => field.name === fieldName);
+}
+
+function getModelFieldType(collection: string, fieldName: string): string | null {
+  const runtime = (prisma as unknown as {
+    _runtimeDataModel?: {
+      models?: Record<string, { fields?: Array<{ name?: string; type?: string }> }>;
+    };
+  })._runtimeDataModel;
+
+  const pascalCollection = collection.charAt(0).toUpperCase() + collection.slice(1);
+  const model = runtime?.models?.[collection] ?? runtime?.models?.[pascalCollection];
+  if (!model?.fields) return null;
+
+  const field = model.fields.find((entry) => entry.name === fieldName);
+  return field?.type ?? null;
+}
+
+function supportsInsensitiveMode(): boolean {
+  const databaseUrl = process.env.DATABASE_URL?.toLowerCase() ?? '';
+  return databaseUrl.startsWith('postgres') || databaseUrl.startsWith('mongodb');
+}
+
+function buildContainsFilter(field: string, value: string): Record<string, unknown> {
+  const filter = supportsInsensitiveMode()
+    ? { contains: value, mode: 'insensitive' as const }
+    : { contains: value };
+
+  return { [field]: filter };
+}
+
+function getSearchableFields(collection: string): string[] {
+  return (SEARCH_FIELDS[collection] ?? []).filter(
+    (fieldName) => modelHasField(collection, fieldName) && getModelFieldType(collection, fieldName) === 'String'
+  );
+}
+
+function getFilterableFields(collection: string): Set<string> {
+  const collectionMeta = getCollection(collection);
+  if (!collectionMeta) return new Set();
+
+  return new Set(
+    collectionMeta.fields
+      .filter((field) => ['text', 'email', 'textarea', 'select'].includes(field.type))
+      .map((field) => field.name)
+      .filter(
+        (fieldName) => modelHasField(collection, fieldName) && getModelFieldType(collection, fieldName) === 'String'
+      )
+  );
 }
 
 function createDocumentId(): string {
@@ -175,14 +224,20 @@ export async function GET(
 
   const skip = (page - 1) * limit;
 
-  const searchableFields = SEARCH_FIELDS[collection] ?? [];
+  const searchableFields = getSearchableFields(collection);
+  const filterableFields = getFilterableFields(collection);
   let parsedFilters: Record<string, string> = {};
   if (rawFilters) {
     try {
       const candidate = JSON.parse(rawFilters) as Record<string, unknown>;
       const next: Record<string, string> = {};
       for (const [k, v] of Object.entries(candidate)) {
-        if (typeof k === 'string' && typeof v === 'string' && v.trim().length > 0) {
+        if (
+          typeof k === 'string' &&
+          typeof v === 'string' &&
+          v.trim().length > 0 &&
+          filterableFields.has(k)
+        ) {
           next[k] = v;
         }
       }
@@ -195,18 +250,14 @@ export async function GET(
   const andClauses: Array<Record<string, unknown>> = [];
   if (search && searchableFields.length > 0) {
     andClauses.push({
-      OR: searchableFields.map((field) => ({
-        [field]: { contains: search, mode: 'insensitive' },
-      })),
+      OR: searchableFields.map((field) => buildContainsFilter(field, search)),
     });
   }
 
   for (const [field, rawValue] of Object.entries(parsedFilters)) {
     const value = rawValue.trim();
     if (!value) continue;
-    andClauses.push({
-      [field]: { contains: value, mode: 'insensitive' },
-    });
+    andClauses.push(buildContainsFilter(field, value));
   }
 
   const where = andClauses.length > 0 ? { AND: andClauses } : {};
