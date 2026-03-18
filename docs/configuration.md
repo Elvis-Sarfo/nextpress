@@ -20,7 +20,7 @@ Array of collection configs (Users, Roles, Permissions, Media, Pages, Settings).
 
 ### `db`
 
-- `provider`: `'postgres'` (used for schema engine)
+- `provider`: currently `'mysql'`
 - `url`: typically `process.env.DATABASE_URI` or `process.env.DATABASE_URL`
 
 ### `schema`
@@ -51,8 +51,9 @@ Controls how Prisma schema is generated and when migrations run:
 
 | Variable | Used by | Purpose |
 |----------|---------|---------|
-| `DATABASE_URL` | Prisma, seed, adapter | Postgres URL |
+| `DATABASE_URL` | Prisma, seed, adapter | MySQL/MariaDB URL |
 | `DATABASE_URI` | nextpress.config `db.url` | Same in many setups |
+| `PRISMA_DB_PROVIDER` | Prisma adapter bootstrap | Optional explicit provider override (`mysql`) |
 | `AUTH_SECRET` | NextAuth | Session/auth |
 | `NEXT_PUBLIC_BASE_URL` | App | Public base URL |
 | `PAYLOAD_SECRET` | Config `secret` | Optional |

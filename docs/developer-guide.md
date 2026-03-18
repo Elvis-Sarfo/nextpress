@@ -166,7 +166,7 @@ const config = {
 
   // 3. Database
   db: {
-    provider: 'postgres',
+    provider: 'mysql',
     url: process.env.DATABASE_URI || '',
   },
 
@@ -221,8 +221,9 @@ const config = {
 
 ```bash
 # Required
-DATABASE_URL=postgresql://user:pass@host:5432/db   # Prisma connection
-DATABASE_URI=postgresql://user:pass@host:5432/db   # NextPress config
+DATABASE_URL=mysql://user:pass@host:3306/db   # Prisma connection
+DATABASE_URI=mysql://user:pass@host:3306/db   # NextPress config
+PRISMA_DB_PROVIDER=mysql
 AUTH_SECRET=your-nextauth-secret-32chars+
 PAYLOAD_SECRET=your-cms-secret
 

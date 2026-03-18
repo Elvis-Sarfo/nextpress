@@ -16,11 +16,11 @@ pnpm install
 
 Copy `.env.example` to `.env` and set at least:
 
-- `DATABASE_URL` – Postgres connection string (Prisma and app)
+- `DATABASE_URL` – MySQL/MariaDB connection string (Prisma and app)
 - `AUTH_SECRET` – for NextAuth
 - `NEXT_PUBLIC_BASE_URL` – e.g. `http://localhost:3000`
 
-Optional: `DATABASE_URI` (used by config; can mirror `DATABASE_URL`), `PAYLOAD_SECRET`, `PREVIEW_SECRET`.
+Optional: `DATABASE_URI` (used by config; can mirror `DATABASE_URL`), `PRISMA_DB_PROVIDER` (`mysql`), `PAYLOAD_SECRET`, `PREVIEW_SECRET`.
 
 ## First run
 

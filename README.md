@@ -8,7 +8,7 @@ A headless CMS built on Next.js, TypeScript, and Prisma. Content is defined via 
 pnpm install
 cp .env.example .env   # set DATABASE_URL, AUTH_SECRET, etc.
 pnpm schema:generate
-pnpm db:migration:run  # or: pnpm db:migration:run --push
+pnpm db:migration:run --push
 pnpm dev
 ```
 
@@ -44,6 +44,13 @@ to refresh generated fragments (collection list, config summary). See [docs/upda
 | `pnpm db:migration:run` | Run migrations (mode from config or `--push` / `--deploy`) |
 | `pnpm db:seed` | Seed database |
 | `pnpm docs:generate` | Regenerate doc fragments from code |
+
+## Deployment Notes
+
+- The active Prisma/runtime path in this repo is currently **MySQL/MariaDB**, not Postgres.
+- Set both `DATABASE_URL` and `DATABASE_URI` to the same MySQL connection string in production.
+- The repository does not currently contain committed Prisma migrations for the active MySQL schema, so first deployment should use `pnpm db:push` or `pnpm db:migration:run --push` until migrations are generated and committed.
+- If you deploy on Coolify with local media storage, mount persistent storage for `public/uploads/media`.
 
 ## License
 

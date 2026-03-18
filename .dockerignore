@@ -1,0 +1,15 @@
+.git
+.gitignore
+.next
+node_modules
+.env
+.env.local
+.env.*.local
+coverage
+dist
+docs
+plans
+.claude
+.cursor
+.pnpm-store
+tsconfig.tsbuildinfo
