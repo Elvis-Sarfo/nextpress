@@ -1,6 +1,6 @@
 import { ProductCategoryRecord } from '@/lib/cms'
-import { AgbonSidebarCategories } from './sidebar-categories'
 import { AgbonProductNavProvider } from '@/contexts/agbon-product-nav-context'
+import { ProductPageSidebar } from './product-page-sidebar'
 
 interface ProductPageShellProps {
   locale: string
@@ -28,7 +28,7 @@ export function ProductPageShell({
         ].join(' ').trim()}
       >
         <AgbonProductNavProvider mode={sidebarMode} syncWithUrl={syncWithUrl} locale={locale}>
-          <AgbonSidebarCategories categories={categories} locale={locale} compactOnMobile />
+          <ProductPageSidebar categories={categories} locale={locale} />
         </AgbonProductNavProvider>
       </div>
 
