@@ -93,7 +93,7 @@ export function AgbonHowItWorksSection() {
       <div className="max-w-7xl mx-auto px-4 md:px-8 relative z-10">
         <div className="text-center mb-16 md:mb-24">
           <h2 className="text-4xl md:text-5xl font-bold mb-4 text-[#1a1a1a]">HOW DOES IT WORK</h2>
-          <div className="w-20 h-1 bg-gradient-to-r from-[#FF6B35] to-[#FFC72C] mx-auto rounded-full" />
+          <div className="w-16 h-1 bg-gradient-to-r from-[#FF6B35] to-[#FFC72C] mx-auto rounded-full" />
         </div>
         <div className="space-y-8">
           {steps.map((step, index) => (

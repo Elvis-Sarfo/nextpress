@@ -67,7 +67,7 @@ export function AgbonProductDetail({
           <div className="mb-6">
             <h3 className="text-lg font-bold mb-2 relative text-black">
               {agbonT('product.description', locale)}
-              <div className="absolute bottom-0 left-0 h-1 w-20 bg-gradient-to-r from-[#FF6B35] via-amber-500 to-transparent rounded-full" />
+              <div className="absolute bottom-0 left-0 h-1 w-16 bg-gradient-to-r from-[#FF6B35] via-amber-500 to-transparent rounded-full" />
             </h3>
             <div
               className="prose prose-sm max-w-none text-gray-700 prose-p:text-gray-700 prose-li:text-gray-700"
@@ -80,7 +80,7 @@ export function AgbonProductDetail({
           <div className="relative bg-gray-50 mb-8">
             <h3 className="text-lg font-bold mb-3 relative text-black">
               {agbonT('product.specifications', locale)}
-              <div className="absolute bottom-0 left-0 h-1 w-20 bg-gradient-to-r from-[#FF6B35] via-amber-500 to-transparent rounded-full" />
+              <div className="absolute bottom-0 left-0 h-1 w-16 bg-gradient-to-r from-[#FF6B35] via-amber-500 to-transparent rounded-full" />
             </h3>
             <div
               className="prose prose-sm mt-4 max-w-none text-gray-700 prose-p:text-gray-700 prose-li:text-gray-700"

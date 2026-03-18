@@ -8,13 +8,22 @@ import { t as agbonT } from '@/lib/agbon-translations'
 import { HeaderLanguageSwitcher } from './header-language-switcher'
 import { HeaderSearchDialog } from './header-search-dialog'
 
+export interface HeaderNavItem {
+  label: string
+  href?: string
+  target?: '_self' | '_blank'
+  items?: Array<{ label: string; href: string; target?: '_self' | '_blank' }>
+}
+
+interface LegacyHeaderNavigation {
+  about?: HeaderNavItem
+  afterSales?: HeaderNavItem
+  joinUs?: HeaderNavItem
+}
+
 export interface HeaderConfig {
   logo: { src: string; alt: string; width: number; height: number; className?: string }
-  navigation: {
-    about: { label: string; href?: string; items?: Array<{ label: string; href: string }> }
-    afterSales: { label: string; href?: string }
-    joinUs: { label: string; href?: string; items?: Array<{ label: string; href: string }> }
-  }
+  navigation: HeaderNavItem[] | LegacyHeaderNavigation
 }
 
 interface AgbonHeaderProps {
@@ -22,15 +31,25 @@ interface AgbonHeaderProps {
   locale?: string
 }
 
+function normalizeNavigation(
+  navigation: HeaderConfig['navigation']
+): HeaderNavItem[] {
+  if (Array.isArray(navigation)) return navigation
+
+  const legacy = navigation as LegacyHeaderNavigation
+  return [legacy.about, legacy.afterSales, legacy.joinUs].filter(
+    (item): item is HeaderNavItem => Boolean(item)
+  )
+}
+
 export function AgbonHeader({ config, locale = 'en' }: AgbonHeaderProps) {
   const [searchOpen, setSearchOpen] = useState(false)
-  const [aboutOpen, setAboutOpen] = useState(false)
-  const [joinUsOpen, setJoinUsOpen] = useState(false)
+  const [openMenuIndex, setOpenMenuIndex] = useState<number | null>(null)
   const [langOpen, setLangOpen] = useState(false)
+  const navigation = normalizeNavigation(config.navigation)
 
   const closeAll = () => {
-    setAboutOpen(false)
-    setJoinUsOpen(false)
+    setOpenMenuIndex(null)
     setLangOpen(false)
   }
 
@@ -62,7 +81,7 @@ export function AgbonHeader({ config, locale = 'en' }: AgbonHeaderProps) {
             <HeaderLanguageSwitcher
               locale={locale}
               isOpen={langOpen}
-              onToggle={() => { setLangOpen(!langOpen); setAboutOpen(false); setJoinUsOpen(false) }}
+              onToggle={() => { setLangOpen(!langOpen); setOpenMenuIndex(null) }}
               onClose={() => setLangOpen(false)}
               compact
             />
@@ -83,71 +102,56 @@ export function AgbonHeader({ config, locale = 'en' }: AgbonHeaderProps) {
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between py-0 px-2 md:px-4">
             <nav className="flex items-center divide-x divide-white/20 flex-1">
-              {/* About */}
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => { setAboutOpen(!aboutOpen); setJoinUsOpen(false); setLangOpen(false) }}
-                  aria-expanded={aboutOpen}
-                  aria-haspopup="menu"
-                  className={`flex items-center gap-1 px-2 md:px-6 py-2 text-xs md:text-sm transition-colors whitespace-nowrap ${
-                    aboutOpen ? 'bg-[#FF6B35] text-white' : 'hover:text-[#FF6B35]'
-                  }`}
-                >
-                  {agbonT('nav.about', locale)}
-                  <ChevronDown className={`w-3 h-3 transition-transform ${aboutOpen ? 'rotate-180' : ''}`} />
-                </button>
-                {aboutOpen && (
-                  <div className="hidden md:block absolute top-full left-0 mt-0 bg-[#FF6B35] text-white shadow-lg min-w-50 z-50">
-                    {config.navigation.about.items?.map((item, i) => (
+              {navigation.map((item, index) => {
+                const hasDropdown = Boolean(item.items?.length)
+                const isOpen = openMenuIndex === index
+                const itemClass = `px-2 md:px-6 py-2 text-xs md:text-sm transition-colors whitespace-nowrap ${isOpen ? 'bg-[#FF6B35] text-white' : 'hover:text-[#FF6B35]'}`
+
+                return (
+                  <div key={`${item.label}-${index}`} className="relative">
+                    {hasDropdown ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOpenMenuIndex(isOpen ? null : index)
+                            setLangOpen(false)
+                          }}
+                          aria-expanded={isOpen}
+                          aria-haspopup="menu"
+                          className={`flex items-center gap-1 ${itemClass}`}
+                        >
+                          {item.label}
+                          <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        {isOpen && (
+                          <div className="hidden md:block absolute top-full left-0 mt-0 bg-[#FF6B35] text-white shadow-lg min-w-50 z-50">
+                            {item.items?.map((child, childIndex) => (
+                              <Link
+                                key={`${child.href}-${childIndex}`}
+                                href={child.href}
+                                target={child.target}
+                                className={`block px-4 py-2 text-sm hover:bg-[#ff5722] transition-colors ${childIndex < (item.items?.length || 0) - 1 ? 'border-b border-white/20' : ''}`}
+                                onClick={() => setOpenMenuIndex(null)}
+                              >
+                                {child.label}
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    ) : (
                       <Link
-                        key={item.href}
-                        href={item.href}
-                        className={`block px-4 py-2 text-sm hover:bg-[#ff5722] transition-colors ${i < (config.navigation.about.items?.length || 0) - 1 ? 'border-b border-white/20' : ''}`}
-                        onClick={() => setAboutOpen(false)}
+                        href={item.href || '#'}
+                        target={item.target}
+                        className={itemClass}
                       >
                         {item.label}
                       </Link>
-                    ))}
+                    )}
                   </div>
-                )}
-              </div>
-
-              {/* After Sales */}
-              <Link
-                href={config.navigation.afterSales.href || '#'}
-                className="px-2 md:px-6 py-2 text-xs md:text-sm hover:text-[#FF6B35] transition-colors whitespace-nowrap"
-              >
-                {agbonT('nav.service', locale)}
-              </Link>
-
-              {/* Join Us */}
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => { setJoinUsOpen(!joinUsOpen); setAboutOpen(false) }}
-                  aria-expanded={joinUsOpen}
-                  aria-haspopup="menu"
-                  className={`flex items-center gap-1 px-1 md:px-6 py-2 text-xs md:text-sm transition-colors ${joinUsOpen ? 'bg-[#FF6B35] text-white' : 'hover:text-[#FF6B35]'}`}
-                >
-                  {agbonT('nav.joinUs', locale)}
-                  <ChevronDown className={`w-3 h-3 transition-transform ${joinUsOpen ? 'rotate-180' : ''}`} />
-                </button>
-                {joinUsOpen && (
-                  <div className="hidden md:block absolute top-full left-0 mt-0 bg-[#FF6B35] text-white shadow-lg min-w-50 z-50">
-                    {config.navigation.joinUs.items?.map((item, i) => (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        className={`block px-4 py-2 text-sm hover:bg-[#ff5722] transition-colors ${i < (config.navigation.joinUs.items?.length || 0) - 1 ? 'border-b border-white/20' : ''}`}
-                        onClick={() => setJoinUsOpen(false)}
-                      >
-                        {item.label}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
+                )
+              })}
             </nav>
 
             {/* Desktop: lang switcher */}
@@ -155,7 +159,7 @@ export function AgbonHeader({ config, locale = 'en' }: AgbonHeaderProps) {
               <HeaderLanguageSwitcher
                 locale={locale}
                 isOpen={langOpen}
-                onToggle={() => { setLangOpen(!langOpen); setAboutOpen(false); setJoinUsOpen(false) }}
+                onToggle={() => { setLangOpen(!langOpen); setOpenMenuIndex(null) }}
                 onClose={() => setLangOpen(false)}
               />
             </div>
@@ -171,42 +175,26 @@ export function AgbonHeader({ config, locale = 'en' }: AgbonHeaderProps) {
             </button>
           </div>
 
-          {/* Mobile about submenu */}
-          {aboutOpen && (
+          {openMenuIndex !== null && navigation[openMenuIndex]?.items?.length ? (
             <div className="md:hidden bg-[#FF6B35] flex flex-col">
-              {config.navigation.about.items?.map((item, i) => (
+              {navigation[openMenuIndex]?.items?.map((item, i) => (
                 <Link
-                  key={item.href}
+                  key={`${item.href}-${i}`}
                   href={item.href}
-                  className={`px-4 py-2 text-xs text-white hover:bg-[#ff5722] transition-colors ${i < (config.navigation.about.items?.length || 0) - 1 ? 'border-b border-white/20' : ''}`}
-                  onClick={() => setAboutOpen(false)}
+                  target={item.target}
+                  className={`px-4 py-2 text-xs text-white hover:bg-[#ff5722] transition-colors ${i < (navigation[openMenuIndex]?.items?.length || 0) - 1 ? 'border-b border-white/20' : ''}`}
+                  onClick={() => setOpenMenuIndex(null)}
                 >
                   {item.label}
                 </Link>
               ))}
             </div>
-          )}
-
-          {/* Mobile join us submenu */}
-          {joinUsOpen && (
-            <div className="md:hidden bg-[#FF6B35] flex flex-col">
-              {config.navigation.joinUs.items?.map((item, i) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`px-4 py-2 text-xs text-white hover:bg-[#ff5722] transition-colors ${i < (config.navigation.joinUs.items?.length || 0) - 1 ? 'border-b border-white/20' : ''}`}
-                  onClick={() => setJoinUsOpen(false)}
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </div>
-          )}
+          ) : null}
         </div>
       </div>
 
       {/* Overlay for closing dropdowns */}
-      {(aboutOpen || joinUsOpen || langOpen) && (
+      {(openMenuIndex !== null || langOpen) && (
         <div className="hidden md:block fixed inset-0 z-40" onClick={closeAll} />
       )}
 

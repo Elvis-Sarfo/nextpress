@@ -45,16 +45,20 @@ export function AgbonProductList({
   showFeatured = false,
   featuredTitle,
 }: AgbonProductListProps) {
-  const { selectedCategory, searchQuery } = useAgbonProductNav()
+  const { selectedCategory, searchQuery, featuredOnly } = useAgbonProductNav()
   const [currentPage, setCurrentPage] = useState(1)
 
   // Reset pagination when filters change
   useEffect(() => {
     setCurrentPage(1)
-  }, [selectedCategory, searchQuery])
+  }, [selectedCategory, searchQuery, featuredOnly])
 
   // Filter products
   let filtered = products
+
+  if (featuredOnly) {
+    filtered = filtered.filter((p) => p.featured)
+  }
 
   if (selectedCategory) {
     filtered = filtered.filter((p) => {
@@ -83,7 +87,9 @@ export function AgbonProductList({
   // Category name for header
   const categoryName = selectedCategory
     ? getLocalized(categories.find((c) => c.id === selectedCategory)?.name, locale)
-    : agbonT('common.allProducts', locale)
+    : featuredOnly
+      ? agbonT('home.hotSellingProducts', locale)
+      : agbonT('common.allProducts', locale)
 
   return (
     <div className="space-y-6">

@@ -81,7 +81,7 @@ export function AgbonVideoShowcaseSection({
                 <Image src={featured.thumbnail} alt={featured.title} fill className="object-cover transition-transform duration-500 group-hover:scale-105" />
                 <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors duration-300" />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-[#FF6B35] flex items-center justify-center shadow-xl hover:scale-110 transition-transform">
+                  <div className="w-16 h-20 md:w-24 md:h-24 rounded-full bg-[#FF6B35] flex items-center justify-center shadow-xl hover:scale-110 transition-transform">
                     <Play size={32} className="text-white ml-1" fill="white" />
                   </div>
                 </div>

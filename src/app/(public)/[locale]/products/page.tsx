@@ -10,12 +10,12 @@ import type { Metadata } from 'next';
 
 interface Props {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ category?: string; search?: string; page?: string }>;
+  searchParams: Promise<{ category?: string; search?: string; featured?: string; page?: string }>;
 }
 
 export default async function ProductsPage({ params, searchParams }: Props) {
   const { locale } = await params;
-  const { category, search, page } = await searchParams;
+  const { category, search, featured, page } = await searchParams;
 
   if (!localeEngine.isSupported(locale)) {
     notFound();
@@ -27,6 +27,7 @@ export default async function ProductsPage({ params, searchParams }: Props) {
     getProducts({
       categoryId: category || undefined,
       search: search || undefined,
+      featured: featured === 'true' ? true : undefined,
       limit: 24,
       page: currentPage,
     }),

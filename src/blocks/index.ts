@@ -2,6 +2,7 @@ import type { BlockManifest } from '@/core/blocks/types';
 
 import { agbonCommitmentSectionBlock } from './agbon-commitment-section';
 import { agbonContactFormBlock } from './agbon-contact-form';
+import { agbonFeaturedProductsBlock } from './agbon-featured-products';
 import { agbonHappyFarmingBannerBlock } from './agbon-happy-farming-banner';
 import { agbonHomeFeatureCardsBlock } from './agbon-home-feature-cards';
 import { agbonPageBannerBlock } from './agbon-page-banner';
@@ -15,6 +16,7 @@ import { productCategorySidebarBlock } from './product-category-sidebar';
 
 export const blocks: BlockManifest[] = [
   agbonPageBannerBlock,
+  agbonFeaturedProductsBlock,
   agbonProductListBlock,
   agbonContactFormBlock,
   agbonCommitmentSectionBlock,

@@ -23,7 +23,7 @@ export function ProductPageShell({
     <div className="flex max-w-[90rem] mx-auto items-start gap-3 px-2 py-6 md:gap-4 md:px-4">
       <div
         className={[
-          'w-20 md:w-64 lg:w-72 shrink-0 sticky top-5 self-start',
+          'w-16 md:w-64 lg:w-72 shrink-0 sticky top-5 self-start',
           stickySidebar ? 'sticky top-6 self-start' : '',
         ].join(' ').trim()}
       >

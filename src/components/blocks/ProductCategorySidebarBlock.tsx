@@ -1,9 +1,23 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { AgbonSidebarCategories } from '@/components/agbon/sidebar-categories';
+import { CatalogueSidebar } from '@/components/agbon/catalogue-sidebar';
 import type { ProductCategoryRecord } from '@/lib/cms';
 import type { BlockContent } from '@/core/blocks/types';
+
+function asBoolean(value: unknown, fallback: boolean): boolean {
+  if (typeof value === 'boolean') return value
+  if (typeof value === 'string') return value === 'true'
+  return fallback
+}
+
+function asLayoutMode(value: unknown, fallback: 'standard' | 'compact' | 'responsive') {
+  return value === 'standard' || value === 'compact' || value === 'responsive' ? value : fallback
+}
+
+function asSearchMode(value: unknown, fallback: 'inline' | 'dialog' | 'auto') {
+  return value === 'inline' || value === 'dialog' || value === 'auto' ? value : fallback
+}
 
 export function ProductCategorySidebarBlock({
   content,
@@ -15,17 +29,25 @@ export function ProductCategorySidebarBlock({
   const params = useParams<{ locale?: string }>();
   const locale = typeof params?.locale === 'string' ? params.locale : 'en';
   const categories = Array.isArray(data) ? (data as ProductCategoryRecord[]) : [];
-  const showSearchButton =
-    content.showSearchButton === true || content.showSearchButton === 'true';
-  const compactOnMobile =
-    content.compactOnMobile !== false && content.compactOnMobile !== 'false';
+  const layoutMode = asLayoutMode(
+    content.layoutMode,
+    asBoolean(content.compactOnMobile, true) ? 'responsive' : 'standard',
+  )
+  const searchMode = asSearchMode(
+    content.searchMode,
+    asBoolean(content.showSearchButton, false) ? 'dialog' : 'auto',
+  )
 
   return (
-    <AgbonSidebarCategories
-      categories={categories}
+    <CatalogueSidebar
       locale={locale}
-      showSearchButton={showSearchButton}
-      compactOnMobile={compactOnMobile}
+      categories={categories}
+      layoutMode={layoutMode}
+      searchMode={searchMode}
+      showSearch={asBoolean(content.showSearch, true)}
+      showAllProducts={asBoolean(content.showAllProducts, true)}
+      showHotSelling={asBoolean(content.showHotSelling, true)}
+      showCategoryHeading={asBoolean(content.showCategoryHeading, true)}
     />
   );
 }

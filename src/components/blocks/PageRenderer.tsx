@@ -152,7 +152,7 @@ function renderCatalogSection(
             <div
               className={getColumnClassName(
                 sidebarColumn,
-                'w-20 md:w-64 lg:w-72 shrink-0 sticky top-5 self-start',
+                'w-16 md:w-64 lg:w-72 shrink-0 sticky top-5 self-start',
               )}
               style={getColumnStyle(sidebarColumn)}
             >

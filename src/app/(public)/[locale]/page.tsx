@@ -3,21 +3,21 @@ import Link from 'next/link';
 import {
   getPublishedPage,
   getPublishedIndexPage,
-  getPublishedPosts,
   localeEngine,
   getProducts,
   getProductCategories,
   getFeaturedProducts,
 } from '@/lib/cms';
 import { getLocale } from '@/lib/locale-utils';
+import { buildLocalizedPath } from '@/lib/agbon-routes';
 import { PageRenderer } from '@/components/blocks/PageRenderer';
 import { AgbonProductList, DEFAULT_AGBON_PRODUCT_GRID_COLUMNS } from '@/components/agbon/product-list';
-import { AgbonSidebarCategories } from '@/components/agbon/sidebar-categories';
+import { AgbonFeaturedProducts } from '@/components/agbon/featured-products';
 import { AgbonHappyFarmingBanner } from '@/components/agbon/happy-farming-banner';
 import { AgbonHomeFeatureCards } from '@/components/agbon/home-feature-cards';
 import { AgbonStatsBar } from '@/components/agbon/stats-bar';
 import { AgbonTestimonialStatsSection } from '@/components/agbon/testimonial-stats-section';
-import { AgbonProductNavProvider } from '@/contexts/agbon-product-nav-context';
+import { ProductPageShell } from '@/components/agbon/product-page-shell';
 import type { Metadata } from 'next';
 
 interface Props {
@@ -63,34 +63,30 @@ export default async function LocaleHomePage({ params }: Props) {
   ]);
 
   return (
-    <>
-      <div className="flex flex-col md:flex-row max-w-[90rem] mx-auto px-2 md:px-4 py-6 gap-4">
-        <div className="w-full md:w-56 lg:w-64 shrink-0">
-          <AgbonProductNavProvider mode="filter" syncWithUrl={false} locale={locale}>
-            <AgbonSidebarCategories categories={categories} locale={locale} />
-          </AgbonProductNavProvider>
-        </div>
-        <div className="flex-1 min-w-0">
-          <AgbonProductNavProvider mode="filter" syncWithUrl={false} locale={locale}>
-            <AgbonHappyFarmingBanner locale={locale} className="pt-0 pb-6" />
-            <AgbonProductList
-              products={productsResult.products}
-              categories={categories}
-              locale={locale}
-              itemsPerPage={8}
-              showHeader={true}
-              showFeatured={true}
-              featuredProducts={featuredProducts}
-              featuredTitle="Hot Selling Products"
-              gridColumns={DEFAULT_AGBON_PRODUCT_GRID_COLUMNS}
-            />
-            <AgbonStatsBar locale={locale} className="my-10" backgroundImage="/images/section/light_gen.png" />
-            <AgbonHomeFeatureCards locale={locale} />
-            <AgbonTestimonialStatsSection />
-          </AgbonProductNavProvider>
-        </div>
-      </div>
-    </>
+    <ProductPageShell locale={locale} categories={categories} sidebarMode="filter" syncWithUrl={false} stickySidebar={false}>
+      <AgbonHappyFarmingBanner locale={locale} className="pt-0 pb-6" />
+      <AgbonFeaturedProducts
+        products={featuredProducts}
+        locale={locale}
+        title="Hot Selling Products"
+        showViewAllButton
+        viewAllLabel="View All"
+        viewAllHref={buildLocalizedPath(locale, '/products')}
+        gridColumns={DEFAULT_AGBON_PRODUCT_GRID_COLUMNS}
+      />
+      <AgbonProductList
+        products={productsResult.products}
+        categories={categories}
+        locale={locale}
+        itemsPerPage={8}
+        showHeader={true}
+        showPagination={true}
+        gridColumns={DEFAULT_AGBON_PRODUCT_GRID_COLUMNS}
+      />
+      <AgbonStatsBar locale={locale} className="my-10" backgroundImage="/images/section/light_gen.png" />
+      <AgbonHomeFeatureCards locale={locale} />
+      <AgbonTestimonialStatsSection />
+    </ProductPageShell>
   );
 }
 
