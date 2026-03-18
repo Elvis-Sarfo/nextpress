@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import Link from 'next/link'
 import { Star } from 'lucide-react'
 
 interface Testimonial {
@@ -49,12 +50,18 @@ interface TestimonialsSectionProps {
   testimonials?: Testimonial[]
   title?: string
   subtitle?: string
+  footerText?: string
+  footerCtaText?: string
+  footerCtaLink?: string
 }
 
 export function AgbonTestimonialsSection({
   testimonials = defaultTestimonials,
   title = 'What Our Customers Say',
   subtitle = 'Trusted by farmers and agricultural businesses across Africa',
+  footerText = 'Join hundreds of satisfied customers across Africa',
+  footerCtaText = 'Start Your Journey',
+  footerCtaLink = '/contact',
 }: TestimonialsSectionProps) {
   return (
     <section className="relative py-12 md:py-20 px-4 bg-gradient-to-br from-gray-50 via-white to-orange-50/30 overflow-hidden">
@@ -107,10 +114,13 @@ export function AgbonTestimonialsSection({
           ))}
         </div>
         <div className="text-center mt-12">
-          <p className="text-gray-600 mb-4">Join hundreds of satisfied customers across Africa</p>
-          <button className="px-6 py-3 bg-[#FF6B35] hover:bg-[#E55A24] text-white font-semibold rounded-lg transition-colors duration-300 shadow-md hover:shadow-lg">
-            Start Your Journey
-          </button>
+          <p className="text-gray-600 mb-4">{footerText}</p>
+          <Link
+            href={footerCtaLink}
+            className="inline-flex px-6 py-3 bg-[#FF6B35] hover:bg-[#E55A24] text-white font-semibold rounded-lg transition-colors duration-300 shadow-md hover:shadow-lg"
+          >
+            {footerCtaText}
+          </Link>
         </div>
       </div>
     </section>

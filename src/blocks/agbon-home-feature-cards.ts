@@ -6,6 +6,17 @@ export const agbonHomeFeatureCardsBlock = defineBlock({
   label: 'Agbon Home Feature Cards',
   category: 'content',
   icon: 'LayoutGrid',
-  definition: {},
+  definition: {
+    elements: {
+      label: 'Card',
+      fields: [
+        { name: 'image', type: 'image', label: 'Image' },
+        { name: 'title', type: 'text', label: 'Title', required: true },
+        { name: 'description', type: 'textarea', label: 'Description' },
+        { name: 'ctaText', type: 'text', label: 'CTA Text' },
+        { name: 'ctaLink', type: 'text', label: 'CTA Link' },
+      ],
+    },
+  },
   component: AgbonHomeFeatureCardsBlock,
 });

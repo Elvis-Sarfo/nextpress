@@ -6,16 +6,7 @@ import { DEFAULT_AGBON_PRODUCT_GRID_COLUMNS } from '@/components/agbon/product-l
 import { buildLocalizedPath } from '@/lib/agbon-routes';
 import type { ProductRecord } from '@/lib/cms';
 import type { BlockContent } from '@/core/blocks/types';
-
-function asBoolean(value: unknown, fallback = false): boolean {
-  if (typeof value === 'boolean') return value;
-  if (typeof value === 'string') return value === 'true';
-  return fallback;
-}
-
-function asString(value: unknown, fallback = ''): string {
-  return typeof value === 'string' ? value : fallback;
-}
+import { asBoolean, asString } from './content-helpers';
 
 export function AgbonFeaturedProductsBlock({
   content,

@@ -1,16 +1,24 @@
 import Image from 'next/image'
 
-const testimonials = [
-  {
-    text: `Having been a host farmer for three seasons, we've seen firsthand the difference this internship makes in beginning farmers and host farms alike. Fresh energy and enthusiasm.`,
-    name: 'Christine Rose',
-    position: 'Director, Radical Orange Pty Ltd.',
-    rating: 5,
-  },
-]
+interface AgbonTestimonialStatsSectionProps {
+  badge?: string
+  title?: string
+  quote?: string
+  name?: string
+  position?: string
+  rating?: number
+  mainImage?: string
+}
 
-export function AgbonTestimonialStatsSection() {
-  const testimonial = testimonials[0]
+export function AgbonTestimonialStatsSection({
+  badge = 'Testimonials With Us',
+  title = 'What Clients Say?',
+  quote = `Having been a host farmer for three seasons, we've seen firsthand the difference this internship makes in beginning farmers and host farms alike. Fresh energy and enthusiasm.`,
+  name = 'Christine Rose',
+  position = 'Director, Radical Orange Pty Ltd.',
+  rating = 5,
+  mainImage = '/images/testimonials/home_2.png',
+}: AgbonTestimonialStatsSectionProps) {
   return (
     <section className="relative w-full overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-[#fef6f0] via-[#fef9f3] to-[#fefbf7]">
@@ -23,7 +31,7 @@ export function AgbonTestimonialStatsSection() {
           <div className="relative w-full max-w-sm md:max-w-md">
             <div className="absolute -inset-3 bg-gradient-to-br from-[#FF6B35]/15 via-[#FFC72C]/15 to-[#FF6B35]/10 rounded-2xl blur-xl opacity-70" />
             <Image
-              src="/images/testimonials/home_2.png"
+              src={mainImage}
               alt="Happy Farmer"
               width={450}
               height={500}
@@ -33,10 +41,10 @@ export function AgbonTestimonialStatsSection() {
         </div>
 
         <div className="w-full md:w-[55%] flex flex-col items-center md:items-start text-center md:text-left">
-          <p className="text-xs text-[#2e7d32] font-semibold uppercase tracking-wider mb-2">Testimonials With Us</p>
-          <h2 className="text-2xl md:text-3xl font-bold text-[#1a1a1a] mb-6">What Clients Say?</h2>
+          <p className="text-xs text-[#2e7d32] font-semibold uppercase tracking-wider mb-2">{badge}</p>
+          <h2 className="text-2xl md:text-3xl font-bold text-[#1a1a1a] mb-6">{title}</h2>
 
-          <p className="text-sm text-gray-700 leading-relaxed italic mb-5 max-w-lg">{testimonial.text}</p>
+          <p className="text-sm text-gray-700 leading-relaxed italic mb-5 max-w-lg">{quote}</p>
 
           <div className="flex items-center gap-3 mb-2">
             <div className="relative w-12 h-12 flex items-center justify-center">
@@ -49,13 +57,13 @@ export function AgbonTestimonialStatsSection() {
               </span>
             </div>
             <div className="flex flex-col items-start">
-              <span className="font-bold text-[#1a1a1a] uppercase text-xs tracking-wide">{testimonial.name}</span>
+              <span className="font-bold text-[#1a1a1a] uppercase text-xs tracking-wide">{name}</span>
               <div className="flex items-center gap-0.5">
-                {Array.from({ length: testimonial.rating }).map((_, i) => (
+                {Array.from({ length: rating }).map((_, i) => (
                   <span key={i} className="text-[#FFC72C] text-base">★</span>
                 ))}
               </div>
-              <span className="text-xs text-gray-500">{testimonial.position}</span>
+              <span className="text-xs text-gray-500">{position}</span>
             </div>
           </div>
         </div>

@@ -2,6 +2,7 @@
 
 import { AgbonTestimonialsSection } from '@/components/agbon/testimonials-section';
 import type { BlockContent } from '@/core/blocks/types';
+import { asElements, asNumber, asOptionalString, parseJsonArray } from './content-helpers';
 
 type Testimonial = {
   id: string;
@@ -14,29 +15,32 @@ type Testimonial = {
   country?: string;
 };
 
-function parseTestimonials(value: unknown): Testimonial[] | undefined {
-  if (Array.isArray(value)) {
-    return value as Testimonial[];
-  }
+function buildTestimonials(content: BlockContent): Testimonial[] | undefined {
+  const items = asElements(content._elements).map((item, index) => ({
+    id: `testimonial-${index}`,
+    name: asOptionalString(item.name) ?? '',
+    role: asOptionalString(item.role) ?? '',
+    company: asOptionalString(item.company) ?? '',
+    image: asOptionalString(item.image) ?? '/placeholder-user.jpg',
+    rating: asNumber(item.rating, 5),
+    quote: asOptionalString(item.quote) ?? '',
+    country: asOptionalString(item.country),
+  }));
 
-  if (typeof value !== 'string' || !value.trim()) {
-    return undefined;
-  }
+  if (items.length > 0) return items;
 
-  try {
-    const parsed = JSON.parse(value);
-    return Array.isArray(parsed) ? (parsed as Testimonial[]) : undefined;
-  } catch {
-    return undefined;
-  }
+  return parseJsonArray<Testimonial>(content.testimonials);
 }
 
 export function AgbonTestimonialsSectionBlock({ content }: { content: BlockContent }) {
   return (
     <AgbonTestimonialsSection
-      title={typeof content.title === 'string' ? content.title : undefined}
-      subtitle={typeof content.subtitle === 'string' ? content.subtitle : undefined}
-      testimonials={parseTestimonials(content.testimonials)}
+      title={asOptionalString(content.title)}
+      subtitle={asOptionalString(content.subtitle)}
+      footerText={asOptionalString(content.footerText)}
+      footerCtaText={asOptionalString(content.footerCtaText)}
+      footerCtaLink={asOptionalString(content.footerCtaLink)}
+      testimonials={buildTestimonials(content)}
     />
   );
 }

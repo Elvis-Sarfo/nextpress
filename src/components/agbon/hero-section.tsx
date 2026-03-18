@@ -4,12 +4,12 @@ import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 
 type HeroSlideRecord = {
-  title: Record<string, string> | null
-  subtitle: Record<string, string> | null
+  title: string
+  subtitle: string
   imageUrl?: string | null
   mobileImageUrl: string | null
   videoUrl: string | null
-  ctaText: Record<string, string> | null
+  ctaText: string
   ctaLink: string | null
   textPosition: Record<string, string> | null
   textColor: string
@@ -19,11 +19,6 @@ type HeroSlideRecord = {
 interface HeroSectionProps {
   slides?: HeroSlideRecord[]
   locale?: string
-}
-
-function getLocalized(field: Record<string, string> | null | undefined, locale: string): string {
-  if (!field) return ''
-  return field[locale] || field.en || field.fr || field.zh || Object.values(field)[0] || ''
 }
 
 function getAlignmentClasses(
@@ -40,20 +35,42 @@ function getTextColorClass(color: 'white' | 'black' | 'orange') {
 }
 
 export function AgbonHeroSection({ slides = [], locale = 'en' }: HeroSectionProps) {
+  const fallbackSlides: HeroSlideRecord[] = [
+    {
+      title: locale === 'fr' ? 'Des machines fiables pour chaque saison.' : locale === 'zh' ? '每个季节都可靠的农机。' : 'Reliable machinery for every season.',
+      subtitle: locale === 'fr'
+        ? 'Équipez votre exploitation avec des solutions conçues pour les réalités africaines.'
+        : locale === 'zh'
+          ? '为非洲农业场景打造的设备解决方案。'
+          : 'Equip your operation with solutions built for African farming realities.',
+      imageUrl: '/images/banner/1.png',
+      mobileImageUrl: '/images/banner/1.png',
+      videoUrl: null,
+      ctaText: locale === 'fr' ? 'Explorer les produits' : locale === 'zh' ? '浏览产品' : 'Explore Products',
+      ctaLink: '/products',
+      textPosition: {
+        desktopAlignment: 'center',
+        desktopVerticalPosition: 'center',
+        mobileAlignment: 'center',
+        mobileVerticalPosition: 'center',
+      },
+      textColor: 'white',
+      overlayOpacity: 30,
+    },
+  ]
+  const resolvedSlides = slides.length > 0 ? slides : fallbackSlides
   const [current, setCurrent] = useState(0)
 
-  const next = useCallback(() => setCurrent((c) => (c + 1) % slides.length), [slides.length])
-  const prev = useCallback(() => setCurrent((c) => (c - 1 + slides.length) % slides.length), [slides.length])
+  const next = useCallback(() => setCurrent((c) => (c + 1) % resolvedSlides.length), [resolvedSlides.length])
+  const prev = useCallback(() => setCurrent((c) => (c - 1 + resolvedSlides.length) % resolvedSlides.length), [resolvedSlides.length])
 
   useEffect(() => {
-    if (slides.length <= 1) return
+    if (resolvedSlides.length <= 1) return
     const id = setInterval(next, 5000)
     return () => clearInterval(id)
-  }, [slides.length, next])
+  }, [resolvedSlides.length, next])
 
-  if (slides.length === 0) return null
-
-  const slide = slides[current]
+  const slide = resolvedSlides[current]
   const textPos = slide.textPosition as Record<string, string> | null
   const desktopAlignment = (textPos?.desktopAlignment || 'center') as 'left' | 'center' | 'right'
   const desktopVertical = (textPos?.desktopVerticalPosition || 'center') as 'top' | 'center' | 'bottom'
@@ -62,9 +79,9 @@ export function AgbonHeroSection({ slides = [], locale = 'en' }: HeroSectionProp
   const textColor = (slide.textColor as 'white' | 'black' | 'orange') || 'white'
   const overlayOpacity = slide.overlayOpacity !== undefined ? slide.overlayOpacity : 30
 
-  const title = getLocalized(slide.title, locale)
-  const subtitle = getLocalized(slide.subtitle, locale)
-  const ctaText = slide.ctaText ? getLocalized(slide.ctaText, locale) : ''
+  const title = slide.title
+  const subtitle = slide.subtitle
+  const ctaText = slide.ctaText
   const imageUrl = slide.imageUrl || null
 
   return (
@@ -133,7 +150,7 @@ export function AgbonHeroSection({ slides = [], locale = 'en' }: HeroSectionProp
       </div>
 
       {/* Navigation arrows */}
-      {slides.length > 1 && (
+      {resolvedSlides.length > 1 && (
         <>
           <button
             onClick={prev}
@@ -152,7 +169,7 @@ export function AgbonHeroSection({ slides = [], locale = 'en' }: HeroSectionProp
 
           {/* Dot indicators */}
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-            {slides.map((_, i) => (
+            {resolvedSlides.map((_, i) => (
               <button
                 key={i}
                 onClick={() => setCurrent(i)}

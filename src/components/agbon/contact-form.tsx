@@ -7,16 +7,38 @@ import { t as agbonT } from '@/lib/agbon-translations'
 
 interface ContactFormProps {
   locale?: string
+  badge?: string
+  title?: string
+  subtitle?: string
+  description?: string
   email?: string
   phone?: string
   address?: string
+  formTitle?: string
+  successTitle?: string
+  successMessage?: string
+  errorTitle?: string
+  submitLabel?: string
+  submittingLabel?: string
+  subjectOptions?: Array<{ label: string; value: string }>
 }
 
 export function AgbonContactForm({
   locale = 'en',
+  badge,
+  title,
+  subtitle,
+  description,
   email = 'info@agbon.com',
   phone = '+1 (555) 123-4567',
   address = 'Industrial Park, Zone A',
+  formTitle = 'Send Us a Message',
+  successTitle = 'Message sent successfully!',
+  successMessage = "We'll get back to you as soon as possible.",
+  errorTitle = 'Failed to send message',
+  submitLabel = 'Send Message',
+  submittingLabel = 'Sending...',
+  subjectOptions = [],
 }: ContactFormProps) {
   const [formData, setFormData] = useState({
     name: '', email: '', phone: '', company: '', subject: '', message: '',
@@ -24,6 +46,15 @@ export function AgbonContactForm({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState('')
+  const resolvedSubjectOptions = subjectOptions.length > 0
+    ? subjectOptions
+    : [
+        { label: 'Product Inquiry', value: 'product-inquiry' },
+        { label: 'After Sales Support', value: 'after-sales' },
+        { label: 'Partnership Opportunity', value: 'partnership' },
+        { label: 'General Inquiry', value: 'general' },
+        { label: 'Other', value: 'other' },
+      ]
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }))
@@ -62,8 +93,11 @@ export function AgbonContactForm({
         {/* Contact info sidebar */}
         <div className="lg:col-span-1 space-y-6">
           <div>
-            <AgbonSectionTitle title={agbonT('contact.heading', locale)} subTitle={agbonT('contact.subtitle', locale)} />
-            <p className="text-gray-600 mt-3 text-sm">{agbonT('contact.description', locale)}</p>
+            <AgbonSectionTitle
+              title={title || agbonT('contact.heading', locale)}
+              subTitle={subtitle || badge || agbonT('contact.subtitle', locale)}
+            />
+            <p className="text-gray-600 mt-3 text-sm">{description || agbonT('contact.description', locale)}</p>
           </div>
           <div className="space-y-4">
             {[
@@ -89,20 +123,20 @@ export function AgbonContactForm({
         {/* Form */}
         <div className="lg:col-span-2">
           <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-6 md:p-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Send Us a Message</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-6">{formTitle}</h2>
 
             {submitStatus === 'success' && (
               <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
                 <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 shrink-0" />
                 <div>
-                  <h3 className="font-semibold text-green-800">Message sent successfully!</h3>
-                  <p className="text-sm text-green-700">We'll get back to you as soon as possible.</p>
+                  <h3 className="font-semibold text-green-800">{successTitle}</h3>
+                  <p className="text-sm text-green-700">{successMessage}</p>
                 </div>
               </div>
             )}
             {submitStatus === 'error' && (
               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                <h3 className="font-semibold text-red-800 mb-1">Failed to send message</h3>
+                <h3 className="font-semibold text-red-800 mb-1">{errorTitle}</h3>
                 <p className="text-sm text-red-700">{errorMessage}</p>
               </div>
             )}
@@ -162,11 +196,9 @@ export function AgbonContactForm({
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B35] focus:border-[#FF6B35] outline-none transition bg-white"
                 >
                   <option value="">Select a subject</option>
-                  <option value="product-inquiry">Product Inquiry</option>
-                  <option value="after-sales">After Sales Support</option>
-                  <option value="partnership">Partnership Opportunity</option>
-                  <option value="general">General Inquiry</option>
-                  <option value="other">Other</option>
+                  {resolvedSubjectOptions.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -186,7 +218,7 @@ export function AgbonContactForm({
                 className="w-full md:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-[#FF6B35] hover:bg-[#E55A24] disabled:bg-gray-400 text-white font-semibold rounded-lg transition-colors shadow-md hover:shadow-lg"
               >
                 {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-                {isSubmitting ? 'Sending...' : 'Send Message'}
+                {isSubmitting ? submittingLabel : submitLabel}
               </button>
             </form>
           </div>
