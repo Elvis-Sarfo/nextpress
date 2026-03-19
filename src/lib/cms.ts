@@ -188,6 +188,108 @@ export async function getPublishedPage(
   });
 }
 
+type PagePathMatch = {
+  page: PageWithLocales;
+  pathByLocale: Record<string, string>;
+};
+
+async function buildPageAncestorChain(page: {
+  id: string;
+  parentId?: string | null;
+  slug: unknown;
+}): Promise<Array<{ id: string; parentId?: string | null; slug: unknown }>> {
+  const chain: Array<{ id: string; parentId?: string | null; slug: unknown }> = [];
+  const seen = new Set<string>();
+
+  let current: { id: string; parentId?: string | null; slug: unknown } | null = page;
+
+  while (current) {
+    if (seen.has(current.id)) break;
+    seen.add(current.id);
+    chain.unshift(current);
+
+    if (!current.parentId) break;
+
+    current = await prisma.pages.findUnique({
+      where: { id: current.parentId },
+      select: { id: true, parentId: true, slug: true },
+    });
+  }
+
+  return chain;
+}
+
+async function buildPagePathMatch(
+  page: {
+    id: string;
+    parentId?: string | null;
+    slug: unknown;
+  },
+): Promise<PagePathMatch | null> {
+  const chain = await buildPageAncestorChain(page);
+  if (chain.length === 0) return null;
+
+  const pathByLocale: Record<string, string[]> = {};
+
+  for (const entry of chain) {
+    const slugMap =
+      entry.slug && typeof entry.slug === 'object' && !Array.isArray(entry.slug)
+        ? (entry.slug as Record<string, string>)
+        : null;
+
+    if (!slugMap) return null;
+
+    for (const [locale, slug] of Object.entries(slugMap)) {
+      if (!slug) continue;
+      if (!pathByLocale[locale]) pathByLocale[locale] = [];
+      pathByLocale[locale].push(slug);
+    }
+  }
+
+  const resolvedPathByLocale = Object.fromEntries(
+    Object.entries(pathByLocale)
+      .filter(([, parts]) => parts.length > 0)
+      .map(([locale, parts]) => [locale, parts.join('/')]),
+  );
+
+  const fullPage = await prisma.pages.findUnique({
+    where: { id: page.id },
+  });
+
+  if (!fullPage) return null;
+
+  return {
+    page: fullPage,
+    pathByLocale: resolvedPathByLocale,
+  };
+}
+
+export async function getPublishedPageByPath(
+  locale: string,
+  slugParts: string[],
+): Promise<PagePathMatch | null> {
+  if (slugParts.length === 0) return null;
+
+  const leaf = slugParts[slugParts.length - 1];
+  const candidates = await prisma.pages.findMany({
+    where: {
+      status: 'published',
+      slug: { path: `$.${locale}`, equals: leaf },
+    },
+    select: { id: true, parentId: true, slug: true },
+  });
+
+  for (const candidate of candidates) {
+    const match = await buildPagePathMatch(candidate);
+    if (!match) continue;
+    if (match.pathByLocale[locale] === slugParts.join('/')) {
+      return match;
+    }
+  }
+
+  return null;
+}
+
 export async function getPublishedIndexPage(): Promise<PageWithLocales | null> {
   return prisma.pages.findFirst({
     where: {

@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import {
-  getPublishedPage,
+  getPublishedPageByPath,
   getPublishedPost,
   getPublishedNewsItem,
   localeEngine,
@@ -9,30 +9,36 @@ import {
   type PostWithLocales,
   type NewsWithLocales,
 } from '@/lib/cms';
-import { getLocale, getLocaleAlternates } from '@/lib/locale-utils';
+import { getLocale } from '@/lib/locale-utils';
 import { PageRenderer } from '@/components/blocks/PageRenderer';
 import { ArrowLeft } from 'lucide-react';
 import type { Metadata } from 'next';
 
 interface PageProps {
-  params: Promise<{ locale: string; slug: string }>;
+  params: Promise<{ locale: string; slug: string[] }>;
 }
 
 type ContentItem =
-  | { type: 'page'; data: PageWithLocales }
-  | { type: 'post'; data: PostWithLocales }
-  | { type: 'news'; data: NewsWithLocales };
+  | { type: 'page'; data: PageWithLocales; pathByLocale: Record<string, string> }
+  | { type: 'post'; data: PostWithLocales; pathByLocale: Record<string, string> }
+  | { type: 'news'; data: NewsWithLocales; pathByLocale: Record<string, string> };
 
-async function findContent(locale: string, slug: string): Promise<ContentItem | null> {
-  const [page, post, news] = await Promise.all([
-    getPublishedPage(locale, slug),
+async function findContent(locale: string, slugParts: string[]): Promise<ContentItem | null> {
+  const pageMatch = await getPublishedPageByPath(locale, slugParts);
+  if (pageMatch) {
+    return { type: 'page', data: pageMatch.page, pathByLocale: pageMatch.pathByLocale };
+  }
+
+  if (slugParts.length !== 1) return null;
+
+  const slug = slugParts[0];
+  const [post, news] = await Promise.all([
     getPublishedPost(locale, slug),
     getPublishedNewsItem(locale, slug),
   ]);
 
-  if (page) return { type: 'page', data: page };
-  if (post) return { type: 'post', data: post };
-  if (news) return { type: 'news', data: news };
+  if (post) return { type: 'post', data: post, pathByLocale: post.slug as Record<string, string> };
+  if (news) return { type: 'news', data: news, pathByLocale: news.slug as Record<string, string> };
 
   return null;
 }
@@ -48,21 +54,18 @@ export default async function ContentPage({ params }: PageProps) {
   if (!content) notFound();
 
   const page = content.data;
+  const currentPath = content.pathByLocale[locale] ?? slug.join('/');
 
-  // Extract locale-first fields
-  const title   = getLocale(page.title   as Record<string, string> | null, locale);
+  const title = getLocale(page.title as Record<string, string> | null, locale);
   const excerpt = getLocale(page.excerpt as Record<string, string> | null, locale);
-  const slugMap = page.slug as Record<string, string> | null;
-
-  // Locale alternates for language switcher (exclude current locale)
-  const alternates = getLocaleAlternates(slugMap).filter((a) => a.locale !== locale);
+  const alternates = Object.entries(content.pathByLocale)
+    .filter(([altLocale]) => altLocale !== locale)
+    .map(([altLocale, altSlug]) => ({ locale: altLocale, slug: altSlug }));
 
   const typeLabel =
     content.type === 'page' ? 'Page' : content.type === 'post' ? 'Post' : 'News';
 
-  // Sections-based render (block page builder)
-  const hasSections =
-    Array.isArray(page.sections) && page.sections.length > 0;
+  const hasSections = Array.isArray(page.sections) && page.sections.length > 0;
 
   return (
     <article>
@@ -80,7 +83,7 @@ export default async function ContentPage({ params }: PageProps) {
 
           <header className="mb-8">
             <p className="text-sm text-muted-foreground mb-2">{typeLabel}</p>
-            <h1 className="text-4xl font-bold">{title ?? slug}</h1>
+            <h1 className="text-4xl font-bold">{title ?? currentPath}</h1>
             {excerpt && (
               <p className="text-xl text-muted-foreground mt-4">{excerpt}</p>
             )}
@@ -96,7 +99,6 @@ export default async function ContentPage({ params }: PageProps) {
         </div>
       )}
 
-      {/* Locale alternates */}
       {alternates.length > 0 && (
         <div className="container mx-auto px-4 pb-8">
           <div className="pt-8 border-t border-border">
@@ -123,21 +125,21 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { locale, slug } = await params;
 
   const content = await findContent(locale, slug);
-  if (!content) return { title: slug };
+  if (!content) return { title: slug.join('/') };
 
   const page = content.data;
-  const title   = getLocale(page.title   as Record<string, string> | null, locale);
+  const title = getLocale(page.title as Record<string, string> | null, locale);
   const excerpt = getLocale(page.excerpt as Record<string, string> | null, locale);
-  const slugMap = page.slug as Record<string, string> | null;
-
-  const alternates = getLocaleAlternates(slugMap);
 
   return {
-    title:       title ?? slug,
+    title: title ?? slug.join('/'),
     description: excerpt,
     alternates: {
       languages: Object.fromEntries(
-        alternates.map(({ locale: l, slug: s }) => [l, `/${l}/${s}`])
+        Object.entries(content.pathByLocale).map(([altLocale, altSlug]) => [
+          altLocale,
+          `/${altLocale}/${altSlug}`,
+        ]),
       ),
     },
   };

@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import {
+  Award,
   Bolt,
   Cog,
   Globe,
@@ -7,9 +8,13 @@ import {
   MapPin,
   Package,
   Search,
+  Sparkles,
   Star,
   Tractor,
+  TrendingUp,
+  Trophy,
   User,
+  Users,
   Wheat,
   Wrench,
 } from 'lucide-react';
@@ -17,6 +22,7 @@ import {
 export type BlockElementRecord = Record<string, unknown>;
 
 const iconMap: Record<string, LucideIcon> = {
+  award: Award,
   bolt: Bolt,
   cog: Cog,
   globe: Globe,
@@ -24,9 +30,13 @@ const iconMap: Record<string, LucideIcon> = {
   mapPin: MapPin,
   package: Package,
   search: Search,
+  sparkles: Sparkles,
   star: Star,
   tractor: Tractor,
+  trendingUp: TrendingUp,
+  trophy: Trophy,
   user: User,
+  users: Users,
   wheat: Wheat,
   wrench: Wrench,
 };

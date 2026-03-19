@@ -1,6 +1,7 @@
 'use server';
 
 import { prisma } from '@/adapters/prisma-adapter/client';
+import { getPublishedPageByPath } from '@/lib/cms';
 
 export interface PageInfo {
   title: string;
@@ -12,26 +13,33 @@ export interface PageInfo {
  * page title and admin edit link, or null if no page is found.
  */
 export async function getPageInfoForPath(pathname: string): Promise<PageInfo | null> {
-  // Parse /{locale}/{slug} or /{locale} (home)
-  const match = pathname.match(/^\/([a-z]{2,5})(?:\/([^/]+))?(?:\/.*)?$/);
-  const locale = match?.[1] ?? null;
-  const slug   = match?.[2] ?? (locale ? 'home' : null);
+  const parts = pathname.split('/').filter(Boolean);
+  const locale = parts[0] ?? null;
+  const slugParts = parts.slice(1);
 
-  if (!locale || !slug) return null;
+  if (!locale) return null;
 
-  try {
-    const page = await prisma.pages.findFirst({
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      where: { slug: { path: `$.${locale}`, equals: slug } as any },
+  if (slugParts.length === 0) {
+    const homePage = await prisma.pages.findFirst({
+      where: { status: 'published', isIndexPage: true },
       select: { id: true, title: true },
     });
 
-    if (!page) return null;
+    if (!homePage) return null;
 
-    const titleJson = (page.title as unknown) as Record<string, string> | null;
-    const title = titleJson?.[locale] ?? titleJson?.['en'] ?? slug;
+    const titleJson = homePage.title as Record<string, string> | null;
+    const title = titleJson?.[locale] ?? titleJson?.['en'] ?? 'home';
+    return { title, editHref: `/admin/pages/${homePage.id}` };
+  }
 
-    return { title, editHref: `/admin/pages/${page.id}` };
+  try {
+    const match = await getPublishedPageByPath(locale, slugParts);
+    if (!match) return null;
+
+    const titleJson = match.page.title as Record<string, string> | null;
+    const title = titleJson?.[locale] ?? titleJson?.['en'] ?? slugParts.join('/');
+
+    return { title, editHref: `/admin/pages/${match.page.id}` };
   } catch {
     return null;
   }
