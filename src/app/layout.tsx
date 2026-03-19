@@ -23,7 +23,7 @@ export default async function RootLayout({
 
   return (
     <html lang="en">
-      <body className="min-h-screen bg-background antialiased">
+      <body suppressHydrationWarning className="min-h-screen bg-background antialiased">
         <SessionProviderClient session={session}>
           {children}
         </SessionProviderClient>

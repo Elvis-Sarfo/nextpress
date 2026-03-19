@@ -129,7 +129,7 @@ async function main() {
   });
 
   const pageBannerId = await upsertBlock({
-    name: 'agbon-page-banner',
+    name: 'agbon-brand-introduction-banner',
     label: 'Brand Introduction Banner',
     content: {
       en: {
