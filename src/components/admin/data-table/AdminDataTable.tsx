@@ -118,24 +118,24 @@ function ColumnFilterDropdown<Row extends object>({
           className={cn(
             'inline-flex h-6 w-6 items-center justify-center rounded-md border transition-colors',
             currentValue
-              ? 'border-[#91caff] bg-[#e6f4ff] text-[#1677ff]'
-              : 'border-transparent text-[#98a2b3] hover:border-[#d9d9d9] hover:bg-white hover:text-[#1677ff]'
+              ? 'border-[#91caff] bg-[#e6f4ff] text-[#1677ff] dark:border-[#1554ad] dark:bg-[#0b2447] dark:text-[#69b1ff]'
+              : 'border-transparent text-[#98a2b3] hover:border-[#d9d9d9] hover:bg-white hover:text-[#1677ff] dark:text-[#667085] dark:hover:border-[#344054] dark:hover:bg-[#111827] dark:hover:text-[#69b1ff]'
           )}
           aria-label={`Filter ${String(column.columnDef.header ?? column.id)}`}
         >
           <Filter className="h-3.5 w-3.5" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-72 rounded-xl border border-[#e4e7ec] p-0 shadow-[0_12px_32px_rgba(16,24,40,0.14)]">
-        <div className="border-b border-[#f2f4f7] p-3">
+      <DropdownMenuContent align="start" className="w-72 rounded-xl border border-[#e4e7ec] bg-white p-0 shadow-[0_12px_32px_rgba(16,24,40,0.14)] dark:border-[#1f2937] dark:bg-[#101828] dark:shadow-[0_18px_40px_rgba(0,0,0,0.45)]">
+        <div className="border-b border-[#f2f4f7] p-3 dark:border-[#1f2937]">
           <div className="mb-2 flex items-center justify-between">
-            <p className="text-sm font-semibold text-[#101828]">
+            <p className="text-sm font-semibold text-[#101828] dark:text-[#f8fafc]">
               Filter {String(column.columnDef.header ?? column.id)}
             </p>
             {currentValue ? (
               <button
                 type="button"
-                className="inline-flex items-center gap-1 text-xs font-medium text-[#1677ff]"
+                className="inline-flex items-center gap-1 text-xs font-medium text-[#1677ff] dark:text-[#69b1ff]"
                 onClick={() => {
                   column.setFilterValue('');
                   setQuery('');
@@ -147,19 +147,19 @@ function ColumnFilterDropdown<Row extends object>({
             ) : null}
           </div>
           <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#98a2b3]" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#98a2b3] dark:text-[#667085]" />
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search options"
-              className="h-9 w-full rounded-lg border border-[#d0d5dd] bg-white pl-9 pr-3 text-sm text-[#101828] outline-none transition-colors placeholder:text-[#98a2b3] focus:border-[#4096ff]"
+              className="h-9 w-full rounded-lg border border-[#d0d5dd] bg-white pl-9 pr-3 text-sm text-[#101828] outline-none transition-colors placeholder:text-[#98a2b3] focus:border-[#4096ff] dark:border-[#344054] dark:bg-[#0b1220] dark:text-[#f8fafc] dark:placeholder:text-[#667085] dark:focus:border-[#69b1ff]"
             />
           </div>
         </div>
         <div className="max-h-64 overflow-auto p-2">
           {filteredOptions.length === 0 ? (
-            <div className="px-2 py-6 text-center text-sm text-[#98a2b3]">No matching values</div>
+            <div className="px-2 py-6 text-center text-sm text-[#98a2b3] dark:text-[#667085]">No matching values</div>
           ) : (
             <div className="space-y-1">
               {filteredOptions.map((option) => {
@@ -171,8 +171,8 @@ function ColumnFilterDropdown<Row extends object>({
                     className={cn(
                       'flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-colors',
                       selected
-                        ? 'bg-[#e6f4ff] text-[#1677ff]'
-                        : 'text-[#344054] hover:bg-[#f9fafb]'
+                        ? 'bg-[#e6f4ff] text-[#1677ff] dark:bg-[#0b2447] dark:text-[#69b1ff]'
+                        : 'text-[#344054] hover:bg-[#f9fafb] dark:text-[#e5e7eb] dark:hover:bg-[#111827]'
                     )}
                     onClick={() => {
                       column.setFilterValue(selected ? '' : option);
@@ -218,31 +218,35 @@ export function AdminDataTable<Row extends object>({
   const selectionColumn: AdminTableColumn<Row> = {
     id: '__select__',
     header: ({ table }) => (
-      <input
-        type="checkbox"
-        aria-label="Select all"
-        checked={table.getIsAllPageRowsSelected()}
-        ref={(element) => {
-          if (element) element.indeterminate = table.getIsSomePageRowsSelected();
-        }}
-        onChange={table.getToggleAllPageRowsSelectedHandler()}
-        className="h-4 w-4 rounded border-[#d9d9d9] text-[#1677ff] accent-[#1677ff]"
-      />
+      <div className="flex items-center justify-center">
+        <input
+          type="checkbox"
+          aria-label="Select all"
+          checked={table.getIsAllPageRowsSelected()}
+          ref={(element) => {
+            if (element) element.indeterminate = table.getIsSomePageRowsSelected();
+          }}
+          onChange={table.getToggleAllPageRowsSelectedHandler()}
+          className="h-4 w-4 rounded border-[#d9d9d9] text-[#1677ff] accent-[#1677ff]"
+        />
+      </div>
     ),
     cell: ({ row }) => (
-      <input
-        type="checkbox"
-        checked={row.getIsSelected()}
-        disabled={!row.getCanSelect()}
-        onChange={row.getToggleSelectedHandler()}
-        className="h-4 w-4 rounded border-[#d9d9d9] text-[#1677ff] accent-[#1677ff]"
-        aria-label={`Select ${row.id}`}
-      />
+      <div className="flex items-center justify-center">
+        <input
+          type="checkbox"
+          checked={row.getIsSelected()}
+          disabled={!row.getCanSelect()}
+          onChange={row.getToggleSelectedHandler()}
+          className="h-4 w-4 rounded border-[#d9d9d9] text-[#1677ff] accent-[#1677ff]"
+          aria-label={`Select ${row.id}`}
+        />
+      </div>
     ),
     enableSorting: false,
     enableColumnFilter: false,
     enableHiding: false,
-    meta: { headerClassName: 'w-10', cellClassName: 'w-10' },
+    meta: { headerClassName: 'w-10 text-center', cellClassName: 'w-10 text-center' },
   };
 
   const actionsColumn: AdminTableColumn<Row> | null = hasActions
@@ -295,17 +299,17 @@ export function AdminDataTable<Row extends object>({
       {toolbar}
 
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-5 py-3 text-sm text-red-600">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-5 py-3 text-sm text-red-600 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">
           {error}
         </div>
       )}
 
-      <div className="overflow-hidden rounded-xl border border-[#f0f0f0] bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+      <div className="overflow-hidden rounded-xl border border-[#f0f0f0] bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)] dark:border-[#1f2937] dark:bg-[#0f172a] dark:shadow-[0_12px_32px_rgba(0,0,0,0.28)]">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[760px] border-separate border-spacing-0">
             <thead>
               {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id} className="bg-[#fafafa]">
+                <tr key={headerGroup.id} className="bg-[#fafafa] dark:bg-[#111827]">
                   {headerGroup.headers.map((header) => {
                     const meta = header.column.columnDef.meta;
                     const canSort = header.column.getCanSort();
@@ -315,7 +319,7 @@ export function AdminDataTable<Row extends object>({
                       <th
                         key={header.id}
                         className={cn(
-                          'border-b border-r border-[#f0f0f0] px-4 py-3 text-left text-[13px] font-semibold text-[#667085] last:border-r-0',
+                          'border-b border-r border-[#f0f0f0] px-4 py-3 text-left text-[13px] font-semibold text-[#667085] last:border-r-0 dark:border-[#1f2937] dark:text-[#98a2b3]',
                           meta?.headerClassName
                         )}
                       >
@@ -324,20 +328,20 @@ export function AdminDataTable<Row extends object>({
                             <button
                               type="button"
                               onClick={header.column.getToggleSortingHandler()}
-                              className="inline-flex items-center gap-2 text-left transition-colors hover:text-[#1677ff]"
+                              className="inline-flex items-center gap-2 text-left transition-colors hover:text-[#1677ff] dark:hover:text-[#69b1ff]"
                             >
                               <span>{flexRender(header.column.columnDef.header, header.getContext())}</span>
                               <span className="flex flex-col leading-none">
                                 <ChevronUp
                                   className={cn(
                                     'h-3 w-3',
-                                    isSorted === 'asc' ? 'text-[#1677ff]' : 'text-[#bfbfbf]'
+                                    isSorted === 'asc' ? 'text-[#1677ff] dark:text-[#69b1ff]' : 'text-[#bfbfbf] dark:text-[#475467]'
                                   )}
                                 />
                                 <ChevronDown
                                   className={cn(
                                     '-mt-1 h-3 w-3',
-                                    isSorted === 'desc' ? 'text-[#1677ff]' : 'text-[#bfbfbf]'
+                                    isSorted === 'desc' ? 'text-[#1677ff] dark:text-[#69b1ff]' : 'text-[#bfbfbf] dark:text-[#475467]'
                                   )}
                                 />
                               </span>
@@ -364,25 +368,25 @@ export function AdminDataTable<Row extends object>({
               {loading ? (
                 <tr>
                   <td colSpan={tableColumns.length} className="px-4 py-16 text-center">
-                    <Loader2 className="mx-auto h-6 w-6 animate-spin text-[#1677ff]" />
+                    <Loader2 className="mx-auto h-6 w-6 animate-spin text-[#1677ff] dark:text-[#69b1ff]" />
                   </td>
                 </tr>
               ) : table.getRowModel().rows.length === 0 ? (
                 <tr>
-                  <td colSpan={tableColumns.length} className="px-4 py-16 text-center text-sm text-[#98a2b3]">
+                  <td colSpan={tableColumns.length} className="px-4 py-16 text-center text-sm text-[#98a2b3] dark:text-[#667085]">
                     {emptyMessage}
                   </td>
                 </tr>
               ) : (
                 table.getRowModel().rows.map((row) => (
-                  <tr key={row.id} className="transition-colors hover:bg-[#fafafa]">
+                  <tr key={row.id} className="transition-colors hover:bg-[#fafafa] dark:hover:bg-[#111827]">
                     {row.getVisibleCells().map((cell) => {
                       const meta = cell.column.columnDef.meta;
                       return (
                         <td
                           key={cell.id}
                           className={cn(
-                            'border-b border-r border-[#f0f0f0] px-1 py-0 text-sm text-[#1f2937] last:border-r-0',
+                            'border-b border-r border-[#f0f0f0] px-1 py-0 text-sm text-[#1f2937] last:border-r-0 dark:border-[#1f2937] dark:text-[#e5e7eb]',
                             meta?.cellClassName
                           )}
                         >
@@ -399,20 +403,20 @@ export function AdminDataTable<Row extends object>({
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-[#667085]">Total {total} items</p>
+        <p className="text-sm text-[#667085] dark:text-[#98a2b3]">Total {total} items</p>
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#d9d9d9] bg-white text-[#344054] transition-colors hover:border-[#4096ff] hover:text-[#1677ff] disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#d9d9d9] bg-white text-[#344054] transition-colors hover:border-[#4096ff] hover:text-[#1677ff] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#344054] dark:bg-[#111827] dark:text-[#98a2b3] dark:hover:border-[#69b1ff] dark:hover:text-[#69b1ff]"
             aria-label="Previous page"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
           {pageItems.map((item, index) =>
             item === 'ellipsis' ? (
-              <span key={`ellipsis-${index}`} className="px-1 text-sm text-[#98a2b3]">
+              <span key={`ellipsis-${index}`} className="px-1 text-sm text-[#98a2b3] dark:text-[#667085]">
                 ...
               </span>
             ) : (
@@ -423,8 +427,8 @@ export function AdminDataTable<Row extends object>({
                 className={cn(
                   'inline-flex h-8 min-w-8 items-center justify-center rounded-md border px-2 text-sm transition-colors',
                   item === page
-                    ? 'border-[#1677ff] bg-[#e6f4ff] text-[#1677ff]'
-                    : 'border-[#d9d9d9] bg-white text-[#344054] hover:border-[#4096ff] hover:text-[#1677ff]'
+                    ? 'border-[#1677ff] bg-[#e6f4ff] text-[#1677ff] dark:border-[#69b1ff] dark:bg-[#0b2447] dark:text-[#69b1ff]'
+                    : 'border-[#d9d9d9] bg-white text-[#344054] hover:border-[#4096ff] hover:text-[#1677ff] dark:border-[#344054] dark:bg-[#111827] dark:text-[#98a2b3] dark:hover:border-[#69b1ff] dark:hover:text-[#69b1ff]'
                 )}
                 aria-current={item === page ? 'page' : undefined}
               >
@@ -436,12 +440,12 @@ export function AdminDataTable<Row extends object>({
             type="button"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#d9d9d9] bg-white text-[#344054] transition-colors hover:border-[#4096ff] hover:text-[#1677ff] disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#d9d9d9] bg-white text-[#344054] transition-colors hover:border-[#4096ff] hover:text-[#1677ff] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#344054] dark:bg-[#111827] dark:text-[#98a2b3] dark:hover:border-[#69b1ff] dark:hover:text-[#69b1ff]"
             aria-label="Next page"
           >
             <ChevronRight className="h-4 w-4" />
           </button>
-          <span className="ml-2 text-sm text-[#667085]">
+          <span className="ml-2 text-sm text-[#667085] dark:text-[#98a2b3]">
             {page} / {totalPages}
           </span>
         </div>

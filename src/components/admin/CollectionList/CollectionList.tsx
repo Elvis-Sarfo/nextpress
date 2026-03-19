@@ -517,20 +517,20 @@ export function CollectionList({ collection }: CollectionListProps) {
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative w-full max-w-sm">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground dark:text-[#667085]" />
           <input
             type="text"
             placeholder={`Search ${collection.labels.plural.toLowerCase()}...`}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-md border bg-background py-2 pl-9 pr-3 text-sm"
+            className="w-full rounded-md border border-input bg-background py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground dark:border-[#475467] dark:bg-[#0f172a] dark:text-[#f8fafc] dark:placeholder:text-[#667085]"
           />
         </div>
 
         <select
           value={pageSize}
           onChange={(e) => setPageSize(Number(e.target.value))}
-          className="h-9 rounded-md border bg-background px-2 text-sm"
+          className="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground dark:border-[#475467] dark:bg-[#0f172a] dark:text-[#f8fafc]"
           title="Rows per page"
         >
           {[10, 20, 50, 100].map((size) => (
