@@ -12,6 +12,7 @@ interface FeaturedProductsProps {
   locale?: string
   title?: string
   showViewAllButton?: boolean
+  showTechnicalDescription?: boolean
   onViewAllClick?: () => void
   viewAllHref?: string
   viewAllLabel?: string
@@ -23,6 +24,7 @@ export function AgbonFeaturedProducts({
   locale = 'en',
   title = 'Hot Selling Products',
   showViewAllButton = false,
+  showTechnicalDescription = true,
   onViewAllClick,
   viewAllHref,
   viewAllLabel = 'View All',
@@ -74,7 +76,7 @@ export function AgbonFeaturedProducts({
         <div className={`grid ${gridColumns} gap-4 md:gap-6`}>
           {products.map((product) => (
             <div key={product.id} className="relative rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 h-full">
-              <AgbonProductCard product={product} locale={locale} />
+              <AgbonProductCard product={product} locale={locale} showSpecs={showTechnicalDescription} />
             </div>
           ))}
         </div>

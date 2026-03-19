@@ -25,6 +25,7 @@ export function AgbonFeaturedProductsBlock({
       locale={locale}
       title={asString(content.title, 'Hot Selling Products')}
       showViewAllButton={asBoolean(content.showViewAllButton, false)}
+      showTechnicalDescription={asBoolean(content.showTechnicalDescription, true)}
       viewAllLabel={asString(content.viewAllLabel, 'View All')}
       viewAllHref={buildLocalizedPath(locale, asString(content.viewAllHref, '/products'))}
       gridColumns={asString(content.gridColumns, DEFAULT_AGBON_PRODUCT_GRID_COLUMNS)}

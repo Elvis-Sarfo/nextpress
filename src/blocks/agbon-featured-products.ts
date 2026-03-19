@@ -20,6 +20,11 @@ export const agbonFeaturedProductsBlock = defineBlock({
         label: 'Show View All Button',
       },
       {
+        name: 'showTechnicalDescription',
+        type: 'toggle',
+        label: 'Show Technical Description',
+      },
+      {
         name: 'viewAllLabel',
         type: 'text',
         label: 'View All Label',
