@@ -85,7 +85,7 @@ export function AgbonHeroSection({ slides = [], locale = 'en' }: HeroSectionProp
   const imageUrl = slide.imageUrl || null
 
   return (
-    <div className="relative w-full overflow-hidden h-70 md:h-[26rem] lg:h-[30rem]">
+    <div className="relative w-full overflow-hidden h-[18rem] sm:h-[22rem] md:h-[26rem] lg:h-[30rem]">
       {/* Background */}
       <div className="absolute inset-0">
         {imageUrl ? (
