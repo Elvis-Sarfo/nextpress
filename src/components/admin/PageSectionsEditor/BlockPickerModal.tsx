@@ -307,6 +307,99 @@ export function BlockPickerModal({ open, onClose, onSelect }: BlockPickerModalPr
       };
     }
 
+    if (name === 'agbon-recruitment-why-join') {
+      return {
+        subTitle: 'Work with us',
+        title: 'Why Work at AGBON?',
+        leadText: "Join a team that's transforming agriculture and creating lasting impact across Africa",
+        bodyHtml:
+          "<p>At AGBON, we are more than just an <strong style='color:#FF6B35'>agricultural machinery company</strong>. We are a team of passionate individuals dedicated to <strong style='color:#FF6B35'>transforming the lives of farmers</strong> across Africa.</p><p>When you join AGBON, you become part of a <strong style='color:#FF6B35'>movement</strong> that is <strong>modernizing agriculture</strong>, creating jobs, and contributing to <strong>food security</strong> on the continent.</p>",
+        imageSrc: '/images/section/recruitment/technician.png',
+        imageAlt: 'AGBON technician',
+        badgeOne: 'Empowering Farmers',
+        badgeTwo: 'Growing Together',
+        iconSrc: '/icons/agric.png',
+      };
+    }
+
+    if (name === 'agbon-recruitment-benefits') {
+      return {
+        subTitle: 'What is in it for you?',
+        title: 'Employee Benefits',
+        description:
+          'Join AGBON and enjoy a comprehensive package designed to support your growth and well-being',
+        iconSrc: '/icons/agric.png',
+        _elements: [
+          {
+            title: 'Competitive Salary',
+            description: 'Assurance of a competitive salary package.',
+            icon: 'award',
+            backgroundImage: '/primary_pattern.webp',
+            gradientFrom: 'red-600',
+            gradientTo: 'red-400',
+            overlayFrom: 'red-900',
+            textAccentColor: 'red-100',
+          },
+          {
+            title: 'Professional Growth',
+            description: 'Training programs and workshops to enhance your skills.',
+            icon: 'trendingUp',
+            backgroundImage: '/primary_pattern.webp',
+            gradientFrom: 'blue-600',
+            gradientTo: 'blue-400',
+            overlayFrom: 'blue-900',
+            textAccentColor: 'blue-100',
+          },
+          {
+            title: 'Impactful Work',
+            description: "Transform agriculture and improve farmers' livelihoods.",
+            icon: 'globe',
+            backgroundImage: '/primary_pattern.webp',
+            gradientFrom: 'rose-600',
+            gradientTo: 'rose-400',
+            overlayFrom: 'rose-900',
+            textAccentColor: 'rose-100',
+          },
+        ],
+      };
+    }
+
+    if (name === 'agbon-recruitment-current-openings') {
+      return {
+        subTitle: 'Find a job that suits you',
+        title: 'Current Job Openings',
+        iconSrc: '/icons/agric.png',
+        requirementsHeading: 'Requirements:',
+        applyButtonLabel: 'Apply Now',
+        applyButtonLink: '/contact',
+        emptyMessage: 'There are no open roles at the moment.',
+      };
+    }
+
+    if (name === 'agbon-recruitment-application-process') {
+      return {
+        title: 'Application Process',
+        _elements: [
+          { title: 'Submit Application', description: 'Send your CV to our recruitment team.' },
+          { title: 'Initial Screening', description: 'Our HR team reviews shortlisted candidates.' },
+          { title: 'Interview', description: 'Meet hiring managers and team members.' },
+          { title: 'Job Offer', description: 'Successful candidates receive an offer.' },
+        ],
+      };
+    }
+
+    if (name === 'agbon-recruitment-cta') {
+      return {
+        title: "Don't See the Right Role?",
+        description:
+          "We are always looking for talented individuals to join our team.<br />Send us your CV and we'll keep you in mind for future opportunities.",
+        ctaText: 'Send Your CV',
+        ctaLink: '/contact',
+        backgroundImage: '/images/section/recruitment/cta-bg.png',
+        backgroundImageAlt: 'Join our team',
+      };
+    }
+
     if (name === 'agbon-network-overview-section') {
       return {
         sectionSubtitle: 'Connections That Matter',
@@ -549,6 +642,39 @@ export function BlockPickerModal({ open, onClose, onSelect }: BlockPickerModalPr
           name: { en: 'Generators' },
           slug: 'generators',
           imageUrl: '/images/section/generator.png',
+        },
+      ];
+    }
+
+    if (name === 'agbon-recruitment-current-openings') {
+      return [
+        {
+          id: 'preview-job-1',
+          title: 'Agricultural Machinery Sales Representative',
+          location: 'Accra, Ghana',
+          employmentType: 'Full-time',
+          salary: 'Competitive',
+          description: 'Promote and sell AGBON machinery to farmers and distributors.',
+          requirements: [
+            { value: '3+ years of sales experience in the agricultural sector' },
+            { value: 'Strong communication and negotiation skills' },
+          ],
+          applyLabel: 'Apply Now',
+          applyLink: '/contact',
+        },
+        {
+          id: 'preview-job-2',
+          title: 'Field Service Technician',
+          location: 'Lagos, Nigeria',
+          employmentType: 'Full-time',
+          salary: 'Competitive',
+          description: 'Provide on-site maintenance, repairs, and technical support.',
+          requirements: [
+            { value: 'Diploma or degree in Mechanical Engineering' },
+            { value: '2+ years experience in machinery maintenance' },
+          ],
+          applyLabel: 'Apply Now',
+          applyLink: '/contact',
         },
       ];
     }

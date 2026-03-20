@@ -269,6 +269,27 @@ model Countries {
   @@map("countries")
 }
 
+model Jobs {
+  id String @id @default(uuid())
+  status String @db.VarChar(20)
+  title String @db.VarChar(255)
+  location String @db.VarChar(255)
+  flag String? @db.VarChar(255)
+  employmentType String @db.VarChar(100) @default("Full-time")
+  salary String @db.VarChar(255) @default("Competitive")
+  description String @db.Text
+  requirements Json?
+  applyLabel String @db.VarChar(255) @default("Apply Now")
+  applyLink String? @db.VarChar(255)
+  order Int @default(0)
+  metadata Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String? @db.VarChar(255)
+  @@index([status])
+  @@map("jobs")
+}
+
 model Settings {
   id String @id @default(uuid())
   status String @db.VarChar(20)

@@ -17,6 +17,11 @@ import { agbonNewsSectionBlock } from './agbon-news-section';
 import { agbonPageBannerBlock } from './agbon-page-banner';
 import { agbonPartnershipOpportunitiesSectionBlock } from './agbon-partnership-opportunities-section';
 import { agbonProductListBlock } from './agbon-product-list';
+import { agbonRecruitmentApplicationProcessBlock } from './agbon-recruitment-application-process';
+import { agbonRecruitmentBenefitsBlock } from './agbon-recruitment-benefits';
+import { agbonRecruitmentCtaBlock } from './agbon-recruitment-cta';
+import { agbonRecruitmentCurrentOpeningsBlock } from './agbon-recruitment-current-openings';
+import { agbonRecruitmentWhyJoinBlock } from './agbon-recruitment-why-join';
 import { agbonServiceAreasSectionBlock } from './agbon-service-areas-section';
 import { agbonStatsBarBlock } from './agbon-stats-bar';
 import { agbonSupportCtaSectionBlock } from './agbon-support-cta-section';
@@ -37,6 +42,11 @@ export const blocks: BlockManifest[] = [
   agbonNetworkOverviewSectionBlock,
   agbonPartnershipOpportunitiesSectionBlock,
   agbonSupportCtaSectionBlock,
+  agbonRecruitmentWhyJoinBlock,
+  agbonRecruitmentBenefitsBlock,
+  agbonRecruitmentCurrentOpeningsBlock,
+  agbonRecruitmentApplicationProcessBlock,
+  agbonRecruitmentCtaBlock,
   agbonNewsSectionBlock,
   agbonFeaturedProductsBlock,
   agbonProductListBlock,

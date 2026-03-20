@@ -2,17 +2,36 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getPage, getPost, getNewsItem, localeEngine } from '@/lib/cms';
 import { getLocale } from '@/lib/locale-utils';
 import { draftMode } from 'next/headers';
+import { auth } from '@/auth';
+import type { SerializedPermission } from '@/types/permissions';
+
+type PreviewSession = {
+  user?: {
+    isAdmin?: boolean;
+    perms?: SerializedPermission[];
+  };
+} | null;
+
+function canPreviewPages(session: PreviewSession): boolean {
+  if (!session?.user) return false;
+  if (session.user.isAdmin) return true;
+
+  const perms = Array.isArray(session.user.perms)
+    ? (session.user.perms as SerializedPermission[])
+    : [];
+
+  return perms.some((perm) => perm.r === 'content' && perm.a === 'read');
+}
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const id = searchParams.get('id');
   const type = searchParams.get('type'); // 'page', 'post', 'news'
   const locale = searchParams.get('locale') ?? localeEngine.getDefaultLocale();
-  const secret = searchParams.get('secret');
+  const session = await auth();
 
-  // Validate preview secret
-  if (secret !== process.env.PREVIEW_SECRET) {
-    return NextResponse.json({ error: 'Invalid preview secret' }, { status: 401 });
+  if (!canPreviewPages(session)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   if (!id) {

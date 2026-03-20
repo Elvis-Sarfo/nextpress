@@ -33,7 +33,7 @@ const INCLUDE_MAP: Record<string, object> = {
 
 const ALLOWED = new Set([
   'users', 'roles', 'permissions', 'media', 'pages', 'settings', 'blocks', 'menus',
-  'categories', 'posts', 'comments', 'product-categories', 'products', 'countries',
+  'categories', 'posts', 'comments', 'product-categories', 'products', 'countries', 'jobs',
 ]);
 
 function supportsBlocksContentDefinition(): boolean {

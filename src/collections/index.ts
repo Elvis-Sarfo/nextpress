@@ -22,6 +22,7 @@ import { Categories } from './Categories';
 import { Posts } from './Posts';
 import { Comments } from './Comments';
 import { Countries } from './Countries';
+import { Jobs } from './Jobs';
 
 // Settings
 import { Settings } from './Settings';
@@ -45,6 +46,7 @@ export const collections: CollectionConfig[] = [
   Posts,
   Comments,
   Countries,
+  Jobs,
 
   // Settings
   Settings,

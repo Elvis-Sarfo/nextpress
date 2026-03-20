@@ -816,7 +816,10 @@ export function CollectionEdit({
   const previewSlug = isPageCollection
     ? ((formData.slug as Record<string, string> | null)?.[activeLocale] ?? '')
     : '';
-  const previewUrl = previewSlug ? `/${activeLocale}/${previewSlug}` : '';
+  const previewUrl =
+    isPageCollection && documentId && previewSlug
+      ? `/api/preview?id=${encodeURIComponent(documentId)}&type=page&locale=${encodeURIComponent(activeLocale)}`
+      : '';
 
   if (isLoading) {
     return (

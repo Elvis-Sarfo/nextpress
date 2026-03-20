@@ -710,6 +710,28 @@ const SPECIFIC_HANDLERS: Partial<
       include: { backgroundImage: { select: { id: true, url: true, altText: true } } },
       orderBy: (p.orderBy as Record<string, 'asc' | 'desc'> | undefined) ?? { order: 'asc' },
     }),
+  jobs: async (p) => {
+    const db = prisma as unknown as Record<string, unknown>;
+    const model = db.jobs as
+      | { findMany: (args: unknown) => Promise<unknown[]> }
+      | undefined;
+
+    if (!model?.findMany) {
+      console.warn('[queryCollection] Prisma delegate missing for "jobs". Returning empty set.');
+      return [];
+    }
+
+    return model.findMany({
+      where: {
+        status: (p.where?.status as string | undefined) ?? 'active',
+        ...(p.where?.employmentType
+          ? { employmentType: p.where.employmentType as string }
+          : {}),
+      },
+      take: p.limit ?? 50,
+      orderBy: (p.orderBy as Record<string, 'asc' | 'desc'> | undefined) ?? { order: 'asc' },
+    });
+  },
   pages: (p) =>
     prisma.pages.findMany({
       where: { status: 'published', ...(p.where ?? {}) },

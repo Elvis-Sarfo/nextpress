@@ -36,7 +36,7 @@ const INCLUDE_MAP: Record<string, object> = {
 // Allowed collection slugs that this API handles
 const ALLOWED = new Set([
   'users', 'roles', 'permissions', 'media', 'pages', 'settings', 'blocks', 'menus',
-  'categories', 'posts', 'comments', 'product-categories', 'products', 'countries',
+  'categories', 'posts', 'comments', 'product-categories', 'products', 'countries', 'jobs',
 ]);
 
 // Fields to use for full-text search per collection (only plain String fields)
@@ -51,6 +51,7 @@ const SEARCH_FIELDS: Record<string, string[]> = {
   blocks: ['name', 'templateName'],
   menus: ['name', 'location'],
   countries: ['name', 'code', 'flag'],
+  jobs: ['title', 'location', 'employmentType', 'salary'],
   categories: ['name'],
   'product-categories': ['slug', 'icon'],
   products: ['slug'],
