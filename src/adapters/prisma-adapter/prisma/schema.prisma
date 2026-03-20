@@ -87,6 +87,7 @@ model Media {
   createdBy String? @db.VarChar(255)
   pages Pages[]
   posts Posts[]
+  countries Countries[]
   productCategories ProductCategories[]
   @@index([status])
   @@unique([documentId, status])
@@ -246,6 +247,26 @@ model Comments {
   createdBy String? @db.VarChar(255)
   @@index([status])
   @@map("comments")
+}
+
+model Countries {
+  id String @id @default(uuid())
+  status String @db.VarChar(20)
+  name String @db.VarChar(255)
+  code String? @db.VarChar(255)
+  flag String? @db.VarChar(255)
+  color String @db.VarChar(255) @default("#FF6B35")
+  description String? @db.Text
+  backgroundImageId String? @db.VarChar(255)
+  offices Json?
+  order Int @default(0)
+  backgroundImage Media? @relation(fields: [backgroundImageId], references: [id], onDelete: SetNull)
+  metadata Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String? @db.VarChar(255)
+  @@index([status])
+  @@map("countries")
 }
 
 model Settings {

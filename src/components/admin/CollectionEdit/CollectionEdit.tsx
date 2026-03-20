@@ -30,7 +30,7 @@ import { PageSectionsEditor } from '@/components/admin/PageSectionsEditor';
 import { MenuItemsEditor, type MenuItem } from '@/components/admin/MenuItemsEditor/MenuItemsEditor';
 import { DataSourceBuilder, type DataSourceValue } from '@/components/admin/DataSourceBuilder/DataSourceBuilder';
 import { RichtextEditor } from '@/components/admin/RichtextEditor';
-import { GroupFieldEditor } from '@/components/admin/GroupFieldEditor/GroupFieldEditor';
+import { ArrayFieldEditor, GroupFieldEditor } from '@/components/admin/GroupFieldEditor/GroupFieldEditor';
 import { ProductMediaEditor } from '@/components/admin/ProductMediaEditor';
 
 interface CollectionEditProps {
@@ -655,6 +655,17 @@ export function CollectionEdit({
         );
 
       case 'array': {
+        if (field.fields && field.fields.length > 0) {
+          return (
+            <ArrayFieldEditor
+              field={field}
+              value={((value as unknown) as Record<string, unknown>[]) ?? []}
+              onChange={(updated) => updateField(field.name, updated as FieldValue)}
+              activeLocale={activeLocale}
+            />
+          );
+        }
+
         // For tags field in Posts, render as tag inputs
         if (isPostCollection && field.name === 'tags') {
           const items = (value as Array<{ tag?: string }>) ?? [];

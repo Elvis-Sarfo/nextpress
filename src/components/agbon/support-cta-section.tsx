@@ -30,7 +30,7 @@ export function AgbonSupportCtaSection({
   const resolvedBenefits = benefits.length > 0 ? benefits : defaultBenefits;
 
   return (
-    <section className="max-w-[90rem] mx-auto px-4 md:px-8 py-8 md:py-14">
+    <section className="px">
       <div className="relative bg-gradient-to-br from-[#FF6B35] via-[#E55A24] to-[#CC4A1A] p-4 md:p-16 rounded-2xl shadow-2xl text-center overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center opacity-15"

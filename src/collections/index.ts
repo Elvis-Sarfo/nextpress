@@ -21,6 +21,7 @@ import { Menus } from './Menus';
 import { Categories } from './Categories';
 import { Posts } from './Posts';
 import { Comments } from './Comments';
+import { Countries } from './Countries';
 
 // Settings
 import { Settings } from './Settings';
@@ -43,6 +44,7 @@ export const collections: CollectionConfig[] = [
   Categories,
   Posts,
   Comments,
+  Countries,
 
   // Settings
   Settings,

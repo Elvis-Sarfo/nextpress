@@ -701,6 +701,15 @@ const SPECIFIC_HANDLERS: Partial<
 > = {
   posts: (p) => queryPostsDirect(p),
   'product-categories': async () => getProductCategories(),
+  countries: (p) =>
+    prisma.countries.findMany({
+      where: {
+        status: (p.where?.status as string | undefined) ?? 'active',
+      },
+      take: p.limit ?? 50,
+      include: { backgroundImage: { select: { id: true, url: true, altText: true } } },
+      orderBy: (p.orderBy as Record<string, 'asc' | 'desc'> | undefined) ?? { order: 'asc' },
+    }),
   pages: (p) =>
     prisma.pages.findMany({
       where: { status: 'published', ...(p.where ?? {}) },

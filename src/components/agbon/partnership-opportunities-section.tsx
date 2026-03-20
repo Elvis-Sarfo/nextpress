@@ -55,7 +55,7 @@ export function AgbonPartnershipOpportunitiesSection({
   const resolvedCards = cards.length > 0 ? cards : defaultCards;
 
   return (
-    <section className="max-w-[90rem] mx-auto px-4 md:px-8 py-8 md:py-14">
+    <section className="px">
       <div className="max-w-3xl mb-6">
         <AgbonSectionTitle
           align="left"

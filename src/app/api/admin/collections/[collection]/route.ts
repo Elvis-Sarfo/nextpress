@@ -18,6 +18,7 @@ const INCLUDE_MAP: Record<string, object> = {
   users: { roles: { select: { id: true, name: true, displayName: true } } },
   roles: { permissions: { select: { id: true, name: true, resource: true, action: true, scope: true } } },
   pages: { featuredImage: { select: { id: true, url: true, altText: true } } },
+  countries: { backgroundImage: { select: { id: true, url: true, altText: true } } },
   'product-categories': { image: { select: { id: true, url: true, altText: true } } },
   products: {
     category: { select: { id: true, name: true, slug: true } },
@@ -35,7 +36,7 @@ const INCLUDE_MAP: Record<string, object> = {
 // Allowed collection slugs that this API handles
 const ALLOWED = new Set([
   'users', 'roles', 'permissions', 'media', 'pages', 'settings', 'blocks', 'menus',
-  'categories', 'posts', 'comments', 'product-categories', 'products',
+  'categories', 'posts', 'comments', 'product-categories', 'products', 'countries',
 ]);
 
 // Fields to use for full-text search per collection (only plain String fields)
@@ -49,6 +50,7 @@ const SEARCH_FIELDS: Record<string, string[]> = {
   settings: ['siteName'],
   blocks: ['name', 'templateName'],
   menus: ['name', 'location'],
+  countries: ['name', 'code', 'flag'],
   categories: ['name'],
   'product-categories': ['slug', 'icon'],
   products: ['slug'],
@@ -347,6 +349,14 @@ export async function POST(
       : typeof image === 'object' && 'id' in (image as Record<string, unknown>) ? (image as Record<string, unknown>).id
       : null;
     delete body.image;
+  }
+  if (collection === 'countries' && Object.prototype.hasOwnProperty.call(body, 'backgroundImage')) {
+    const image = body.backgroundImage;
+    body.backgroundImageId = image === null || image === undefined ? null
+      : typeof image === 'string' ? image
+      : typeof image === 'object' && 'id' in (image as Record<string, unknown>) ? (image as Record<string, unknown>).id
+      : null;
+    delete body.backgroundImage;
   }
 
   // Posts: remap category and author relation objects to scalar FKs

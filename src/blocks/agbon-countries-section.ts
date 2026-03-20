@@ -29,15 +29,23 @@ export const agbonCountriesSectionBlock = defineBlock({
         ],
       },
     ],
-    elements: {
-      label: 'Country Card',
+    dataSource: {
+      collection: 'countries',
+      defaultParams: {
+        limit: 24,
+        where: {
+          status: 'active',
+        },
+        orderBy: { order: 'asc' },
+      },
       fields: [
-        { name: 'name', type: 'text', label: 'Country Name', required: true },
-        { name: 'flag', type: 'text', label: 'Flag Emoji' },
-        { name: 'description', type: 'textarea', label: 'Description' },
-        { name: 'color', type: 'text', label: 'Accent Color Hex' },
-        { name: 'backgroundImage', type: 'image', label: 'Background Image' },
-        { name: 'officesJson', type: 'textarea', label: 'Offices JSON' },
+        {
+          name: 'limit',
+          type: 'number',
+          label: 'Countries Limit',
+          default: 24,
+          scope: 'root',
+        },
       ],
     },
   },

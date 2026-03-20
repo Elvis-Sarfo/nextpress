@@ -221,7 +221,7 @@ interface ArrayFieldEditorProps {
   activeLocale: string;
 }
 
-function ArrayFieldEditor({ field, value, onChange, activeLocale }: ArrayFieldEditorProps) {
+export function ArrayFieldEditor({ field, value, onChange, activeLocale }: ArrayFieldEditorProps) {
   const subFields = field.fields ?? [];
   const items = value ?? [];
 
