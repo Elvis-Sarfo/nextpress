@@ -2,6 +2,7 @@ import type { BlockManifest } from '@/core/blocks/types';
 
 import { agbonAfterSalesServiceBannerBlock } from './agbon-after-sales-service-banner';
 import { agbonBusinessMapImageBlock } from './agbon-business-map-image';
+import { agbonCountriesSectionBlock } from './agbon-countries-section';
 import { agbonBrandPresenceSectionBlock } from './agbon-brand-presence-section';
 import { agbonBrandIntroductionBannerBlock } from './agbon-brand-introduction-banner';
 import { agbonBrandStorySectionBlock } from './agbon-brand-story-section';
@@ -29,6 +30,7 @@ export const blocks: BlockManifest[] = [
   agbonBrandIntroductionBannerBlock,
   agbonAfterSalesServiceBannerBlock,
   agbonBusinessMapImageBlock,
+  agbonCountriesSectionBlock,
   agbonBrandStorySectionBlock,
   agbonBrandValuesSectionBlock,
   agbonBrandPresenceSectionBlock,

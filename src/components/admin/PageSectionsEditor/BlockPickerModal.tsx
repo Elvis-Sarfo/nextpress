@@ -269,6 +269,44 @@ export function BlockPickerModal({ open, onClose, onSelect }: BlockPickerModalPr
       };
     }
 
+    if (name === 'agbon-countries-section') {
+      return {
+        subTitle: 'Our Global Presence',
+        title: 'Our Service Areas',
+        showSearch: true,
+        searchPlaceholder: 'Search countries, cities...',
+        searchNoResultsTemplate: 'No countries found matching "{query}"',
+        noResultsMessage: 'No countries found',
+        emptyMessage: 'No service areas available',
+        officesHeading: 'Contact Our Offices',
+        headquartersBadgeLabel: 'HQ',
+        moreOfficesTemplate: '+{count} more offices',
+        columns: '2',
+        _elements: [
+          {
+            name: 'Ghana',
+            flag: '🇬🇭',
+            color: '#FF6B35',
+            backgroundImage: '/images/banner/9.png',
+            officesJson: JSON.stringify([
+              { city: 'Accra', phone: '+233 20 000 0000', email: 'accra@agbon.com', type: 'headquarters' },
+              { city: 'Kumasi', phone: '+233 24 000 0000', email: 'kumasi@agbon.com', type: 'regional' },
+            ]),
+          },
+          {
+            name: 'Kenya',
+            flag: '🇰🇪',
+            color: '#E55A24',
+            backgroundImage: '/images/banner/11.png',
+            officesJson: JSON.stringify([
+              { city: 'Nairobi', phone: '+254 700 000 000', email: 'nairobi@agbon.com', type: 'headquarters' },
+              { city: 'Mombasa', phone: '+254 711 000 000', email: 'mombasa@agbon.com', type: 'regional' },
+            ]),
+          },
+        ],
+      };
+    }
+
     if (name === 'agbon-network-overview-section') {
       return {
         sectionSubtitle: 'Connections That Matter',
