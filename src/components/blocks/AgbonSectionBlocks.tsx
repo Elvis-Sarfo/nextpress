@@ -2,6 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import { AgbonCommitmentSection } from '@/components/agbon/commitment-section';
+import { AgbonContactInfo } from '@/components/agbon/contact-info';
 import { AgbonContactForm } from '@/components/agbon/contact-form';
 import { AgbonHappyFarmingBanner } from '@/components/agbon/happy-farming-banner';
 import { AgbonHomeFeatureCards } from '@/components/agbon/home-feature-cards';
@@ -37,13 +38,6 @@ export function AgbonContactFormBlock({ content }: { content: BlockContent }) {
   return (
     <AgbonContactForm
       locale={locale}
-      badge={asOptionalString(content.badge)}
-      title={asOptionalString(content.title)}
-      subtitle={asOptionalString(content.subtitle)}
-      description={asOptionalString(content.description)}
-      email={asOptionalString(content.email)}
-      phone={asOptionalString(content.phone)}
-      address={asOptionalString(content.address)}
       formTitle={asOptionalString(content.formTitle)}
       successTitle={asOptionalString(content.successTitle)}
       successMessage={asOptionalString(content.successMessage)}
@@ -51,6 +45,24 @@ export function AgbonContactFormBlock({ content }: { content: BlockContent }) {
       submitLabel={asOptionalString(content.submitLabel)}
       submittingLabel={asOptionalString(content.submittingLabel)}
       subjectOptions={subjectOptions}
+      showContactInfo={false}
+    />
+  );
+}
+
+export function AgbonContactInfoBlock({ content }: { content: BlockContent }) {
+  const locale = useBlockLocale();
+
+  return (
+    <AgbonContactInfo
+      locale={locale}
+      badge={asOptionalString(content.badge)}
+      title={asOptionalString(content.title)}
+      subtitle={asOptionalString(content.subtitle)}
+      description={asOptionalString(content.description)}
+      email={asOptionalString(content.email)}
+      phone={asOptionalString(content.phone)}
+      address={asOptionalString(content.address)}
     />
   );
 }

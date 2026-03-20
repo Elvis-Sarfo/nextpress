@@ -9,6 +9,7 @@ import { agbonBrandStorySectionBlock } from './agbon-brand-story-section';
 import { agbonBrandValuesSectionBlock } from './agbon-brand-values-section';
 import { agbonCommitmentSectionBlock } from './agbon-commitment-section';
 import { agbonContactFormBlock } from './agbon-contact-form';
+import { agbonContactInfoBlock } from './agbon-contact-info';
 import { agbonFeaturedProductsBlock } from './agbon-featured-products';
 import { agbonHappyFarmingBannerBlock } from './agbon-happy-farming-banner';
 import { agbonHomeFeatureCardsBlock } from './agbon-home-feature-cards';
@@ -50,6 +51,7 @@ export const blocks: BlockManifest[] = [
   agbonNewsSectionBlock,
   agbonFeaturedProductsBlock,
   agbonProductListBlock,
+  agbonContactInfoBlock,
   agbonContactFormBlock,
   agbonCommitmentSectionBlock,
   agbonServiceAreasSectionBlock,

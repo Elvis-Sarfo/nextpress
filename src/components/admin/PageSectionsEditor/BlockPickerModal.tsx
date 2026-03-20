@@ -451,15 +451,23 @@ export function BlockPickerModal({ open, onClose, onSelect }: BlockPickerModalPr
 
     if (name === 'agbon-contact-form') {
       return {
-        badge: 'Get in touch',
-        title: 'Contact Our Team',
-        description: 'Ask about products, service, or partnerships.',
         formTitle: 'Send a message',
         submitLabel: 'Send',
         _elements: [
           { label: 'General Inquiry', value: 'general' },
           { label: 'Support', value: 'support' },
         ],
+      };
+    }
+
+    if (name === 'agbon-contact-info') {
+      return {
+        badge: 'Get in touch',
+        title: 'Contact Our Team',
+        description: 'Ask about products, service, or partnerships.',
+        email: 'info@agbon.com',
+        phone: '+233 20 000 0000',
+        address: 'Industrial Park, Zone A',
       };
     }
 

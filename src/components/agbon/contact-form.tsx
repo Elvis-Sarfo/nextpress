@@ -21,6 +21,7 @@ interface ContactFormProps {
   submitLabel?: string
   submittingLabel?: string
   subjectOptions?: Array<{ label: string; value: string }>
+  showContactInfo?: boolean
 }
 
 export function AgbonContactForm({
@@ -39,6 +40,7 @@ export function AgbonContactForm({
   submitLabel = 'Send Message',
   submittingLabel = 'Sending...',
   subjectOptions = [],
+  showContactInfo = true,
 }: ContactFormProps) {
   const [formData, setFormData] = useState({
     name: '', email: '', phone: '', company: '', subject: '', message: '',
@@ -88,40 +90,40 @@ export function AgbonContactForm({
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="grid lg:grid-cols-3 gap-8">
-        {/* Contact info sidebar */}
-        <div className="lg:col-span-1 space-y-6">
-          <div>
-            <AgbonSectionTitle
-              title={title || agbonT('contact.heading', locale)}
-              subTitle={subtitle || badge || agbonT('contact.subtitle', locale)}
-            />
-            <p className="text-gray-600 mt-3 text-sm">{description || agbonT('contact.description', locale)}</p>
-          </div>
-          <div className="space-y-4">
-            {[
-              { icon: <Phone className="w-5 h-5" />, label: 'Phone', value: phone, href: `tel:${phone}` },
-              { icon: <Mail className="w-5 h-5" />, label: 'Email', value: email, href: `mailto:${email}` },
-              { icon: <MapPin className="w-5 h-5" />, label: 'Address', value: address },
-            ].map((item) => (
-              <div key={item.label} className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
-                <span className="text-[#FF6B35] mt-0.5">{item.icon}</span>
-                <div>
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{item.label}</p>
-                  {item.href ? (
-                    <a href={item.href} className="text-sm text-[#1a1a1a] hover:text-[#FF6B35] transition">{item.value}</a>
-                  ) : (
-                    <p className="text-sm text-[#1a1a1a]">{item.value}</p>
-                  )}
+    // <div className="max-w-6xl mx-auto"> 
+      <div className={showContactInfo ? 'grid lg:grid-cols-3 gap-8' : ''}>
+        {showContactInfo && (
+          <div className="lg:col-span-1 space-y-6">
+            <div>
+              <AgbonSectionTitle
+                title={title || agbonT('contact.heading', locale)}
+                subTitle={subtitle || badge || agbonT('contact.subtitle', locale)}
+              />
+              <p className="text-gray-600 mt-3 text-sm">{description || agbonT('contact.description', locale)}</p>
+            </div>
+            <div className="space-y-4">
+              {[
+                { icon: <Phone className="w-5 h-5" />, label: 'Phone', value: phone, href: `tel:${phone}` },
+                { icon: <Mail className="w-5 h-5" />, label: 'Email', value: email, href: `mailto:${email}` },
+                { icon: <MapPin className="w-5 h-5" />, label: 'Address', value: address },
+              ].map((item) => (
+                <div key={item.label} className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
+                  <span className="text-[#FF6B35] mt-0.5">{item.icon}</span>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{item.label}</p>
+                    {item.href ? (
+                      <a href={item.href} className="text-sm text-[#1a1a1a] hover:text-[#FF6B35] transition">{item.value}</a>
+                    ) : (
+                      <p className="text-sm text-[#1a1a1a]">{item.value}</p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Form */}
-        <div className="lg:col-span-2">
+        <div className={showContactInfo ? 'lg:col-span-2' : ''}>
           <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-6 md:p-8">
             <h2 className="text-xl font-bold text-gray-900 mb-6">{formTitle}</h2>
 
@@ -224,6 +226,6 @@ export function AgbonContactForm({
           </div>
         </div>
       </div>
-    </div>
+    // </div>
   )
 }
