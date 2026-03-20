@@ -1,0 +1,51 @@
+import { AgbonBusinessMapImageBlock } from '@/components/blocks/AgbonBusinessMapImageBlock';
+import { defineBlock } from '@/core/blocks/define';
+
+export const agbonBusinessMapImageBlock = defineBlock({
+  name: 'agbon-business-map-image',
+  label: 'Agbon Business Map Image',
+  category: 'content',
+  icon: 'MapPinned',
+  definition: {
+    content: [
+      { name: 'badgeText', type: 'text', label: 'Badge Text' },
+      { name: 'title', type: 'text', label: 'Title' },
+      { name: 'description', type: 'textarea', label: 'Description' },
+      { name: 'mapImageSrc', type: 'image', label: 'Map Image' },
+      { name: 'mapImageAlt', type: 'text', label: 'Map Image Alt Text' },
+      { name: 'countriesLabel', type: 'text', label: 'Countries Stat Label' },
+      { name: 'officesLabel', type: 'text', label: 'Offices Stat Label' },
+      { name: 'growthValue', type: 'text', label: 'Growth Stat Value' },
+      { name: 'growthLabel', type: 'text', label: 'Growth Stat Label' },
+      { name: 'activeMarketsLabel', type: 'text', label: 'Floating Card Title' },
+      { name: 'expandingLabel', type: 'text', label: 'Floating Card Status' },
+      { name: 'mapCardOffsetTop', type: 'text', label: 'Desktop Map Overlap Offset' },
+      { name: 'markerOneTop', type: 'text', label: 'Marker 1 Top' },
+      { name: 'markerOneLeft', type: 'text', label: 'Marker 1 Left' },
+      { name: 'markerOneDelay', type: 'text', label: 'Marker 1 Delay' },
+      { name: 'markerTwoTop', type: 'text', label: 'Marker 2 Top' },
+      { name: 'markerTwoLeft', type: 'text', label: 'Marker 2 Left' },
+      { name: 'markerTwoDelay', type: 'text', label: 'Marker 2 Delay' },
+      { name: 'markerThreeTop', type: 'text', label: 'Marker 3 Top' },
+      { name: 'markerThreeLeft', type: 'text', label: 'Marker 3 Left' },
+      { name: 'markerThreeDelay', type: 'text', label: 'Marker 3 Delay' },
+      { name: 'markerFourTop', type: 'text', label: 'Marker 4 Top' },
+      { name: 'markerFourLeft', type: 'text', label: 'Marker 4 Left' },
+      { name: 'markerFourDelay', type: 'text', label: 'Marker 4 Delay' },
+      { name: 'markerFiveTop', type: 'text', label: 'Marker 5 Top' },
+      { name: 'markerFiveLeft', type: 'text', label: 'Marker 5 Left' },
+      { name: 'markerFiveDelay', type: 'text', label: 'Marker 5 Delay' },
+      { name: 'markerSixTop', type: 'text', label: 'Marker 6 Top' },
+      { name: 'markerSixLeft', type: 'text', label: 'Marker 6 Left' },
+      { name: 'markerSixDelay', type: 'text', label: 'Marker 6 Delay' },
+    ],
+    elements: {
+      label: 'Country',
+      fields: [
+        { name: 'name', type: 'text', label: 'Country Name', required: true },
+        { name: 'officesCount', type: 'number', label: 'Offices Count' },
+      ],
+    },
+  },
+  component: AgbonBusinessMapImageBlock,
+});

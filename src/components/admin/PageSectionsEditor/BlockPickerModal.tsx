@@ -227,6 +227,48 @@ export function BlockPickerModal({ open, onClose, onSelect }: BlockPickerModalPr
       };
     }
 
+    if (name === 'agbon-business-map-image') {
+      return {
+        badgeText: 'Our Global Presence',
+        title: 'Expanding Across Africa',
+        description:
+          'Building partnerships and delivering quality agricultural equipment to farmers in 8+ countries',
+        mapImageSrc: '/african_map.png',
+        mapImageAlt: 'AGBON business map',
+        countriesLabel: 'Countries',
+        officesLabel: 'Offices',
+        growthValue: '100%',
+        growthLabel: 'Growth',
+        activeMarketsLabel: 'Active Markets',
+        expandingLabel: 'Expanding',
+        mapCardOffsetTop: '11rem',
+        markerOneTop: '25%',
+        markerOneLeft: '48%',
+        markerOneDelay: '0s',
+        markerTwoTop: '35%',
+        markerTwoLeft: '42%',
+        markerTwoDelay: '0.2s',
+        markerThreeTop: '45%',
+        markerThreeLeft: '52%',
+        markerThreeDelay: '0.4s',
+        markerFourTop: '55%',
+        markerFourLeft: '58%',
+        markerFourDelay: '0.6s',
+        markerFiveTop: '70%',
+        markerFiveLeft: '48%',
+        markerFiveDelay: '0.8s',
+        markerSixTop: '38%',
+        markerSixLeft: '65%',
+        markerSixDelay: '1s',
+        _elements: [
+          { name: 'Ghana', officesCount: 5 },
+          { name: 'Nigeria', officesCount: 12 },
+          { name: 'Kenya', officesCount: 7 },
+          { name: 'Tanzania', officesCount: 4 },
+        ],
+      };
+    }
+
     if (name === 'agbon-network-overview-section') {
       return {
         sectionSubtitle: 'Connections That Matter',
