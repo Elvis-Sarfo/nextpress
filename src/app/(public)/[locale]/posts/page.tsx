@@ -2,10 +2,10 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { EditorialPageShell } from '@/components/agbon/editorial-page-shell';
 import { AgbonPageBanner } from '@/components/agbon/page-banner';
 import { AgbonNewsCard, type AgbonNewsItem } from '@/components/agbon/news-card';
 import { AgbonSectionTitle } from '@/components/agbon/section-title';
-import { ProductPageShell } from '@/components/agbon/product-page-shell';
 import { buildLocalizedPath, buildPostCategoryPath, buildPostsListingPath, buildPostItemPath } from '@/lib/agbon-routes';
 import { getCategories, getPosts, getProductCategories, localeEngine, type PostWithLocales } from '@/lib/cms';
 import { getCategorySlugForLocale, getLocale } from '@/lib/locale-utils';
@@ -56,10 +56,10 @@ export default async function PostsListingPage({ params, searchParams }: PostsPa
 
   const currentPage = parsePageNumber(page);
   const offset = (currentPage - 1) * POSTS_PAGE_SIZE;
-  const [result, productCategories, categories] = await Promise.all([
+  const [result, categories, productCategories] = await Promise.all([
     getPosts({ status: 'published', limit: POSTS_PAGE_SIZE, offset }),
-    getProductCategories(),
     getCategories(),
+    getProductCategories(),
   ]);
 
   const totalPages = Math.max(1, Math.ceil(result.total / POSTS_PAGE_SIZE));
@@ -87,8 +87,8 @@ export default async function PostsListingPage({ params, searchParams }: PostsPa
         ]}
       />
 
-      <ProductPageShell locale={locale} categories={productCategories} sidebarMode="navigation" syncWithUrl={false}>
-        <section className="py-6 md:py-10">
+      <EditorialPageShell locale={locale} categories={categoryLinks} productCategories={productCategories}>
+        <section className="">
           <AgbonSectionTitle
             subTitle="Editorial"
             title="Latest Posts"
@@ -179,7 +179,7 @@ export default async function PostsListingPage({ params, searchParams }: PostsPa
             </div>
           )}
         </section>
-      </ProductPageShell>
+      </EditorialPageShell>
     </article>
   );
 }

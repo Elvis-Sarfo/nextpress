@@ -2,10 +2,10 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { EditorialPageShell } from '@/components/agbon/editorial-page-shell';
 import { AgbonPageBanner } from '@/components/agbon/page-banner';
 import { AgbonNewsCard, type AgbonNewsItem } from '@/components/agbon/news-card';
 import { AgbonSectionTitle } from '@/components/agbon/section-title';
-import { ProductPageShell } from '@/components/agbon/product-page-shell';
 import { buildLocalizedPath, buildPostCategoryPath, buildPostsListingPath, buildPostItemPath } from '@/lib/agbon-routes';
 import { getCategories, getCategoryBySlug, getPostsByCategory, getProductCategories, localeEngine, type PostWithLocales } from '@/lib/cms';
 import { getCategorySlugForLocale, getLocale } from '@/lib/locale-utils';
@@ -56,11 +56,11 @@ export default async function CategoryPostsPage({ params, searchParams }: Catego
 
   const currentPage = parsePageNumber(page);
   const offset = (currentPage - 1) * POSTS_PAGE_SIZE;
-  const [category, allPosts, productCategories, categories] = await Promise.all([
+  const [category, allPosts, categories, productCategories] = await Promise.all([
     getCategoryBySlug(locale, categorySlug),
     getPostsByCategory(locale, categorySlug),
-    getProductCategories(),
     getCategories(),
+    getProductCategories(),
   ]);
 
   if (!category) {
@@ -93,8 +93,13 @@ export default async function CategoryPostsPage({ params, searchParams }: Catego
         ]}
       />
 
-      <ProductPageShell locale={locale} categories={productCategories} sidebarMode="navigation" syncWithUrl={false}>
-        <section className="py-6 md:py-10">
+      <EditorialPageShell
+        locale={locale}
+        categories={categoryLinks}
+        productCategories={productCategories}
+        activeCategorySlug={categorySlug}
+      >
+        <section className="">
           <AgbonSectionTitle
             subTitle="Editorial"
             title={category.name}
@@ -192,7 +197,7 @@ export default async function CategoryPostsPage({ params, searchParams }: Catego
             </div>
           )}
         </section>
-      </ProductPageShell>
+      </EditorialPageShell>
     </article>
   );
 }
@@ -214,6 +219,14 @@ export async function generateMetadata({ params }: CategoryPostsPageProps): Prom
     description: `${category.name} posts and updates.`,
     alternates: {
       canonical: buildPostCategoryPath(locale, categorySlug),
+      languages:
+        category.slug && typeof category.slug === 'object'
+          ? Object.fromEntries(
+              Object.entries(category.slug)
+                .filter(([, slug]) => typeof slug === 'string' && slug)
+                .map(([altLocale, slug]) => [altLocale, buildPostCategoryPath(altLocale, slug)]),
+            )
+          : undefined,
     },
   };
 }

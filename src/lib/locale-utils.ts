@@ -51,3 +51,15 @@ export function getCategorySlugForLocale(
 ): string | undefined {
   return getLocalizedSlug(category?.slug, locale);
 }
+
+export function getLocalizedRichTextHtml(
+  localized: Record<string, unknown> | string | null | undefined,
+  locale: string,
+  fallback = DEFAULT_LOCALE,
+): string | undefined {
+  if (!localized) return undefined;
+  if (typeof localized === 'string') return localized;
+
+  const value = localized[locale] ?? localized[fallback];
+  return typeof value === 'string' && value.trim() ? value : undefined;
+}
