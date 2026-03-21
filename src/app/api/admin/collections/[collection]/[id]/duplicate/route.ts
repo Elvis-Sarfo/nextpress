@@ -3,6 +3,13 @@ import { Prisma } from '@prisma/client';
 import { auth } from '@/auth';
 import { prisma } from '@/adapters/prisma-adapter';
 
+function getLocalizedValue(value: unknown, locale: string): string | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const localized = value as Record<string, unknown>;
+  const direct = localized[locale];
+  return typeof direct === 'string' && direct ? direct : undefined;
+}
+
 function createDocumentId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
@@ -35,10 +42,10 @@ async function getUniqueLocalizedSlugs(sourceSlug: unknown): Promise<Record<stri
     let suffix = 2;
 
     while (true) {
-      const existing = await prisma.pages.findFirst({
-        where: { slug: { path: `$.${locale}`, equals: candidate } },
-        select: { id: true },
+      const existingPages = await prisma.pages.findMany({
+        select: { id: true, slug: true },
       });
+      const existing = existingPages.find((page) => getLocalizedValue(page.slug, locale) === candidate);
 
       if (!existing) {
         next[locale] = candidate;
@@ -107,6 +114,7 @@ export async function POST(
         title: asRequiredInputJson(duplicatedTitle),
         slug: asRequiredInputJson(duplicatedSlug),
         excerpt: asInputJson(source.excerpt),
+        subtitle: source.subtitle,
         sections: asInputJson(source.sections),
         config: asInputJson(source.config),
         parentId: source.parentId,

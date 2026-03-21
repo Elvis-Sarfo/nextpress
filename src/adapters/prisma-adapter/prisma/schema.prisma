@@ -114,6 +114,7 @@ model Pages {
   title Json
   slug Json
   excerpt Json?
+  subtitle String? @db.VarChar(255)
   sections Json?
   config Json?
   parentId String? @db.VarChar(255)

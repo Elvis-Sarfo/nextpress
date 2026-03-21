@@ -11,12 +11,17 @@ import { generatePrismaSchema } from '../core/schema-engine';
 import * as fs from 'fs';
 import * as path from 'path';
 import { exec } from 'child_process';
+import type { NextPressDatabaseProvider } from '../core/types/nextpress-config.types';
 
 // Import config (which contains all collections)
 import nextpressConfig from '../nextpress.config';
 
 // Get collections from config
 const collections = nextpressConfig.collections;
+const dbProvider = nextpressConfig.db?.provider as NextPressDatabaseProvider | undefined;
+const configuredProvider = dbProvider === 'postgres'
+  ? 'postgresql'
+  : (dbProvider ?? 'postgresql');
 
 console.log(`📦 Generating schema for ${collections.length} collections:`);
 collections.forEach(c => console.log(`   - ${c.slug}`));
@@ -24,7 +29,7 @@ console.log();
 
 // Generate schema
 const schema = generatePrismaSchema(collections, {
-  provider: 'postgresql',
+  provider: configuredProvider,
   localization: true,
   versioning: true,
 });

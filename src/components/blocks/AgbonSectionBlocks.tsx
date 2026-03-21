@@ -10,7 +10,7 @@ import { AgbonPageBanner } from '@/components/agbon/page-banner';
 import { AgbonServiceAreasSection } from '@/components/agbon/service-areas-section';
 import { AgbonStatsBar } from '@/components/agbon/stats-bar';
 import { AgbonTestimonialStatsSection } from '@/components/agbon/testimonial-stats-section';
-import type { BlockContent } from '@/core/blocks/types';
+import type { BlockContent, BlockPageContext } from '@/core/blocks/types';
 import { asElements, asNumber, asOptionalString } from './content-helpers';
 
 function useBlockLocale(): string {
@@ -18,12 +18,18 @@ function useBlockLocale(): string {
   return typeof params?.locale === 'string' ? params.locale : 'en';
 }
 
-export function AgbonPageBannerBlock({ content }: { content: BlockContent }) {
+export function AgbonPageBannerBlock({
+  content,
+  page,
+}: {
+  content: BlockContent;
+  page?: BlockPageContext;
+}) {
   return (
     <AgbonPageBanner
-      title={asOptionalString(content.title)}
-      subTitle={asOptionalString(content.subTitle)}
-      backgroundImage={asOptionalString(content.backgroundImage)}
+      title={page?.title ?? asOptionalString(content.title)}
+      subTitle={page?.subTitle ?? asOptionalString(content.subTitle)}
+      backgroundImage={page?.featuredImage ?? asOptionalString(content.backgroundImage)}
     />
   );
 }

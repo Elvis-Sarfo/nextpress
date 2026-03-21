@@ -10,6 +10,7 @@ import {
   type NewsWithLocales,
 } from '@/lib/cms';
 import { getLocale } from '@/lib/locale-utils';
+import { buildPageBlockContext } from '@/lib/page-block-context';
 import { PageRenderer } from '@/components/blocks/PageRenderer';
 import { ArrowLeft } from 'lucide-react';
 import type { Metadata } from 'next';
@@ -66,11 +67,12 @@ export default async function ContentPage({ params }: PageProps) {
     content.type === 'page' ? 'Page' : content.type === 'post' ? 'Post' : 'News';
 
   const hasSections = Array.isArray(page.sections) && page.sections.length > 0;
+  const pageContext = buildPageBlockContext(page, locale);
 
   return (
     <article>
       {hasSections ? (
-        <PageRenderer sections={page.sections} locale={locale} />
+        <PageRenderer sections={page.sections} locale={locale} page={pageContext} />
       ) : (
         <div className="container mx-auto px-4 py-16 max-w-3xl">
           <Link

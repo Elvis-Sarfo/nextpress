@@ -1,7 +1,11 @@
 import { getBlocksByIds, queryCollection } from '@/lib/cms';
 import { getLocale } from '@/lib/locale-utils';
 import { getBlockComponent, getBlockManifest } from '@/core/blocks/registry';
-import type { BlockDataSourceSpec, CollectionQueryParams } from '@/core/blocks/types';
+import type {
+  BlockDataSourceSpec,
+  BlockPageContext,
+  CollectionQueryParams,
+} from '@/core/blocks/types';
 import { AgbonProductNavProvider } from '@/contexts/agbon-product-nav-context';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -98,6 +102,7 @@ function renderColumnBlocks(
   blockMap: Map<string, BlockRow>,
   locale: string,
   dataMap: Map<string, unknown[]>,
+  page: BlockPageContext | undefined,
 ) {
   return column.blocks
     .slice()
@@ -121,7 +126,7 @@ function renderColumnBlocks(
       const content = getLocale(block.content, locale) ?? {};
       const data = dataMap.get(ref.blockId);
 
-      return <Component key={ref.blockId} content={content} data={data} />;
+      return <Component key={ref.blockId} content={content} data={data} page={page} />;
     });
 }
 
@@ -130,6 +135,7 @@ function renderCatalogSection(
   blockMap: Map<string, BlockRow>,
   locale: string,
   dataMap: Map<string, unknown[]>,
+  page: BlockPageContext | undefined,
 ) {
   const sidebarColumn = section.columns[0];
   const mainColumns = section.columns.slice(1);
@@ -156,14 +162,14 @@ function renderCatalogSection(
               )}
               style={getColumnStyle(sidebarColumn)}
             >
-              {renderColumnBlocks(sidebarColumn, blockMap, locale, dataMap)}
+              {renderColumnBlocks(sidebarColumn, blockMap, locale, dataMap, page)}
             </div>
           )}
           <div className="flex-1 min-w-0">
             {mainColumns.length <= 1 ? (
               mainColumns[0] ? (
                 <div className="flex flex-col space-y-6 md:space-y-8">
-                  {renderColumnBlocks(mainColumns[0], blockMap, locale, dataMap)}
+                  {renderColumnBlocks(mainColumns[0], blockMap, locale, dataMap, page)}
                 </div>
               ) : null
             ) : (
@@ -175,7 +181,7 @@ function renderCatalogSection(
                     style={getColumnStyle(column)}
                   >
                     <div className="flex flex-col space-y-6 md:space-y-8">
-                      {renderColumnBlocks(column, blockMap, locale, dataMap)}
+                      {renderColumnBlocks(column, blockMap, locale, dataMap, page)}
                     </div>
                   </div>
                 ))}
@@ -220,9 +226,11 @@ function buildManifestParams(
 export async function PageRenderer({
   sections,
   locale,
+  page,
 }: {
   sections: Section[];
   locale: string;
+  page?: BlockPageContext;
 }) {
   // Collect all block IDs referenced across all sections/columns
   const blockIds = sections.flatMap((s) =>
@@ -281,7 +289,7 @@ export async function PageRenderer({
       {sections.map((section) => (
         <section key={section.id} data-section={section.name} data-template={section.templateName}>
           {section.templateName === 'agbon-catalog' ? (
-            renderCatalogSection(section, blockMap, locale, dataMap)
+            renderCatalogSection(section, blockMap, locale, dataMap, page)
           ) : section.columns.every(isFullBleedColumn) ? (
             <div
               className={getSectionClassName(section, 'flex flex-wrap')}
@@ -293,7 +301,7 @@ export async function PageRenderer({
                   className={getColumnClassName(column)}
                   style={getColumnStyle(column)}
                 >
-                  {renderColumnBlocks(column, blockMap, locale, dataMap)}
+                  {renderColumnBlocks(column, blockMap, locale, dataMap, page)}
                 </div>
               ))}
             </div>
@@ -309,7 +317,7 @@ export async function PageRenderer({
                     className={getColumnClassName(column)}
                     style={getColumnStyle(column)}
                   >
-                    {renderColumnBlocks(column, blockMap, locale, dataMap)}
+                    {renderColumnBlocks(column, blockMap, locale, dataMap, page)}
                   </div>
                 ))}
               </div>

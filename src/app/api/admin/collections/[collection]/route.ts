@@ -34,6 +34,13 @@ const INCLUDE_MAP: Record<string, object> = {
   },
 };
 
+function getLocalizedValue(value: unknown, locale: string): string | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const localized = value as Record<string, unknown>;
+  const direct = localized[locale];
+  return typeof direct === 'string' && direct ? direct : undefined;
+}
+
 // Allowed collection slugs that this API handles
 const ALLOWED = new Set([
   'users', 'roles', 'permissions', 'media', 'pages', 'settings', 'blocks', 'menus',
@@ -403,11 +410,12 @@ export async function POST(
   // Enforce per-locale slug uniqueness for pages and posts (Json column can't use DB unique index)
   if ((collection === 'pages' || collection === 'posts') && body.slug && typeof body.slug === 'object') {
     const slugEntries = Object.entries(body.slug as Record<string, string>);
+    const existingDocs = collection === 'pages'
+      ? await prisma.pages.findMany({ select: { id: true, slug: true } })
+      : await prisma.posts.findMany({ select: { id: true, slug: true } });
     for (const [locale, localeSlug] of slugEntries) {
       if (!localeSlug) continue;
-      const existing = collection === 'pages'
-        ? await prisma.pages.findFirst({ where: { slug: { path: `$.${locale}`, equals: localeSlug } } })
-        : await prisma.posts.findFirst({ where: { slug: { path: `$.${locale}`, equals: localeSlug } } });
+      const existing = existingDocs.find((doc) => getLocalizedValue(doc.slug, locale) === localeSlug);
       if (existing) {
         return NextResponse.json(
           { error: `Slug "${localeSlug}" is already in use for locale "${locale}"` },

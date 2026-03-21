@@ -64,7 +64,18 @@ export interface BlockDefinition {
 }
 
 export type BlockContent = Record<string, unknown>;
-export type BlockComponent = ComponentType<{ content: BlockContent; data?: unknown[] }>;
+export interface BlockPageContext {
+  title?: string;
+  subTitle?: string;
+  featuredImage?: string;
+  featuredImageAlt?: string;
+}
+
+export type BlockComponent = ComponentType<{
+  content: BlockContent;
+  data?: unknown[];
+  page?: BlockPageContext;
+}>;
 
 // ─── Data Source Types ────────────────────────────────────────────────────────
 

@@ -10,6 +10,7 @@ import {
 } from '@/lib/cms';
 import { getLocale } from '@/lib/locale-utils';
 import { buildLocalizedPath } from '@/lib/agbon-routes';
+import { buildPageBlockContext } from '@/lib/page-block-context';
 import { PageRenderer } from '@/components/blocks/PageRenderer';
 import { AgbonProductList, DEFAULT_AGBON_PRODUCT_GRID_COLUMNS } from '@/components/agbon/product-list';
 import { AgbonFeaturedProducts } from '@/components/agbon/featured-products';
@@ -38,10 +39,11 @@ export default async function LocaleHomePage({ params }: Props) {
     const hasSections = Array.isArray(homePage.sections) && homePage.sections.length > 0;
     const title = getLocale(homePage.title as Record<string, string> | null, locale);
     const excerpt = getLocale(homePage.excerpt as Record<string, string> | null, locale);
+    const pageContext = buildPageBlockContext(homePage, locale);
     return (
       <article>
         {hasSections ? (
-          <PageRenderer sections={homePage.sections} locale={locale} />
+          <PageRenderer sections={homePage.sections} locale={locale} page={pageContext} />
         ) : (
           <div className="container mx-auto px-4 py-16 max-w-3xl">
             <h1 className="text-4xl font-bold mb-4">{title ?? 'Home'}</h1>

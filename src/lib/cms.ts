@@ -101,6 +101,19 @@ export interface MenuWithItems {
   items: MenuItem[];
 }
 
+const PAGE_INCLUDE = {
+  featuredImage: { select: { id: true, url: true, altText: true } },
+};
+
+function getLocalizedValue(value: unknown, locale: string): string | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const localized = value as Record<string, unknown>;
+  const direct = localized[locale];
+  if (typeof direct === 'string' && direct) return direct;
+  const fallback = localized[DEFAULT_LOCALE];
+  return typeof fallback === 'string' && fallback ? fallback : undefined;
+}
+
 // ============================================================================
 // LOCALE ENGINE
 // ============================================================================
@@ -180,12 +193,14 @@ export async function getPublishedPage(
   locale: string,
   slug: string
 ): Promise<PageWithLocales | null> {
-  return prisma.pages.findFirst({
+  const pages = await prisma.pages.findMany({
     where: {
       status: 'published',
-      slug: { path: `$.${locale}`, equals: slug },
     },
+    include: PAGE_INCLUDE,
   });
+
+  return pages.find((page) => getLocalizedValue(page.slug, locale) === slug) ?? null;
 }
 
 type PagePathMatch = {
@@ -254,6 +269,7 @@ async function buildPagePathMatch(
 
   const fullPage = await prisma.pages.findUnique({
     where: { id: page.id },
+    include: PAGE_INCLUDE,
   });
 
   if (!fullPage) return null;
@@ -274,12 +290,12 @@ export async function getPublishedPageByPath(
   const candidates = await prisma.pages.findMany({
     where: {
       status: 'published',
-      slug: { path: `$.${locale}`, equals: leaf },
     },
     select: { id: true, parentId: true, slug: true },
   });
 
   for (const candidate of candidates) {
+    if (getLocalizedValue(candidate.slug, locale) !== leaf) continue;
     const match = await buildPagePathMatch(candidate);
     if (!match) continue;
     if (match.pathByLocale[locale] === slugParts.join('/')) {
@@ -297,6 +313,7 @@ export async function getPublishedIndexPage(): Promise<PageWithLocales | null> {
       isIndexPage: true,
     },
     orderBy: { updatedAt: 'desc' },
+    include: PAGE_INCLUDE,
   });
 }
 
@@ -382,9 +399,10 @@ export async function getCategoryBySlug(
   locale: string,
   slug: string
 ): Promise<Category | null> {
-  return prisma.categories.findFirst({
-    where: { slug: { path: `$.${locale}`, equals: slug } },
-  }) as unknown as Category | null;
+  const categories = await prisma.categories.findMany();
+  return (
+    categories.find((category) => getLocalizedValue(category.slug, locale) === slug) ?? null
+  ) as unknown as Category | null;
 }
 
 // ============================================================================
@@ -438,13 +456,16 @@ export async function getPublishedPost(
   locale: string,
   slug: string
 ): Promise<PostWithLocales | null> {
-  return prisma.posts.findFirst({
+  const posts = await prisma.posts.findMany({
     where: {
       status: 'published',
-      slug: { path: `$.${locale}`, equals: slug },
     },
     include: POST_INCLUDE,
-  }) as unknown as PostWithLocales | null;
+  });
+
+  return (
+    posts.find((post) => getLocalizedValue(post.slug, locale) === slug) ?? null
+  ) as unknown as PostWithLocales | null;
 }
 
 export async function getPublishedPosts(

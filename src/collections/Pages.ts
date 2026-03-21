@@ -72,6 +72,13 @@ export const Pages: CollectionConfig<'pages'> = {
       },
     } satisfies JSONField,
     {
+      name: 'subtitle',
+      type: 'text',
+      admin: {
+        description: 'Page subtitle',
+      },
+    } satisfies CollectionTextField,
+    {
       name: 'sections',
       type: 'json',
       admin: {
