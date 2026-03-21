@@ -9,6 +9,7 @@ import { AgbonSectionTitle } from '@/components/agbon/section-title';
 import { buildLocalizedPath, buildPostCategoryPath, buildPostsListingPath, buildPostItemPath } from '@/lib/agbon-routes';
 import { getCategories, getCategoryBySlug, getPostsByCategory, getProductCategories, localeEngine, type PostWithLocales } from '@/lib/cms';
 import { getCategorySlugForLocale, getLocale } from '@/lib/locale-utils';
+import { getSiteConfig } from '@/lib/site-config';
 
 const POSTS_PAGE_SIZE = 9;
 
@@ -188,9 +189,14 @@ export async function generateMetadata({ params }: CategoryPostsPageProps): Prom
     return {};
   }
 
+  const siteConfig = await getSiteConfig(locale);
+
   const category = await getCategoryBySlug(locale, categorySlug);
   if (!category) {
-    return {};
+    return {
+      title: siteConfig.seo.defaultTitle,
+      description: siteConfig.seo.description,
+    };
   }
 
   return {

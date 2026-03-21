@@ -3,6 +3,7 @@
 import { Mail, MapPin, Phone } from 'lucide-react'
 import { AgbonSectionTitle } from './section-title'
 import { t as agbonT } from '@/lib/agbon-translations'
+import { useSiteConfig } from '@/contexts/site-config-context'
 
 interface ContactInfoProps {
   locale?: string
@@ -21,27 +22,32 @@ export function AgbonContactInfo({
   title,
   subtitle,
   description,
-  email = 'info@agbon.com',
-  phone = '+1 (555) 123-4567',
-  address = 'Industrial Park, Zone A',
+  email,
+  phone,
+  address,
 }: ContactInfoProps) {
+  const siteConfig = useSiteConfig()
+  const resolvedEmail = email || siteConfig?.contact.email || 'info@agbon.com'
+  const resolvedPhone = phone || siteConfig?.contact.phone || '+1 (555) 123-4567'
+  const resolvedAddress = address || siteConfig?.contact.address || 'Industrial Park, Zone A'
+
   const items = [
     {
       icon: <Mail className="w-8 h-8" />,
       label: 'Email',
-      value: email,
-      href: `mailto:${email}`,
+      value: resolvedEmail,
+      href: `mailto:${resolvedEmail}`,
     },
     {
       icon: <Phone className="w-8 h-8" />,
       label: 'Phone',
-      value: phone,
-      href: `tel:${phone}`,
+      value: resolvedPhone,
+      href: `tel:${resolvedPhone}`,
     },
     {
       icon: <MapPin className="w-8 h-8" />,
       label: 'Location',
-      value: address,
+      value: resolvedAddress,
     },
   ]
 

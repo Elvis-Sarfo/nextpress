@@ -24,6 +24,10 @@ interface LegacyHeaderNavigation {
 export interface HeaderConfig {
   logo: { src: string; alt: string; width: number; height: number; className?: string }
   navigation: HeaderNavItem[] | LegacyHeaderNavigation
+  features?: {
+    showSearch?: boolean
+    showLanguageSwitcher?: boolean
+  }
 }
 
 interface AgbonHeaderProps {
@@ -47,6 +51,8 @@ export function AgbonHeader({ config, locale = 'en' }: AgbonHeaderProps) {
   const [openMenuIndex, setOpenMenuIndex] = useState<number | null>(null)
   const [langOpen, setLangOpen] = useState(false)
   const navigation = normalizeNavigation(config.navigation)
+  const showSearch = config.features?.showSearch !== false
+  const showLanguageSwitcher = config.features?.showLanguageSwitcher !== false
 
   const closeAll = () => {
     setOpenMenuIndex(null)
@@ -78,21 +84,25 @@ export function AgbonHeader({ config, locale = 'en' }: AgbonHeaderProps) {
 
           {/* Mobile: lang + search */}
           <div className="flex md:hidden items-center gap-2">
-            <HeaderLanguageSwitcher
-              locale={locale}
-              isOpen={langOpen}
-              onToggle={() => { setLangOpen(!langOpen); setOpenMenuIndex(null) }}
-              onClose={() => setLangOpen(false)}
-              compact
-            />
-            <button
-              type="button"
-              onClick={() => setSearchOpen(true)}
-              aria-label={agbonT('search.openSearch', locale)}
-              className="p-2 hover:bg-white/20 rounded transition"
-            >
-              <Search size={20} />
-            </button>
+            {showLanguageSwitcher ? (
+              <HeaderLanguageSwitcher
+                locale={locale}
+                isOpen={langOpen}
+                onToggle={() => { setLangOpen(!langOpen); setOpenMenuIndex(null) }}
+                onClose={() => setLangOpen(false)}
+                compact
+              />
+            ) : null}
+            {showSearch ? (
+              <button
+                type="button"
+                onClick={() => setSearchOpen(true)}
+                aria-label={agbonT('search.openSearch', locale)}
+                className="p-2 hover:bg-white/20 rounded transition"
+              >
+                <Search size={20} />
+              </button>
+            ) : null}
           </div>
         </div>
       </div>
@@ -155,24 +165,28 @@ export function AgbonHeader({ config, locale = 'en' }: AgbonHeaderProps) {
             </nav>
 
             {/* Desktop: lang switcher */}
-            <div className="relative shrink-0 hidden md:block">
-              <HeaderLanguageSwitcher
-                locale={locale}
-                isOpen={langOpen}
-                onToggle={() => { setLangOpen(!langOpen); setOpenMenuIndex(null) }}
-                onClose={() => setLangOpen(false)}
-              />
-            </div>
+            {showLanguageSwitcher ? (
+              <div className="relative shrink-0 hidden md:block">
+                <HeaderLanguageSwitcher
+                  locale={locale}
+                  isOpen={langOpen}
+                  onToggle={() => { setLangOpen(!langOpen); setOpenMenuIndex(null) }}
+                  onClose={() => setLangOpen(false)}
+                />
+              </div>
+            ) : null}
 
             {/* Desktop: search */}
-            <button
-              type="button"
-              onClick={() => setSearchOpen(true)}
-              aria-label={agbonT('search.openSearch', locale)}
-              className="hidden md:block p-2 hover:bg-white/20 rounded transition"
-            >
-              <Search size={20} />
-            </button>
+            {showSearch ? (
+              <button
+                type="button"
+                onClick={() => setSearchOpen(true)}
+                aria-label={agbonT('search.openSearch', locale)}
+                className="hidden md:block p-2 hover:bg-white/20 rounded transition"
+              >
+                <Search size={20} />
+              </button>
+            ) : null}
           </div>
 
           {openMenuIndex !== null && navigation[openMenuIndex]?.items?.length ? (
@@ -198,7 +212,7 @@ export function AgbonHeader({ config, locale = 'en' }: AgbonHeaderProps) {
         <div className="hidden md:block fixed inset-0 z-40" onClick={closeAll} />
       )}
 
-      <HeaderSearchDialog locale={locale} isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
+      <HeaderSearchDialog locale={locale} isOpen={showSearch && searchOpen} onClose={() => setSearchOpen(false)} />
     </>
   )
 }

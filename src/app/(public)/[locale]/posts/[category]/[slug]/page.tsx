@@ -19,6 +19,7 @@ import {
 } from '@/lib/cms';
 import { buildArticleStructuredData, scoreRelatedPost } from '@/lib/editorial';
 import { getCategorySlugForLocale, getLocale, getLocalizedRichTextHtml } from '@/lib/locale-utils';
+import { getSiteConfig } from '@/lib/site-config';
 
 interface PostDetailPageProps {
   params: Promise<{ locale: string; category: string; slug: string }>;
@@ -228,9 +229,14 @@ export async function generateMetadata({ params }: PostDetailPageProps): Promise
     return {};
   }
 
+  const siteConfig = await getSiteConfig(locale);
+
   const post = await getPublishedPostByCategoryAndSlug(locale, categorySlug, slug);
   if (!post) {
-    return { title: slug };
+    return {
+      title: slug,
+      description: siteConfig.seo.description,
+    };
   }
 
   const title = getLocale(post.title as Record<string, string> | null, locale) ?? slug;
@@ -240,7 +246,7 @@ export async function generateMetadata({ params }: PostDetailPageProps): Promise
   const metaDescription =
     typeof seo?.metaDescription === 'string' && seo.metaDescription.trim()
       ? seo.metaDescription
-      : excerpt;
+      : (excerpt ?? siteConfig.seo.description);
   const noIndex = seo?.noIndex === true;
   const categorySlugMap =
     post.category?.slug && typeof post.category.slug === 'object'

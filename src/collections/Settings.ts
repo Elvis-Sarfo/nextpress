@@ -25,11 +25,25 @@ export const Settings: CollectionConfig<'settings'> = {
         description: 'Website/Company name',
       },
     },
+    {
+      name: 'siteDescription',
+      type: 'textarea',
+      label: 'Site Description',
+      localized: true,
+      admin: {
+        localizedAs: 'textarea',
+        description: 'Global site description used as a fallback for shell content and metadata',
+      },
+    },
 
     // Logo Configuration
     {
       name: 'logo',
       type: 'group',
+      label: 'Brand Logo',
+      admin: {
+        description: 'Primary logo used across the public site shell',
+      },
       fields: [
         {
           name: 'image',
@@ -74,6 +88,10 @@ export const Settings: CollectionConfig<'settings'> = {
     {
       name: 'contact',
       type: 'group',
+      label: 'Primary Contact',
+      admin: {
+        description: 'Default sitewide contact details used by the footer and contact surfaces',
+      },
       fields: [
         {
           name: 'phone',
@@ -109,8 +127,10 @@ export const Settings: CollectionConfig<'settings'> = {
     {
       name: 'headerNavigation',
       type: 'group',
+      label: 'Legacy Header Navigation',
       admin: {
-        description: 'Header navigation menu items',
+        hidden: true,
+        description: 'Legacy navigation settings kept for compatibility. The live header uses the Menus collection.',
       },
       fields: [
         {
@@ -187,6 +207,10 @@ export const Settings: CollectionConfig<'settings'> = {
     {
       name: 'footer',
       type: 'group',
+      label: 'Footer',
+      admin: {
+        description: 'Global footer content and quick links',
+      },
       fields: [
         {
           name: 'companyName',
@@ -249,6 +273,10 @@ export const Settings: CollectionConfig<'settings'> = {
     {
       name: 'socialMedia',
       type: 'group',
+      label: 'Social Media',
+      admin: {
+        description: 'Social profiles rendered in global site chrome',
+      },
       fields: [
         {
           name: 'facebook',
@@ -292,6 +320,10 @@ export const Settings: CollectionConfig<'settings'> = {
     {
       name: 'newsletter',
       type: 'group',
+      label: 'Newsletter',
+      admin: {
+        description: 'Newsletter UI settings for the global footer',
+      },
       fields: [
         {
           name: 'enabled',
@@ -317,6 +349,10 @@ export const Settings: CollectionConfig<'settings'> = {
     {
       name: 'legal',
       type: 'group',
+      label: 'Legal Links',
+      admin: {
+        description: 'Global legal links shown in the footer',
+      },
       fields: [
         {
           name: 'privacyPolicy',
@@ -338,11 +374,51 @@ export const Settings: CollectionConfig<'settings'> = {
         },
       ],
     },
+    {
+      name: 'seo',
+      type: 'group',
+      label: 'SEO Defaults',
+      admin: {
+        description: 'Default metadata used when page-specific SEO values are missing',
+      },
+      fields: [
+        {
+          name: 'defaultTitle',
+          type: 'text',
+          localized: true,
+          admin: {
+            localizedAs: 'text',
+            description: 'Default site title used for metadata when a page does not provide one',
+          },
+        },
+        {
+          name: 'titleSuffix',
+          type: 'text',
+          defaultValue: 'AGBON',
+          admin: {
+            description: 'Title suffix used in metadata templates',
+          },
+        },
+        {
+          name: 'description',
+          type: 'textarea',
+          localized: true,
+          admin: {
+            localizedAs: 'textarea',
+            description: 'Default SEO description used when a page does not provide one',
+          },
+        },
+      ],
+    },
 
     // Feature Toggles
     {
       name: 'features',
       type: 'group',
+      label: 'Feature Toggles',
+      admin: {
+        description: 'Sitewide shell and utility toggles',
+      },
       fields: [
         {
           name: 'showSearch',

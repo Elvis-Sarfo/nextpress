@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Mail, Phone, MapPin, Send, Loader2, CheckCircle } from 'lucide-react'
 import { AgbonSectionTitle } from './section-title'
 import { t as agbonT } from '@/lib/agbon-translations'
+import { useSiteConfig } from '@/contexts/site-config-context'
 
 interface ContactFormProps {
   locale?: string
@@ -30,9 +31,9 @@ export function AgbonContactForm({
   title,
   subtitle,
   description,
-  email = 'info@agbon.com',
-  phone = '+1 (555) 123-4567',
-  address = 'Industrial Park, Zone A',
+  email,
+  phone,
+  address,
   formTitle = 'Send Us a Message',
   successTitle = 'Message sent successfully!',
   successMessage = "We'll get back to you as soon as possible.",
@@ -42,6 +43,10 @@ export function AgbonContactForm({
   subjectOptions = [],
   showContactInfo = true,
 }: ContactFormProps) {
+  const siteConfig = useSiteConfig()
+  const resolvedEmail = email || siteConfig?.contact.email || 'info@agbon.com'
+  const resolvedPhone = phone || siteConfig?.contact.phone || '+1 (555) 123-4567'
+  const resolvedAddress = address || siteConfig?.contact.address || 'Industrial Park, Zone A'
   const [formData, setFormData] = useState({
     name: '', email: '', phone: '', company: '', subject: '', message: '',
   })
@@ -107,9 +112,9 @@ export function AgbonContactForm({
             </div>
             <div className="space-y-4">
               {[
-                { icon: <Phone className="w-5 h-5" />, label: 'Phone', value: phone, href: `tel:${phone}` },
-                { icon: <Mail className="w-5 h-5" />, label: 'Email', value: email, href: `mailto:${email}` },
-                { icon: <MapPin className="w-5 h-5" />, label: 'Address', value: address },
+                { icon: <Phone className="w-5 h-5" />, label: 'Phone', value: resolvedPhone, href: `tel:${resolvedPhone}` },
+                { icon: <Mail className="w-5 h-5" />, label: 'Email', value: resolvedEmail, href: `mailto:${resolvedEmail}` },
+                { icon: <MapPin className="w-5 h-5" />, label: 'Address', value: resolvedAddress },
               ].map((item) => (
                 <div key={item.label} className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
                   <span className="text-[#FF6B35] mt-0.5">{item.icon}</span>

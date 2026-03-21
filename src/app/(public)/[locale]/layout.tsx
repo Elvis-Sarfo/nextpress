@@ -1,22 +1,18 @@
 import { notFound } from 'next/navigation'
 import { unstable_noStore as noStore } from 'next/cache'
+import type { Metadata } from 'next'
 import { AgbonHeader, HeaderConfig, type HeaderNavItem } from '@/components/agbon/header'
 import { AgbonFooter, FooterConfig } from '@/components/agbon/footer'
 import { AgbonFloatingQuickInquiry } from '@/components/agbon/floating-quick-inquiry'
 import { AgbonProductNavProvider } from '@/contexts/agbon-product-nav-context'
-import { getActiveCountries, getMenuByLocation, getSettings, localeEngine, type MenuItem } from '@/lib/cms'
+import { SiteConfigProvider } from '@/contexts/site-config-context'
+import { getActiveCountries, getMenuByLocation, localeEngine, type MenuItem } from '@/lib/cms'
 import { buildLocalizedPath } from '@/lib/agbon-routes'
-import { getLocale } from '@/lib/locale-utils'
+import { getSiteConfig } from '@/lib/site-config'
 
 interface LocaleLayoutProps {
   children: React.ReactNode
   params: Promise<{ locale: string }>
-}
-
-function localizeConfiguredPath(locale: string, path: string, fallback: string) {
-  if (!path) return buildLocalizedPath(locale, fallback)
-  if (/^https?:\/\//.test(path)) return path
-  return buildLocalizedPath(locale, path)
 }
 
 function resolveMenuHref(locale: string, item: MenuItem): string | undefined {
@@ -61,6 +57,19 @@ function mapMenuItemsToHeaderNavigation(locale: string, items: MenuItem[]): Head
     .filter((item): item is NonNullable<typeof item> => item !== null)
 }
 
+export async function generateMetadata({ params }: LocaleLayoutProps): Promise<Metadata> {
+  const { locale } = await params
+  const siteConfig = await getSiteConfig(locale)
+
+  return {
+    title: {
+      default: siteConfig.seo.defaultTitle,
+      template: `%s | ${siteConfig.seo.titleSuffix || siteConfig.siteName}`,
+    },
+    description: siteConfig.seo.description,
+  }
+}
+
 export default async function LocalePublicLayout({ children, params }: LocaleLayoutProps) {
   noStore()
 
@@ -70,45 +79,11 @@ export default async function LocalePublicLayout({ children, params }: LocaleLay
     notFound()
   }
 
-  const [settings, primaryMenu, countries] = await Promise.all([
-    getSettings() as Promise<Record<string, unknown>>,
+  const [siteConfig, primaryMenu, countries] = await Promise.all([
+    getSiteConfig(locale),
     getMenuByLocation('primary'),
     getActiveCountries(),
   ])
-  const legal = (settings.legal as Record<string, string> | null) || {}
-  const newsletter = (settings.newsletter as Record<string, unknown> | null) || {}
-  const features = (settings.features as Record<string, unknown> | null) || {}
-  const footer = (settings.footer as Record<string, unknown> | null) || {}
-  const contact = (settings.contact as Record<string, unknown> | null) || {}
-  const socialMedia = (settings.socialMedia as Record<string, unknown> | null) || {}
-  const logo = (settings.logo as Record<string, unknown> | null) || {}
-
-  const logoImage = (logo.image as { url?: string } | null) || (settings.logo as { url?: string } | null)
-  const logoUrl = logoImage?.url || '/logo.png'
-  const siteName = (settings.siteName as string | null) || 'Agbon'
-  const footerDescription =
-    getLocale(footer.description as Record<string, string> | null | undefined, locale) ||
-    (settings.siteDescription as string | null) ||
-    'Leading agricultural machinery manufacturer since 2018. Providing quality equipment to farmers worldwide.'
-  const footerQuickLinks = Array.isArray(footer.quickLinks)
-    ? footer.quickLinks
-        .filter(
-          (item): item is { label: string; href: string } =>
-            typeof item === 'object' &&
-            item !== null &&
-            typeof (item as { label?: unknown }).label === 'string' &&
-            typeof (item as { href?: unknown }).href === 'string',
-        )
-        .map((item) => ({
-          label: item.label,
-          href: localizeConfiguredPath(locale, item.href, item.href),
-        }))
-    : [
-        { label: 'About', href: buildLocalizedPath(locale, '/about') },
-        { label: 'Products', href: buildLocalizedPath(locale, '/products') },
-        { label: 'After Sales', href: buildLocalizedPath(locale, '/after-sales-service') },
-        { label: 'Contact', href: buildLocalizedPath(locale, '/contact') },
-      ]
 
   const fallbackNavigation: HeaderNavItem[] = [
     {
@@ -131,52 +106,41 @@ export default async function LocalePublicLayout({ children, params }: LocaleLay
   const dynamicNavigation = primaryMenu ? mapMenuItemsToHeaderNavigation(locale, primaryMenu.items) : []
 
   const headerConfig: HeaderConfig = {
-    logo: {
-      src: logoUrl,
-      alt: (logo.alt as string | null) || siteName,
-      width: (logo.width as number | null) || 120,
-      height: (logo.height as number | null) || 40,
-      className: 'h-8 md:h-10 w-auto',
-    },
+    logo: siteConfig.logo,
     navigation: dynamicNavigation.length > 0 ? dynamicNavigation : fallbackNavigation,
+    features: {
+      showSearch: siteConfig.features.showSearch,
+      showLanguageSwitcher: siteConfig.features.showLanguageSwitcher,
+    },
   }
 
   const footerConfig: FooterConfig = {
-    companyName: (footer.companyName as string | null) || siteName,
-    description: footerDescription,
+    companyName: siteConfig.footer.companyName,
+    description: siteConfig.footer.description,
     logo: headerConfig.logo,
-    quickLinks: footerQuickLinks,
-    contact: {
-      phone: (contact.phone as string | null) || '+1 (555) 123-4567',
-      email: (contact.email as string | null) || 'info@agbon.com',
-      address: (contact.address as string | null) || 'Industrial Park, Zone A',
-    },
+    quickLinks: siteConfig.footer.quickLinks,
+    contact: siteConfig.contact,
     socialMedia: {
-      facebook: (socialMedia.facebook as string | null) || undefined,
-      linkedin: (socialMedia.linkedin as string | null) || undefined,
-      twitter: (socialMedia.twitter as string | null) || undefined,
+      facebook: siteConfig.socialMedia.facebook,
+      linkedin: siteConfig.socialMedia.linkedin,
+      twitter: siteConfig.socialMedia.twitter,
+      instagram: siteConfig.socialMedia.instagram,
+      youtube: siteConfig.socialMedia.youtube,
     },
-    newsletter: {
-      enabled: (newsletter.enabled as boolean | undefined) ?? true,
-      placeholder:
-        getLocale(newsletter.placeholder as Record<string, string> | null | undefined, locale) ||
-        'Your email',
-    },
-    legal: {
-      privacy: localizeConfiguredPath(locale, legal.privacyPolicy || '', '/privacy-policy'),
-      terms: localizeConfiguredPath(locale, legal.termsOfService || '', '/terms-of-service'),
-    },
-    copyright:
-      (footer.copyright as string | null) || `© ${new Date().getFullYear()} ${siteName}. All rights reserved.`,
+    newsletter: siteConfig.newsletter,
+    legal: siteConfig.legal,
+    copyright: siteConfig.footer.copyright,
   }
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <AgbonHeader config={headerConfig} locale={locale} />
-      <AgbonProductNavProvider>
-        <main className="flex-1">{children}</main>
-      </AgbonProductNavProvider>
-      {features.showQuickInquiry !== false ? <AgbonFloatingQuickInquiry countries={countries} /> : null}
+      <SiteConfigProvider value={siteConfig}>
+        <AgbonProductNavProvider>
+          <main className="flex-1">{children}</main>
+        </AgbonProductNavProvider>
+      </SiteConfigProvider>
+      {siteConfig.features.showQuickInquiry ? <AgbonFloatingQuickInquiry countries={countries} /> : null}
       <AgbonFooter config={footerConfig} locale={locale} />
     </div>
   )

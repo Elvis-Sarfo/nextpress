@@ -7,6 +7,7 @@ import {
 } from '@/lib/cms';
 import { getLocale } from '@/lib/locale-utils';
 import { buildPageBlockContext } from '@/lib/page-block-context';
+import { getSiteConfig } from '@/lib/site-config';
 import { PageRenderer } from '@/components/blocks/PageRenderer';
 import { ArrowLeft } from 'lucide-react';
 import type { Metadata } from 'next';
@@ -105,9 +106,15 @@ export default async function ContentPage({ params }: PageProps) {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale, slug } = await params;
+  const siteConfig = await getSiteConfig(locale);
 
   const content = await findContent(locale, slug);
-  if (!content) return { title: slug.join('/') };
+  if (!content) {
+    return {
+      title: slug.join('/'),
+      description: siteConfig.seo.description,
+    };
+  }
 
   const page = content.data;
   const title = getLocale(page.title as Record<string, string> | null, locale);
@@ -115,7 +122,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   return {
     title: title ?? slug.join('/'),
-    description: excerpt,
+    description: excerpt ?? siteConfig.seo.description,
     alternates: {
       languages: Object.fromEntries(
         Object.entries(content.pathByLocale).map(([altLocale, altSlug]) => [

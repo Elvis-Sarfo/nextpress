@@ -9,6 +9,7 @@ import { AgbonSectionTitle } from '@/components/agbon/section-title';
 import { buildLocalizedPath, buildPostsListingPath, buildPostItemPath } from '@/lib/agbon-routes';
 import { getCategories, getPosts, getProductCategories, localeEngine, type PostWithLocales } from '@/lib/cms';
 import { getCategorySlugForLocale, getLocale } from '@/lib/locale-utils';
+import { getSiteConfig } from '@/lib/site-config';
 
 const POSTS_PAGE_SIZE = 9;
 
@@ -177,9 +178,11 @@ export async function generateMetadata({ params }: PostsPageProps): Promise<Meta
     return {};
   }
 
+  const siteConfig = await getSiteConfig(locale);
+
   return {
     title: 'Posts',
-    description: 'Editorial posts, news, notices, and category archives.',
+    description: siteConfig.seo.description || 'Editorial posts, news, notices, and category archives.',
     alternates: {
       canonical: buildPostsListingPath(locale),
     },

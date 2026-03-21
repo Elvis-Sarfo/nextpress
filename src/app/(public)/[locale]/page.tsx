@@ -11,6 +11,7 @@ import {
 import { getLocale } from '@/lib/locale-utils';
 import { buildLocalizedPath } from '@/lib/agbon-routes';
 import { buildPageBlockContext } from '@/lib/page-block-context';
+import { getSiteConfig } from '@/lib/site-config';
 import { PageRenderer } from '@/components/blocks/PageRenderer';
 import { AgbonProductList, DEFAULT_AGBON_PRODUCT_GRID_COLUMNS } from '@/components/agbon/product-list';
 import { AgbonFeaturedProducts } from '@/components/agbon/featured-products';
@@ -97,15 +98,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (!localeEngine.isSupported(locale)) return {};
 
+  const siteConfig = await getSiteConfig(locale);
+
   const homePage = (await getPublishedIndexPage()) ?? (await getPublishedPage(locale, 'home'));
-  if (!homePage) return { title: 'Home' };
+  if (!homePage) {
+    return {
+      title: siteConfig.seo.defaultTitle,
+      description: siteConfig.seo.description,
+    };
+  }
 
   const title = getLocale(homePage.title as Record<string, string> | null, locale);
   const excerpt = getLocale(homePage.excerpt as Record<string, string> | null, locale);
 
   return {
-    title: title ?? 'Home',
-    description: excerpt ?? undefined,
+    title: title ?? siteConfig.seo.defaultTitle,
+    description: excerpt ?? siteConfig.seo.description,
   };
 }
 

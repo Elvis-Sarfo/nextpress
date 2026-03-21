@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { Facebook, Linkedin, Twitter } from 'lucide-react'
+import { Facebook, Instagram, Linkedin, Twitter, Youtube } from 'lucide-react'
 import { t as agbonT } from '@/lib/agbon-translations'
 
 export interface FooterConfig {
@@ -9,7 +9,7 @@ export interface FooterConfig {
   logo: { src: string; alt: string; width: number; height: number; className?: string }
   quickLinks: Array<{ label: string; href: string }>
   contact: { phone: string; email: string; address: string }
-  socialMedia: { facebook?: string; linkedin?: string; twitter?: string }
+  socialMedia: { facebook?: string; linkedin?: string; twitter?: string; instagram?: string; youtube?: string }
   newsletter: { enabled: boolean; placeholder: string }
   legal: { privacy: string; terms: string }
   copyright: string
@@ -61,6 +61,16 @@ export function AgbonFooter({ config, locale = 'en' }: AgbonFooterProps) {
               {config.socialMedia.twitter && (
                 <a href={config.socialMedia.twitter} className="p-2 border border-gray-600 rounded-full hover:border-[#FF6B35] transition" aria-label="Twitter">
                   <Twitter size={16} />
+                </a>
+              )}
+              {config.socialMedia.instagram && (
+                <a href={config.socialMedia.instagram} className="p-2 border border-gray-600 rounded-full hover:border-[#FF6B35] transition" aria-label="Instagram">
+                  <Instagram size={16} />
+                </a>
+              )}
+              {config.socialMedia.youtube && (
+                <a href={config.socialMedia.youtube} className="p-2 border border-gray-600 rounded-full hover:border-[#FF6B35] transition" aria-label="YouTube">
+                  <Youtube size={16} />
                 </a>
               )}
             </div>

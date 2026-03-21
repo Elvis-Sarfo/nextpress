@@ -319,6 +319,7 @@ model Settings {
   id String @id @default(uuid())
   status String @db.VarChar(20)
   siteName String @db.VarChar(255) @default("AGBON")
+  siteDescription Json?
   logo Json?
   contact Json?
   headerNavigation Json?
@@ -326,6 +327,7 @@ model Settings {
   socialMedia Json?
   newsletter Json?
   legal Json?
+  seo Json?
   features Json?
   metadata Json?
   createdAt DateTime @default(now())

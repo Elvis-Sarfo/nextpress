@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 import { localeEngine, getProduct } from '@/lib/cms';
 import { buildProductPath } from '@/lib/agbon-routes';
+import { getSiteConfig } from '@/lib/site-config';
 import type { Metadata } from 'next';
 
 interface Props {
@@ -21,10 +22,19 @@ export default async function ProductDetailPage({ params }: Props) {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, id } = await params;
+  const siteConfig = await getSiteConfig(locale);
   const product = await getProduct(id);
-  if (!product) return {};
+  if (!product) {
+    return {
+      title: siteConfig.seo.defaultTitle,
+      description: siteConfig.seo.description,
+    };
+  }
 
-  const name = product.name as any;
+  const name = product.name as Record<string, string> | string;
   const title = typeof name === 'string' ? name : name?.[locale] || name?.en || 'Product';
-  return { title };
+  return {
+    title,
+    description: siteConfig.seo.description,
+  };
 }

@@ -4,6 +4,7 @@ import {
   getProducts,
   getProductCategories,
 } from '@/lib/cms';
+import { getSiteConfig } from '@/lib/site-config';
 import { AgbonProductList, DEFAULT_AGBON_PRODUCT_GRID_COLUMNS } from '@/components/agbon/product-list';
 import { ProductPageShell } from '@/components/agbon/product-page-shell';
 import type { Metadata } from 'next';
@@ -51,7 +52,12 @@ export default async function ProductsPage({ params, searchParams }: Props) {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
-  return { title: locale === 'fr' ? 'Produits' : locale === 'zh' ? '产品' : 'Products' };
+  const siteConfig = await getSiteConfig(locale);
+
+  return {
+    title: locale === 'fr' ? 'Produits' : locale === 'zh' ? '产品' : 'Products',
+    description: siteConfig.seo.description,
+  };
 }
 
 export async function generateStaticParams() {
