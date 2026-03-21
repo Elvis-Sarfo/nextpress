@@ -6,7 +6,7 @@ import { EditorialPageShell } from '@/components/agbon/editorial-page-shell';
 import { AgbonPageBanner } from '@/components/agbon/page-banner';
 import { AgbonNewsCard, type AgbonNewsItem } from '@/components/agbon/news-card';
 import { AgbonSectionTitle } from '@/components/agbon/section-title';
-import { buildLocalizedPath, buildPostCategoryPath, buildPostsListingPath, buildPostItemPath } from '@/lib/agbon-routes';
+import { buildLocalizedPath, buildPostsListingPath, buildPostItemPath } from '@/lib/agbon-routes';
 import { getCategories, getPosts, getProductCategories, localeEngine, type PostWithLocales } from '@/lib/cms';
 import { getCategorySlugForLocale, getLocale } from '@/lib/locale-utils';
 
@@ -93,23 +93,9 @@ export default async function PostsListingPage({ params, searchParams }: PostsPa
             subTitle="Editorial"
             title="Latest Posts"
             iconSrc="/icons/agric.png"
-            align="center"
-            className="mb-10"
+            align="left"
+            className="mb-4"
           />
-
-          {categoryLinks.length > 0 ? (
-            <div className="mb-8 flex flex-wrap items-center justify-center gap-3">
-              {categoryLinks.map((category) => (
-                <Link
-                  key={category.id}
-                  href={buildPostCategoryPath(locale, category.slug)}
-                  className="rounded-full border border-[#e8dcc5] bg-white px-4 py-2 text-sm font-semibold text-[#1a1a1a] transition hover:border-[#FF6B35] hover:text-[#FF6B35]"
-                >
-                  {category.name}
-                </Link>
-              ))}
-            </div>
-          ) : null}
 
           {items.length > 0 ? (
             <>

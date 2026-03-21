@@ -11,7 +11,7 @@ import { buildLocalizedPath, buildPostCategoryPath, buildPostItemPath, buildPost
 import {
   getCategories,
   getPostComments,
-  getPostsByCategory,
+  getPosts,
   getProductCategories,
   getPublishedPostByCategoryAndSlug,
   localeEngine,
@@ -55,6 +55,78 @@ function toPostCardItem(post: PostWithLocales, locale: string): AgbonNewsItem {
   };
 }
 
+function getTagNames(tags: unknown): string[] {
+  if (!Array.isArray(tags)) return [];
+
+  return tags
+    .map((tag) => {
+      if (typeof tag === 'string') return tag.trim().toLowerCase();
+      if (tag && typeof tag === 'object' && 'tag' in tag) {
+        const value = (tag as { tag?: unknown }).tag;
+        return typeof value === 'string' ? value.trim().toLowerCase() : '';
+      }
+      return '';
+    })
+    .filter((tag): tag is string => Boolean(tag));
+}
+
+function scoreRelatedPost(candidate: PostWithLocales, currentPost: PostWithLocales): number {
+  const candidateTags = new Set(getTagNames(candidate.tags));
+  const currentTags = getTagNames(currentPost.tags);
+  const sharedTagCount = currentTags.filter((tag) => candidateTags.has(tag)).length;
+  const sameCategory = candidate.category?.id && currentPost.category?.id
+    ? candidate.category.id === currentPost.category.id
+    : false;
+  const timestamp = new Date(candidate.publishedAt ?? candidate.createdAt).getTime();
+
+  return (sameCategory ? 1000 : 0) + sharedTagCount * 100 + timestamp / 1_000_000_000_000;
+}
+
+function buildArticleStructuredData(params: {
+  locale: string;
+  categorySlug: string;
+  title: string;
+  description?: string | null;
+  authorName: string;
+  categoryName: string;
+  publishedAt: Date;
+  updatedAt: Date;
+  slug: string;
+  imageUrl?: string | null;
+}): Record<string, unknown> {
+  const {
+    locale,
+    categorySlug,
+    title,
+    description,
+    authorName,
+    categoryName,
+    publishedAt,
+    updatedAt,
+    slug,
+    imageUrl,
+  } = params;
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: title,
+    description: description ?? undefined,
+    datePublished: publishedAt.toISOString(),
+    dateModified: updatedAt.toISOString(),
+    articleSection: categoryName,
+    author: {
+      '@type': 'Person',
+      name: authorName,
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': buildPostItemPath(locale, categorySlug, slug),
+    },
+    image: imageUrl ? [imageUrl] : undefined,
+  };
+}
+
 export default async function PostDetailPage({ params }: PostDetailPageProps) {
   const { locale, category: categorySlug, slug } = await params;
 
@@ -62,9 +134,9 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
     notFound();
   }
 
-  const [post, relatedPosts, categories, productCategories] = await Promise.all([
+  const [post, allPostsResult, categories, productCategories] = await Promise.all([
     getPublishedPostByCategoryAndSlug(locale, categorySlug, slug),
-    getPostsByCategory(locale, categorySlug, { limit: 12 }),
+    getPosts({ status: 'published', limit: 50 }),
     getCategories(),
     getProductCategories(),
   ]);
@@ -77,11 +149,25 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
   const excerpt = getLocale(post.excerpt as Record<string, string> | null, locale);
   const contentHtml = getLocalizedRichTextHtml(post.content as Record<string, unknown> | null, locale);
   const publishedAt = post.publishedAt ? new Date(post.publishedAt) : new Date(post.createdAt);
+  const updatedAt = new Date(post.updatedAt);
   const categoryName = post.category?.name ?? categorySlug;
   const authorName = post.author?.name?.trim() || 'Editorial Team';
   const seo = post.seo && typeof post.seo === 'object' ? (post.seo as Record<string, unknown>) : null;
-  const relatedItems = relatedPosts
+  const articleStructuredData = buildArticleStructuredData({
+    locale,
+    categorySlug,
+    title,
+    description: excerpt,
+    authorName,
+    categoryName,
+    publishedAt,
+    updatedAt,
+    slug,
+    imageUrl: post.featuredImage?.url ?? null,
+  });
+  const relatedItems = allPostsResult.posts
     .filter((item) => item.id !== post.id)
+    .sort((a, b) => scoreRelatedPost(b, post) - scoreRelatedPost(a, post))
     .slice(0, 3)
     .map((item) => toPostCardItem(item, locale));
   const comments = await getPostComments(post.id);
@@ -94,6 +180,11 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
 
   return (
     <article className="min-h-screen">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleStructuredData) }}
+      />
+
       <AgbonPageBanner
         title={title}
         subTitle={categoryName}

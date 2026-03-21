@@ -104,30 +104,9 @@ export default async function CategoryPostsPage({ params, searchParams }: Catego
             subTitle="Editorial"
             title={category.name}
             iconSrc="/icons/agric.png"
-            align="center"
-            className="mb-10"
+            align="left"
+            className="mb-4"
           />
-
-          {categoryLinks.length > 0 ? (
-            <div className="mb-8 flex flex-wrap items-center justify-center gap-3">
-              {categoryLinks.map((entry) => {
-                const isActive = entry.slug === categorySlug;
-                return (
-                  <Link
-                    key={entry.id}
-                    href={buildPostCategoryPath(locale, entry.slug)}
-                    className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
-                      isActive
-                        ? 'border-[#FF6B35] bg-[#FF6B35] text-white'
-                        : 'border-[#e8dcc5] bg-white text-[#1a1a1a] hover:border-[#FF6B35] hover:text-[#FF6B35]'
-                    }`}
-                  >
-                    {entry.name}
-                  </Link>
-                );
-              })}
-            </div>
-          ) : null}
 
           {items.length > 0 ? (
             <>
