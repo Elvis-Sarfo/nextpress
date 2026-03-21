@@ -16,6 +16,7 @@ const INCLUDE_MAP: Record<string, object> = {
   users: { roles: { select: { id: true, name: true, displayName: true } } },
   roles: { permissions: { select: { id: true, name: true, resource: true, action: true, scope: true } } },
   pages: { featuredImage: { select: { id: true, url: true, altText: true } } },
+  'contact-messages': { assignedTo: { select: { id: true, name: true, email: true } } },
   countries: { backgroundImage: { select: { id: true, url: true, altText: true } } },
   'product-categories': { image: { select: { id: true, url: true, altText: true } } },
   products: {
@@ -33,7 +34,7 @@ const INCLUDE_MAP: Record<string, object> = {
 
 const ALLOWED = new Set([
   'users', 'roles', 'permissions', 'media', 'pages', 'settings', 'blocks', 'menus',
-  'categories', 'posts', 'comments', 'product-categories', 'products', 'countries', 'jobs',
+  'categories', 'posts', 'comments', 'contact-messages', 'product-categories', 'products', 'countries', 'jobs',
 ]);
 
 function supportsBlocksContentDefinition(): boolean {
@@ -63,6 +64,7 @@ function supportsBlocksDataSource(): boolean {
 function getPrismaModel(collection: string) {
   const db = prisma as unknown as Record<string, unknown>;
   const delegateMap: Record<string, string> = {
+    'contact-messages': 'contactMessages',
     'product-categories': 'productCategories',
   };
   const delegate = delegateMap[collection] ?? collection;
@@ -191,6 +193,14 @@ export async function PUT(
       : typeof image === 'object' && 'id' in (image as Record<string, unknown>) ? (image as Record<string, unknown>).id
       : null;
     delete body.backgroundImage;
+  }
+  if (collection === 'contact-messages' && Object.prototype.hasOwnProperty.call(body, 'assignedTo')) {
+    const assigned = body.assignedTo;
+    body.assignedToId = assigned === null || assigned === undefined ? null
+      : typeof assigned === 'string' ? assigned
+      : typeof assigned === 'object' && 'id' in (assigned as Record<string, unknown>) ? (assigned as Record<string, unknown>).id
+      : null;
+    delete body.assignedTo;
   }
 
   // Posts: remap category and author relation objects to scalar FKs

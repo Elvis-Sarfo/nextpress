@@ -21,6 +21,7 @@ import { Menus } from './Menus';
 import { Categories } from './Categories';
 import { Posts } from './Posts';
 import { Comments } from './Comments';
+import { ContactMessages } from './ContactMessages';
 import { Countries } from './Countries';
 import { Jobs } from './Jobs';
 
@@ -45,6 +46,7 @@ export const collections: CollectionConfig[] = [
   Categories,
   Posts,
   Comments,
+  ContactMessages,
   Countries,
   Jobs,
 

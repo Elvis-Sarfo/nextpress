@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   type Column,
   type Table as TanStackTable,
@@ -102,7 +102,12 @@ function ColumnFilterDropdown<Row extends object>({
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const [mounted, setMounted] = useState(false);
   const currentValue = (column.getFilterValue() as string | undefined) ?? '';
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const options = useMemo(() => getColumnOptionValues(table, column), [table, column, table.getState().pagination, table.getState().rowSelection]);
   const filteredOptions = useMemo(
@@ -110,17 +115,32 @@ function ColumnFilterDropdown<Row extends object>({
     [options, query]
   );
 
+  const triggerClassName = cn(
+    'inline-flex h-6 w-6 items-center justify-center rounded-md border transition-colors',
+    currentValue
+      ? 'border-[#91caff] bg-[#e6f4ff] text-[#1677ff] dark:border-[#1554ad] dark:bg-[#0b2447] dark:text-[#69b1ff]'
+      : 'border-transparent text-[#98a2b3] hover:border-[#d9d9d9] hover:bg-white hover:text-[#1677ff] dark:text-[#667085] dark:hover:border-[#344054] dark:hover:bg-[#111827] dark:hover:text-[#69b1ff]'
+  );
+
+  if (!mounted) {
+    return (
+      <button
+        type="button"
+        className={triggerClassName}
+        aria-label={`Filter ${String(column.columnDef.header ?? column.id)}`}
+        disabled
+      >
+        <Filter className="h-3.5 w-3.5" />
+      </button>
+    );
+  }
+
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className={cn(
-            'inline-flex h-6 w-6 items-center justify-center rounded-md border transition-colors',
-            currentValue
-              ? 'border-[#91caff] bg-[#e6f4ff] text-[#1677ff] dark:border-[#1554ad] dark:bg-[#0b2447] dark:text-[#69b1ff]'
-              : 'border-transparent text-[#98a2b3] hover:border-[#d9d9d9] hover:bg-white hover:text-[#1677ff] dark:text-[#667085] dark:hover:border-[#344054] dark:hover:bg-[#111827] dark:hover:text-[#69b1ff]'
-          )}
+          className={triggerClassName}
           aria-label={`Filter ${String(column.columnDef.header ?? column.id)}`}
         >
           <Filter className="h-3.5 w-3.5" />

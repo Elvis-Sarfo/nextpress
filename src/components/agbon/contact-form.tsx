@@ -70,7 +70,11 @@ export function AgbonContactForm({
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          locale,
+          sourcePage: typeof window !== 'undefined' ? window.location.pathname : '',
+        }),
       })
       if (res.ok) {
         setSubmitStatus('success')

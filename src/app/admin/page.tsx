@@ -6,6 +6,7 @@
 
 import Link from 'next/link';
 import {
+  Bell,
   FileText,
   Image,
   Users,
@@ -17,7 +18,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { collectionsMeta } from '@/lib/collections-data';
-import { getPageCount, getMediaCount, getUserCount } from '@/lib/cms';
+import { getNewContactMessagesCount, getPageCount, getMediaCount, getUserCount } from '@/lib/cms';
 
 // Icon mapping for collections
 const collectionIcons: Record<string, React.ElementType> = {
@@ -35,10 +36,11 @@ function getCollectionIcon(slug: string): React.ElementType {
 }
 
 export default async function AdminDashboard() {
-  const [pageCount, mediaCount, userCount] = await Promise.all([
+  const [pageCount, mediaCount, userCount, newContactMessagesCount] = await Promise.all([
     getPageCount(),
     getMediaCount(),
     getUserCount(),
+    getNewContactMessagesCount(),
   ]);
 
   return (
@@ -50,6 +52,31 @@ export default async function AdminDashboard() {
           Welcome to your NextPress admin panel. Manage your content and settings from here.
         </p>
       </div>
+
+      {newContactMessagesCount > 0 ? (
+        <Link
+          href="/admin/contact-messages"
+          className="flex items-start justify-between gap-4 rounded-xl border border-[#FFD9CC] bg-[#FFF4EF] p-5 shadow-sm transition-colors hover:bg-[#FFEDE4]"
+        >
+          <div className="flex items-start gap-3">
+            <div className="rounded-lg bg-white p-2 shadow-sm">
+              <Bell className="h-5 w-5 text-[#FF6B35]" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-wide text-[#FF6B35]">
+                New Contact Messages
+              </p>
+              <h2 className="mt-1 text-xl font-bold text-slate-900">
+                {newContactMessagesCount} message{newContactMessagesCount === 1 ? '' : 's'} waiting for review
+              </h2>
+              <p className="mt-1 text-sm text-slate-600">
+                Open the inbox to assign, reply, or resolve them.
+              </p>
+            </div>
+          </div>
+          <ArrowRight className="mt-1 h-5 w-5 shrink-0 text-[#FF6B35]" />
+        </Link>
+      ) : null}
 
       {/* Quick Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

@@ -251,6 +251,7 @@ export function AdminSidebar() {
   const pathname = usePathname();
   const navGroups = useMemo(() => buildNavGroups(), []);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [newContactMessagesCount, setNewContactMessagesCount] = useState(0);
 
   const topLinks = adminConfig.sidebar?.topLinks ?? [];
   const footerLinks = adminConfig.sidebar?.footerLinks ?? [];
@@ -313,6 +314,39 @@ export function AdminSidebar() {
   }, [openCollections]);
 
   useEffect(() => { setMobileOpen(false); }, [pathname]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadContactNotificationCount() {
+      try {
+        const filters = encodeURIComponent(JSON.stringify({ status: 'new' }));
+        const response = await fetch(`/api/admin/collections/contact-messages?limit=1&filters=${filters}`);
+        if (!response.ok) {
+          throw new Error('Failed to load contact message notifications');
+        }
+        const data = await response.json();
+        if (!cancelled) {
+          setNewContactMessagesCount(typeof data.total === 'number' ? data.total : 0);
+        }
+      } catch (error) {
+        console.error(error);
+        if (!cancelled) {
+          setNewContactMessagesCount(0);
+        }
+      }
+    }
+
+    void loadContactNotificationCount();
+    const interval = window.setInterval(() => {
+      void loadContactNotificationCount();
+    }, 30000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, []);
 
   return (
     <>
@@ -419,7 +453,14 @@ export function AdminSidebar() {
                                   )}
                                 >
                                   {ColIcon && <ColIcon className="h-4 w-4 shrink-0" />}
-                                  <span className="truncate">{col.label}</span>
+                                  <span className="flex min-w-0 items-center gap-2">
+                                    <span className="truncate">{col.label}</span>
+                                    {col.key === 'contact-messages' && newContactMessagesCount > 0 ? (
+                                      <span className="rounded-full bg-[#FFF1EB] px-1.5 py-0.5 text-[10px] font-semibold text-[#FF6B35]">
+                                        {newContactMessagesCount}
+                                      </span>
+                                    ) : null}
+                                  </span>
                                 </Link>
                               ) : (
                               <button
@@ -436,10 +477,17 @@ export function AdminSidebar() {
                                     ? 'bg-primary/10 text-primary'
                                     : 'hover:bg-secondary'
                                 )}
-                              >
-                                <span className="flex min-w-0 items-center gap-1.5">
-                                  {ColIcon && <ColIcon className="h-4 w-4 shrink-0" />}
-                                  <span className="truncate">{col.label}</span>
+                                >
+                                  <span className="flex min-w-0 items-center gap-1.5">
+                                    {ColIcon && <ColIcon className="h-4 w-4 shrink-0" />}
+                                    <span className="flex min-w-0 items-center gap-2">
+                                      <span className="truncate">{col.label}</span>
+                                      {col.key === 'contact-messages' && newContactMessagesCount > 0 ? (
+                                        <span className="rounded-full bg-[#FFF1EB] px-1.5 py-0.5 text-[10px] font-semibold text-[#FF6B35]">
+                                          {newContactMessagesCount}
+                                        </span>
+                                      ) : null}
+                                    </span>
                                 </span>
                                 {isColOpen
                                   ? <ChevronDown className="h-3.5 w-3.5 shrink-0" />

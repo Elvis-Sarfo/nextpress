@@ -8,6 +8,7 @@
 import { notFound } from 'next/navigation';
 import { getCollection, collectionsMeta } from '@/lib/collections-data';
 import { CollectionList } from '@/components/admin/CollectionList/CollectionList';
+import { ContactMessagesInbox } from '@/components/admin/ContactMessagesInbox';
 import { MediaLibraryPage } from '@/components/media/MediaLibraryPage';
 
 interface PageProps {
@@ -51,6 +52,10 @@ export default async function CollectionPage({ params }: PageProps) {
   // Dedicated media library UX for media collection
   if (collectionSlug === 'media') {
     return <MediaLibraryPage />;
+  }
+
+  if (collectionSlug === 'contact-messages') {
+    return <ContactMessagesInbox collection={collection} />;
   }
 
   return <CollectionList collection={collection} />;

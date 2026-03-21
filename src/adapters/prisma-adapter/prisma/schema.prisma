@@ -22,6 +22,7 @@ model Users {
   createdBy String? @db.VarChar(255)
   posts Posts[]
   comments Comments[]
+  contactMessages ContactMessages[]
   @@index([status])
   @@map("users")
 }
@@ -247,6 +248,29 @@ model Comments {
   createdBy String? @db.VarChar(255)
   @@index([status])
   @@map("comments")
+}
+
+model ContactMessages {
+  id String @id @default(uuid())
+  name String @db.VarChar(255)
+  email String @db.VarChar(255)
+  phone String? @db.VarChar(255)
+  company String? @db.VarChar(255)
+  subject String @db.VarChar(255)
+  message String @db.Text
+  status String @db.VarChar(100) @default("new")
+  assignedToId String? @db.VarChar(100)
+  notes String? @db.Text
+  sourcePage String? @db.VarChar(255)
+  locale String? @db.VarChar(255)
+  submittedAt DateTime?
+  assignedTo Users? @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
+  metadata Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String? @db.VarChar(255)
+  @@index([status])
+  @@map("contact_messages")
 }
 
 model Countries {

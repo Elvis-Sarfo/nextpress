@@ -358,6 +358,14 @@ export async function getUserCount(): Promise<number> {
   return prisma.users.count();
 }
 
+export async function getNewContactMessagesCount(): Promise<number> {
+  return prisma.contactMessages.count({
+    where: {
+      status: 'new',
+    },
+  });
+}
+
 // ============================================================================
 // CATEGORIES
 // ============================================================================
