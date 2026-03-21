@@ -84,12 +84,12 @@ export interface PostWithLocales {
 export type NewsWithLocales = PostWithLocales;
 export interface MenuItem {
   id: string;
-  label: string;
+  label: string | Record<string, string>;
   type: 'page' | 'custom' | 'section';
   pageId?: string;
   /** Locale → slug map, injected at query time for page-type items */
   slugsByLocale?: Record<string, string>;
-  url?: string;
+  url?: string | Record<string, string>;
   target?: '_self' | '_blank';
   children?: MenuItem[];
 }
@@ -632,8 +632,28 @@ interface MenuRow {
   items: unknown;
 }
 
-async function resolveMenuItems(row: MenuRow): Promise<MenuWithItems> {
-  const items = (Array.isArray(row.items) ? row.items : []) as MenuItem[];
+function extractMenuItemsForLocale(rawItems: unknown, locale: string): MenuItem[] {
+  if (Array.isArray(rawItems)) {
+    return rawItems as MenuItem[];
+  }
+
+  if (rawItems && typeof rawItems === 'object') {
+    const localized = rawItems as Record<string, unknown>;
+    const localeItems = localized[locale];
+    if (Array.isArray(localeItems)) return localeItems as MenuItem[];
+
+    const fallbackItems = localized[DEFAULT_LOCALE];
+    if (Array.isArray(fallbackItems)) return fallbackItems as MenuItem[];
+
+    const firstArray = Object.values(localized).find((value) => Array.isArray(value));
+    if (Array.isArray(firstArray)) return firstArray as MenuItem[];
+  }
+
+  return [];
+}
+
+async function resolveMenuItems(row: MenuRow, locale: string = DEFAULT_LOCALE): Promise<MenuWithItems> {
+  const items = extractMenuItemsForLocale(row.items, locale);
   const pageIds = collectPageIds(items);
   if (pageIds.length > 0) {
     const pages = await prisma.pages.findMany({
@@ -651,33 +671,33 @@ async function resolveMenuItems(row: MenuRow): Promise<MenuWithItems> {
   return { id: row.id, name: row.name, location: row.location, items };
 }
 
-export async function getMenus(): Promise<MenuWithItems[]> {
+export async function getMenus(locale: string = DEFAULT_LOCALE): Promise<MenuWithItems[]> {
   const rows = await prisma.menus.findMany({
     orderBy: { createdAt: 'asc' },
   });
-  return Promise.all(rows.map((r) => resolveMenuItems(r as unknown as MenuRow)));
+  return Promise.all(rows.map((r) => resolveMenuItems(r as unknown as MenuRow, locale)));
 }
 
-export async function getMenu(id: string): Promise<MenuWithItems | null> {
+export async function getMenu(id: string, locale: string = DEFAULT_LOCALE): Promise<MenuWithItems | null> {
   const row = await prisma.menus.findUnique({ where: { id } });
   if (!row) return null;
-  return resolveMenuItems(row as unknown as MenuRow);
+  return resolveMenuItems(row as unknown as MenuRow, locale);
 }
 
-export async function getMenuByName(name: string): Promise<MenuWithItems | null> {
+export async function getMenuByName(name: string, locale: string = DEFAULT_LOCALE): Promise<MenuWithItems | null> {
   const row = await prisma.menus.findFirst({ where: { name } });
   if (!row) return null;
-  return resolveMenuItems(row as unknown as MenuRow);
+  return resolveMenuItems(row as unknown as MenuRow, locale);
 }
 
-export async function getMenuByLocation(location: string): Promise<MenuWithItems | null> {
+export async function getMenuByLocation(location: string, locale: string = DEFAULT_LOCALE): Promise<MenuWithItems | null> {
   const row = await prisma.menus.findFirst({ where: { location } });
   if (!row) return null;
-  return resolveMenuItems(row as unknown as MenuRow);
+  return resolveMenuItems(row as unknown as MenuRow, locale);
 }
 
-export async function getMenuItems(menuId: string): Promise<MenuItem[]> {
-  const menu = await getMenu(menuId);
+export async function getMenuItems(menuId: string, locale: string = DEFAULT_LOCALE): Promise<MenuItem[]> {
+  const menu = await getMenu(menuId, locale);
   return menu?.items ?? [];
 }
 

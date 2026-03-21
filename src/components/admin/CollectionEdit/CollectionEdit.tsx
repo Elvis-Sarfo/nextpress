@@ -314,6 +314,21 @@ export function CollectionEdit({
       );
     }
 
+    if (field.type === 'json' && field.adminComponent === 'menu-items') {
+      const menuItemsValue = Array.isArray(localeValue)
+        ? localeValue
+        : Array.isArray(formData[field.name])
+          ? formData[field.name]
+          : [];
+
+      return (
+        <MenuItemsEditor
+          value={menuItemsValue as unknown as MenuItem[]}
+          onChange={(items) => updateLocalizedField(field.name, activeLocale, items as unknown as FieldValue)}
+        />
+      );
+    }
+
     // ── Rich text editor for localized richText fields ──────────────────────
     if (field.type === 'richText') {
       return (

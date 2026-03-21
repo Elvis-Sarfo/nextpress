@@ -15,6 +15,12 @@ interface LocaleLayoutProps {
   params: Promise<{ locale: string }>
 }
 
+function getLocalizedMenuValue(value: string | Record<string, string> | undefined, locale: string): string {
+  if (typeof value === 'string') return value
+  if (!value) return ''
+  return value[locale] ?? value.en ?? Object.values(value)[0] ?? ''
+}
+
 function resolveMenuHref(locale: string, item: MenuItem): string | undefined {
   if (item.type === 'page') {
     const slug = item.slugsByLocale?.[locale] ?? item.slugsByLocale?.en ?? Object.values(item.slugsByLocale ?? {})[0]
@@ -22,8 +28,10 @@ function resolveMenuHref(locale: string, item: MenuItem): string | undefined {
   }
 
   if (item.type === 'custom' && item.url) {
-    if (/^https?:\/\//.test(item.url)) return item.url
-    return buildLocalizedPath(locale, item.url)
+    const localizedUrl = getLocalizedMenuValue(item.url, locale)
+    if (!localizedUrl) return undefined
+    if (/^https?:\/\//.test(localizedUrl)) return localizedUrl
+    return buildLocalizedPath(locale, localizedUrl)
   }
 
   return undefined
@@ -38,7 +46,7 @@ function mapMenuItemsToHeaderNavigation(locale: string, items: MenuItem[]): Head
           const childHref = resolveMenuHref(locale, child)
           if (!childHref) return null
           return {
-            label: child.label,
+            label: getLocalizedMenuValue(child.label, locale),
             href: childHref,
             target: child.target,
           }
@@ -48,7 +56,7 @@ function mapMenuItemsToHeaderNavigation(locale: string, items: MenuItem[]): Head
       if (!href && childItems.length === 0) return null
 
       return {
-        label: item.label,
+        label: getLocalizedMenuValue(item.label, locale),
         href,
         target: item.target,
         items: childItems.length > 0 ? childItems : undefined,
@@ -81,7 +89,7 @@ export default async function LocalePublicLayout({ children, params }: LocaleLay
 
   const [siteConfig, primaryMenu, countries] = await Promise.all([
     getSiteConfig(locale),
-    getMenuByLocation('primary'),
+    getMenuByLocation('primary', locale),
     getActiveCountries(),
   ])
 

@@ -71,13 +71,21 @@ export const Menus: CollectionConfig<'menus'> = {
     {
       name: 'items',
       type: 'json',
+      localized: true,
       label: 'Menu Items',
       admin: {
+        localizedAs: 'json',
         component: 'menu-items',
-        description: 'Tree of navigation items — supports unlimited nesting',
+        description: 'Tree of navigation items for the active locale — supports unlimited nesting',
       },
     } satisfies JSONField,
   ],
+
+  localization: {
+    locales: ['en', 'fr'],
+    defaultLocale: 'en',
+    fallback: true,
+  },
 
   queryable: false,
 

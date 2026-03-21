@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { ChevronRight, ChevronDown, Pencil, Trash2, Plus, GripVertical, ArrowUp, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useAdminLocale } from '@/components/providers/AdminLocaleProvider';
 
 // ============================================================================
 // TYPES
@@ -11,11 +12,11 @@ import { cn } from '@/lib/utils';
 
 export interface MenuItem {
   id: string;
-  label: string;
+  label: string | Record<string, string>;
   type: 'page' | 'custom' | 'section';
   pageId?: string;
   slugsByLocale?: Record<string, string>;
-  url?: string;
+  url?: string | Record<string, string>;
   target?: '_self' | '_blank';
   children?: MenuItem[];
 }
@@ -81,11 +82,32 @@ function addChildToItem(items: MenuItem[], parentId: string, child: MenuItem): M
 function newItem(): MenuItem {
   return {
     id: crypto.randomUUID(),
-    label: 'New Item',
+    label: { en: 'New Item', fr: 'Nouvel element' },
     type: 'custom',
-    url: '',
+    url: { en: '', fr: '' },
     target: '_self',
     children: [],
+  };
+}
+
+function getLocalizedFieldValue(value: string | Record<string, string> | undefined, locale: string): string {
+  if (typeof value === 'string') return value;
+  if (!value) return '';
+  return value[locale] ?? value.en ?? Object.values(value)[0] ?? '';
+}
+
+function patchLocalizedField(
+  value: string | Record<string, string> | undefined,
+  locale: string,
+  nextValue: string,
+): Record<string, string> {
+  if (typeof value === 'string') {
+    return { en: value, [locale]: nextValue };
+  }
+
+  return {
+    ...(value ?? {}),
+    [locale]: nextValue,
   };
 }
 
@@ -149,20 +171,25 @@ interface ItemFormProps {
 }
 
 function MenuItemForm({ item, onSave, onCancel }: ItemFormProps) {
-  const [label, setLabel] = useState(item.label);
+  const { locale } = useAdminLocale();
+  const [label, setLabel] = useState(getLocalizedFieldValue(item.label, locale));
   const [type, setType] = useState<MenuItem['type']>(item.type);
   const [pageId, setPageId] = useState(item.pageId ?? '');
   const [pageLabel, setPageLabel] = useState('');
-  const [url, setUrl] = useState(item.url ?? '');
+  const [url, setUrl] = useState(getLocalizedFieldValue(item.url, locale));
   const [target, setTarget] = useState<'_self' | '_blank'>(item.target ?? '_self');
 
   const handleSave = () => {
-    const patch: Partial<MenuItem> = { label, type, target };
+    const patch: Partial<MenuItem> = {
+      label: patchLocalizedField(item.label, locale, label),
+      type,
+      target,
+    };
     if (type === 'page') {
       patch.pageId = pageId;
       // preserve existing slugsByLocale — will be resolved at query time
     } else if (type === 'custom') {
-      patch.url = url;
+      patch.url = patchLocalizedField(item.url, locale, url);
       patch.pageId = undefined;
     } else {
       patch.pageId = undefined;
@@ -178,7 +205,7 @@ function MenuItemForm({ item, onSave, onCancel }: ItemFormProps) {
     <div className="mt-2 rounded-lg border bg-muted/30 p-4 space-y-3">
       {/* Label */}
       <div>
-        <label className="block text-xs font-medium text-muted-foreground mb-1">Label</label>
+        <label className="block text-xs font-medium text-muted-foreground mb-1">Label ({locale.toUpperCase()})</label>
         <input
           type="text"
           value={label}
@@ -218,7 +245,7 @@ function MenuItemForm({ item, onSave, onCancel }: ItemFormProps) {
             onChange={(id, title) => {
               setPageId(id);
               setPageLabel(title);
-              if (!label || label === 'New Item') setLabel(title);
+              if (!label || label === 'New Item' || label === 'Nouvel element') setLabel(title);
             }}
           />
           {pageLabel && <p className="mt-1 text-xs text-muted-foreground">Selected: {pageLabel}</p>}
@@ -228,7 +255,7 @@ function MenuItemForm({ item, onSave, onCancel }: ItemFormProps) {
       {type === 'custom' && (
         <>
           <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1">URL</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">URL ({locale.toUpperCase()})</label>
             <input
               type="text"
               value={url}
@@ -298,9 +325,11 @@ function MenuItemRow({
   onMoveDown,
   onAddChild,
 }: MenuItemRowProps) {
+  const { locale } = useAdminLocale();
   const [expanded, setExpanded] = useState(true);
   const [editing, setEditing] = useState(false);
   const hasChildren = (item.children?.length ?? 0) > 0;
+  const itemLabel = getLocalizedFieldValue(item.label, locale) || 'Untitled';
 
   const typeBadge: Record<MenuItem['type'], string> = {
     page: 'bg-blue-100 text-blue-700',
@@ -338,7 +367,7 @@ function MenuItemRow({
         <GripVertical className="h-4 w-4 flex-shrink-0 text-muted-foreground/40" />
 
         {/* Label */}
-        <span className="flex-1 text-sm font-medium truncate">{item.label}</span>
+        <span className="flex-1 text-sm font-medium truncate">{itemLabel}</span>
 
         {/* Type badge */}
         <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium flex-shrink-0', typeBadge[item.type])}>
@@ -385,7 +414,7 @@ function MenuItemRow({
             size="icon"
             className="h-6 w-6 text-red-500 hover:text-red-600 hover:bg-red-50"
             onClick={() => {
-              if (confirm(`Delete "${item.label}"${hasChildren ? ' and all its children' : ''}?`))
+              if (confirm(`Delete "${itemLabel}"${hasChildren ? ' and all its children' : ''}?`))
                 onDelete(item.id);
             }}
             title="Delete"
@@ -484,6 +513,10 @@ interface MenuItemsEditorProps {
 
 export function MenuItemsEditor({ value, onChange }: MenuItemsEditorProps) {
   const [items, setItems] = useState<MenuItem[]>(value ?? []);
+
+  useEffect(() => {
+    setItems(value ?? []);
+  }, [value]);
 
   // Sync outward whenever items change
   const update = (next: MenuItem[]) => {

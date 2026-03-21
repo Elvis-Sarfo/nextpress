@@ -17,8 +17,14 @@ interface NavMenuProps {
   orientation?: 'horizontal' | 'vertical';
 }
 
+function getLocalizedMenuValue(value: string | Record<string, string> | undefined, locale: string): string {
+  if (typeof value === 'string') return value;
+  if (!value) return '';
+  return value[locale] ?? value.en ?? Object.values(value)[0] ?? '';
+}
+
 function resolveUrl(item: MenuItem, locale: string): string {
-  if (item.type === 'custom') return item.url ?? '#';
+  if (item.type === 'custom') return getLocalizedMenuValue(item.url, locale) || '#';
   if (item.type === 'page') {
     const slug =
       item.slugsByLocale?.[locale] ??
@@ -40,6 +46,7 @@ function NavItem({ item, locale, depth, orientation }: NavItemProps) {
   const hasChildren = (item.children?.length ?? 0) > 0;
   const url = resolveUrl(item, locale);
   const isRoot = depth === 0;
+  const label = getLocalizedMenuValue(item.label, locale);
 
   const linkClass =
     isRoot && orientation === 'horizontal'
@@ -50,7 +57,7 @@ function NavItem({ item, locale, depth, orientation }: NavItemProps) {
     <li className={isRoot && orientation === 'horizontal' ? 'relative group' : 'relative group'}>
       {item.type === 'section' ? (
         <span className="px-3 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground/70 block">
-          {item.label}
+          {label}
         </span>
       ) : (
         <Link
@@ -59,7 +66,7 @@ function NavItem({ item, locale, depth, orientation }: NavItemProps) {
           rel={item.target === '_blank' ? 'noopener noreferrer' : undefined}
           className={linkClass}
         >
-          {item.label}
+          {label}
         </Link>
       )}
 
