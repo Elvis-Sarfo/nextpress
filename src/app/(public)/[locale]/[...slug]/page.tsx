@@ -2,12 +2,8 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import {
   getPublishedPageByPath,
-  getPublishedPost,
-  getPublishedNewsItem,
   localeEngine,
   type PageWithLocales,
-  type PostWithLocales,
-  type NewsWithLocales,
 } from '@/lib/cms';
 import { getLocale } from '@/lib/locale-utils';
 import { buildPageBlockContext } from '@/lib/page-block-context';
@@ -20,26 +16,13 @@ interface PageProps {
 }
 
 type ContentItem =
-  | { type: 'page'; data: PageWithLocales; pathByLocale: Record<string, string> }
-  | { type: 'post'; data: PostWithLocales; pathByLocale: Record<string, string> }
-  | { type: 'news'; data: NewsWithLocales; pathByLocale: Record<string, string> };
+  | { type: 'page'; data: PageWithLocales; pathByLocale: Record<string, string> };
 
 async function findContent(locale: string, slugParts: string[]): Promise<ContentItem | null> {
   const pageMatch = await getPublishedPageByPath(locale, slugParts);
   if (pageMatch) {
     return { type: 'page', data: pageMatch.page, pathByLocale: pageMatch.pathByLocale };
   }
-
-  if (slugParts.length !== 1) return null;
-
-  const slug = slugParts[0];
-  const [post, news] = await Promise.all([
-    getPublishedPost(locale, slug),
-    getPublishedNewsItem(locale, slug),
-  ]);
-
-  if (post) return { type: 'post', data: post, pathByLocale: post.slug as Record<string, string> };
-  if (news) return { type: 'news', data: news, pathByLocale: news.slug as Record<string, string> };
 
   return null;
 }
@@ -63,9 +46,6 @@ export default async function ContentPage({ params }: PageProps) {
     .filter(([altLocale]) => altLocale !== locale)
     .map(([altLocale, altSlug]) => ({ locale: altLocale, slug: altSlug }));
 
-  const typeLabel =
-    content.type === 'page' ? 'Page' : content.type === 'post' ? 'Post' : 'News';
-
   const hasSections = Array.isArray(page.sections) && page.sections.length > 0;
   const pageContext = buildPageBlockContext(page, locale);
 
@@ -84,7 +64,7 @@ export default async function ContentPage({ params }: PageProps) {
           </Link>
 
           <header className="mb-8">
-            <p className="text-sm text-muted-foreground mb-2">{typeLabel}</p>
+            <p className="text-sm text-muted-foreground mb-2">Page</p>
             <h1 className="text-4xl font-bold">{title ?? currentPath}</h1>
             {excerpt && (
               <p className="text-xl text-muted-foreground mt-4">{excerpt}</p>

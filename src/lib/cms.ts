@@ -415,27 +415,76 @@ const POST_INCLUDE = {
   author: { select: { id: true, name: true, email: true } },
 };
 
-export async function getPosts(options?: {
+type EditorialKind = 'all' | 'news' | 'standard';
+
+function isNewsCategory(category: { name?: string | null; slug?: unknown } | null | undefined): boolean {
+  if (!category) return false;
+
+  if (typeof category.name === 'string' && category.name.trim().toLowerCase() === 'news') {
+    return true;
+  }
+
+  if (category.slug && typeof category.slug === 'object' && !Array.isArray(category.slug)) {
+    return Object.values(category.slug as Record<string, unknown>).some(
+      (value) => typeof value === 'string' && value.trim().toLowerCase() === 'news',
+    );
+  }
+
+  return false;
+}
+
+function filterPostsByKind<T extends { category?: { name?: string | null; slug?: unknown } | null }>(
+  posts: T[],
+  kind: EditorialKind,
+): T[] {
+  if (kind === 'all') return posts;
+  return posts.filter((post) => (kind === 'news' ? isNewsCategory(post.category) : !isNewsCategory(post.category)));
+}
+
+async function getPostsByKind(options?: {
   limit?: number;
   offset?: number;
-  status?: ContentStatus;
+  status?: ContentStatus | string;
   categoryId?: string;
+  kind?: EditorialKind;
 }): Promise<{ posts: PostWithLocales[]; total: number }> {
   const where = {
     ...(options?.status ? { status: options.status } : {}),
     ...(options?.categoryId ? { categoryId: options.categoryId } : {}),
   };
-  const [posts, total] = await Promise.all([
-    prisma.posts.findMany({
-      where,
-      take: options?.limit ?? 20,
-      skip: options?.offset ?? 0,
-      include: POST_INCLUDE,
-      orderBy: { publishedAt: 'desc' },
-    }),
-    prisma.posts.count({ where }),
-  ]);
-  return { posts: posts as unknown as PostWithLocales[], total };
+
+  const posts = await prisma.posts.findMany({
+    where,
+    include: POST_INCLUDE,
+    orderBy: { publishedAt: 'desc' },
+  });
+
+  const filtered = filterPostsByKind(posts as unknown as PostWithLocales[], options?.kind ?? 'all');
+  const offset = options?.offset ?? 0;
+  const limit = options?.limit ?? 20;
+
+  return {
+    posts: filtered.slice(offset, offset + limit),
+    total: filtered.length,
+  };
+}
+
+export async function getPosts(options?: {
+  limit?: number;
+  offset?: number;
+  status?: ContentStatus | string;
+  categoryId?: string;
+}): Promise<{ posts: PostWithLocales[]; total: number }> {
+  return getPostsByKind({ ...options, kind: 'all' });
+}
+
+export async function getStandardPosts(options?: {
+  limit?: number;
+  offset?: number;
+  status?: ContentStatus | string;
+  categoryId?: string;
+}): Promise<{ posts: PostWithLocales[]; total: number }> {
+  return getPostsByKind({ ...options, kind: 'standard' });
 }
 
 export async function getPost(id: string): Promise<PostWithLocales | null> {
@@ -456,30 +505,32 @@ export async function getPublishedPost(
   locale: string,
   slug: string
 ): Promise<PostWithLocales | null> {
-  const posts = await prisma.posts.findMany({
-    where: {
-      status: 'published',
-    },
-    include: POST_INCLUDE,
-  });
+  const { posts } = await getStandardPosts({ status: 'published' });
 
   return (
     posts.find((post) => getLocalizedValue(post.slug, locale) === slug) ?? null
   ) as unknown as PostWithLocales | null;
 }
 
+export async function getPublishedPostByCategoryAndSlug(
+  locale: string,
+  categorySlug: string,
+  slug: string,
+): Promise<PostWithLocales | null> {
+  const posts = await getPostsByCategory(locale, categorySlug);
+  return posts.find((post) => getLocalizedValue(post.slug, locale) === slug) ?? null;
+}
+
 export async function getPublishedPosts(
   _locale: string,
   options?: { limit?: number; offset?: number }
 ): Promise<PostWithLocales[]> {
-  const posts = await prisma.posts.findMany({
-    where: { status: 'published' },
-    take: options?.limit ?? 20,
-    skip: options?.offset ?? 0,
-    include: POST_INCLUDE,
-    orderBy: { publishedAt: 'desc' },
+  const { posts } = await getStandardPosts({
+    status: 'published',
+    limit: options?.limit,
+    offset: options?.offset,
   });
-  return posts as unknown as PostWithLocales[];
+  return posts;
 }
 
 export async function getPostsByCategory(
@@ -507,13 +558,14 @@ export async function getPostsByCategory(
 export async function getNews(options?: {
   limit?: number;
   offset?: number;
-  status?: ContentStatus;
+  status?: ContentStatus | string;
   category?: string;
 }): Promise<{ news: NewsWithLocales[]; total: number }> {
-  const { posts, total } = await getPosts({
+  const { posts, total } = await getPostsByKind({
     limit: options?.limit,
     offset: options?.offset,
     status: options?.status,
+    kind: 'news',
   });
   return { news: posts, total };
 }
@@ -533,7 +585,8 @@ export async function getPublishedNewsItem(
   locale: string,
   slug: string
 ): Promise<NewsWithLocales | null> {
-  return getPublishedPost(locale, slug);
+  const { news } = await getNews({ status: 'published' });
+  return news.find((post) => getLocalizedValue(post.slug, locale) === slug) ?? null;
 }
 
 export async function getNewsByCategory(
@@ -724,11 +777,21 @@ async function queryPostsDirect(params: CollectionQueryParams) {
   });
 }
 
+async function queryNewsDirect(params: CollectionQueryParams) {
+  const { news } = await getNews({
+    limit: params.limit ?? 10,
+    offset: 0,
+    status: (params.where?.status as ContentStatus | undefined) ?? 'published',
+  });
+  return news;
+}
+
 // Collections with custom query logic (relationships, access control, etc.)
 const SPECIFIC_HANDLERS: Partial<
   Record<string, (p: CollectionQueryParams) => Promise<unknown[]>>
 > = {
   posts: (p) => queryPostsDirect(p),
+  news: (p) => queryNewsDirect(p),
   'product-categories': async () => getProductCategories(),
   countries: (p) =>
     prisma.countries.findMany({

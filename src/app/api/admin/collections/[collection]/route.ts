@@ -12,6 +12,7 @@ import { prisma } from '@/adapters/prisma-adapter';
 import bcrypt from 'bcryptjs';
 import { invalidatePrincipalCache } from '@/lib/rbac-service';
 import { getCollection } from '@/lib/collections-data';
+import { slugify } from '@/lib/utils';
 
 // Collections that have many-to-many relations we want to include in responses
 const INCLUDE_MAP: Record<string, object> = {
@@ -39,6 +40,39 @@ function getLocalizedValue(value: unknown, locale: string): string | undefined {
   const localized = value as Record<string, unknown>;
   const direct = localized[locale];
   return typeof direct === 'string' && direct ? direct : undefined;
+}
+
+function normalizeLocalizedSlugFromTitle(
+  title: unknown,
+  slug: unknown,
+): Record<string, string> | undefined {
+  const titleMap =
+    title && typeof title === 'object' && !Array.isArray(title)
+      ? (title as Record<string, unknown>)
+      : null;
+
+  const slugMap =
+    slug && typeof slug === 'object' && !Array.isArray(slug)
+      ? Object.fromEntries(
+          Object.entries(slug as Record<string, unknown>).filter(
+            (entry): entry is [string, string] => typeof entry[1] === 'string' && entry[1].trim().length > 0,
+          ),
+        )
+      : {};
+
+  if (!titleMap) {
+    return Object.keys(slugMap).length > 0 ? slugMap : undefined;
+  }
+
+  for (const [locale, value] of Object.entries(titleMap)) {
+    if (typeof value !== 'string' || !value.trim()) continue;
+    if (!slugMap[locale]) {
+      const generated = slugify(value);
+      if (generated) slugMap[locale] = generated;
+    }
+  }
+
+  return Object.keys(slugMap).length > 0 ? slugMap : undefined;
 }
 
 // Allowed collection slugs that this API handles
@@ -174,6 +208,31 @@ function stripNullScalarDefaultFields(collection: string, body: Record<string, u
     if (body[field.name] === null) {
       delete body[field.name];
     }
+  }
+}
+
+function normalizeDateFieldValue(value: unknown): unknown {
+  if (typeof value !== 'string') return value;
+
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  // HTML date inputs submit YYYY-MM-DD; Prisma DateTime expects full ISO-8601.
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    return `${trimmed}T00:00:00.000Z`;
+  }
+
+  return trimmed;
+}
+
+function normalizeCollectionDateFields(collection: string, body: Record<string, unknown>): void {
+  const collectionMeta = getCollection(collection);
+  if (!collectionMeta) return;
+
+  for (const field of collectionMeta.fields) {
+    if (field.type !== 'date') continue;
+    if (!Object.prototype.hasOwnProperty.call(body, field.name)) continue;
+    body[field.name] = normalizeDateFieldValue(body[field.name]);
   }
 }
 
@@ -407,6 +466,13 @@ export async function POST(
     delete body.category;
   }
 
+  if (collection === 'posts') {
+    const nextSlug = normalizeLocalizedSlugFromTitle(body.title, body.slug);
+    if (nextSlug) {
+      body.slug = nextSlug;
+    }
+  }
+
   // Enforce per-locale slug uniqueness for pages and posts (Json column can't use DB unique index)
   if ((collection === 'pages' || collection === 'posts') && body.slug && typeof body.slug === 'object') {
     const slugEntries = Object.entries(body.slug as Record<string, string>);
@@ -450,6 +516,7 @@ export async function POST(
     delete body.documentId;
   }
 
+  normalizeCollectionDateFields(collection, body);
   stripNullScalarDefaultFields(collection, body);
 
   // Build Prisma data object

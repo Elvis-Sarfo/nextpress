@@ -35,3 +35,19 @@ export function getLocaleAlternates(
   if (!slugs) return [];
   return Object.entries(slugs).map(([locale, slug]) => ({ locale, slug }));
 }
+
+export function getLocalizedSlug(
+  value: Record<string, string> | null | undefined,
+  locale: string,
+  fallback = DEFAULT_LOCALE,
+): string | undefined {
+  if (!value) return undefined;
+  return value[locale] ?? value[fallback];
+}
+
+export function getCategorySlugForLocale(
+  category: { slug?: Record<string, string> | null } | null | undefined,
+  locale: string,
+): string | undefined {
+  return getLocalizedSlug(category?.slug, locale);
+}

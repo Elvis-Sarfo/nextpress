@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPages, getPosts, getNews } from '@/lib/cms';
+import { getPages, getPosts, getNews, getStandardPosts } from '@/lib/cms';
 import { getLocale } from '@/lib/locale-utils';
 
 export async function GET(request: NextRequest) {
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (type === 'post') {
-      const result = await getPosts({ limit, offset, status: status ?? undefined });
+      const result = await getStandardPosts({ limit, offset, status: status ?? undefined });
       return NextResponse.json({
         type: 'post',
         items: result.posts.map((p) => ({
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
     // Get all content types
     const [pagesResult, postsResult, newsResult] = await Promise.all([
       getPages({ limit: 10, status: status ?? undefined }),
-      getPosts({ limit: 10, status: status ?? undefined }),
+      getStandardPosts({ limit: 10, status: status ?? undefined }),
       getNews({ limit: 10, status: status ?? undefined }),
     ]);
 

@@ -59,11 +59,10 @@ export const Posts: CollectionConfig<'posts'> = {
     {
       name: 'slug',
       type: 'json',
-      required: true,
       localized: true,
       admin: {
         localizedAs: 'text',
-        description: 'URL slug per locale — { "en": "my-post", "fr": "mon-article" }. Must be unique per locale.',
+        description: 'Optional URL slug per locale — if empty, it will be generated from the title on save.',
       },
     } satisfies JSONField,
     {

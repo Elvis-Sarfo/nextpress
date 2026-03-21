@@ -11,6 +11,8 @@ import { prisma } from '@/adapters/prisma-adapter';
 import bcrypt from 'bcryptjs';
 import { invalidatePrincipalCache } from '@/lib/rbac-service';
 import { invalidateSettingsCache } from '@/lib/cms';
+import { getCollection } from '@/lib/collections-data';
+import { slugify } from '@/lib/utils';
 
 const INCLUDE_MAP: Record<string, object> = {
   users: { roles: { select: { id: true, name: true, displayName: true } } },
@@ -73,6 +75,70 @@ function getPrismaModel(collection: string) {
     update: (args: unknown) => Promise<unknown>;
     delete: (args: unknown) => Promise<unknown>;
   } | undefined;
+}
+
+function getLocalizedValue(value: unknown, locale: string): string | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const localized = value as Record<string, unknown>;
+  const direct = localized[locale];
+  return typeof direct === 'string' && direct ? direct : undefined;
+}
+
+function normalizeLocalizedSlugFromTitle(
+  title: unknown,
+  slug: unknown,
+): Record<string, string> | undefined {
+  const titleMap =
+    title && typeof title === 'object' && !Array.isArray(title)
+      ? (title as Record<string, unknown>)
+      : null;
+
+  const slugMap =
+    slug && typeof slug === 'object' && !Array.isArray(slug)
+      ? Object.fromEntries(
+          Object.entries(slug as Record<string, unknown>).filter(
+            (entry): entry is [string, string] => typeof entry[1] === 'string' && entry[1].trim().length > 0,
+          ),
+        )
+      : {};
+
+  if (!titleMap) {
+    return Object.keys(slugMap).length > 0 ? slugMap : undefined;
+  }
+
+  for (const [locale, value] of Object.entries(titleMap)) {
+    if (typeof value !== 'string' || !value.trim()) continue;
+    if (!slugMap[locale]) {
+      const generated = slugify(value);
+      if (generated) slugMap[locale] = generated;
+    }
+  }
+
+  return Object.keys(slugMap).length > 0 ? slugMap : undefined;
+}
+
+function normalizeDateFieldValue(value: unknown): unknown {
+  if (typeof value !== 'string') return value;
+
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    return `${trimmed}T00:00:00.000Z`;
+  }
+
+  return trimmed;
+}
+
+function normalizeCollectionDateFields(collection: string, body: Record<string, unknown>): void {
+  const collectionMeta = getCollection(collection);
+  if (!collectionMeta) return;
+
+  for (const field of collectionMeta.fields) {
+    if (field.type !== 'date') continue;
+    if (!Object.prototype.hasOwnProperty.call(body, field.name)) continue;
+    body[field.name] = normalizeDateFieldValue(body[field.name]);
+  }
 }
 
 async function clearOtherIndexPages(exceptId: string): Promise<void> {
@@ -232,6 +298,33 @@ export async function PUT(
     delete body.category;
   }
 
+  if (collection === 'posts') {
+    const nextSlug = normalizeLocalizedSlugFromTitle(body.title, body.slug);
+    if (nextSlug) {
+      body.slug = nextSlug;
+    }
+  }
+
+  if ((collection === 'pages' || collection === 'posts') && body.slug && typeof body.slug === 'object') {
+    const slugEntries = Object.entries(body.slug as Record<string, string>);
+    const existingDocs = collection === 'pages'
+      ? await prisma.pages.findMany({ select: { id: true, slug: true } })
+      : await prisma.posts.findMany({ select: { id: true, slug: true } });
+
+    for (const [locale, localeSlug] of slugEntries) {
+      if (!localeSlug) continue;
+      const existing = existingDocs.find(
+        (doc) => doc.id !== id && getLocalizedValue(doc.slug, locale) === localeSlug,
+      );
+      if (existing) {
+        return NextResponse.json(
+          { error: `Slug "${localeSlug}" is already in use for locale "${locale}"` },
+          { status: 409 },
+        );
+      }
+    }
+  }
+
   // Extract many-to-many arrays
   const rolesIds = body.roles as string[] | undefined;
   const permissionsIds = body.permissions as string[] | undefined;
@@ -249,6 +342,8 @@ export async function PUT(
     body.passwordHash = await bcrypt.hash(body.password, 12);
   }
   delete body.password;
+
+  normalizeCollectionDateFields(collection, body);
 
   const data: Record<string, unknown> = { ...body };
 

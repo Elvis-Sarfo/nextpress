@@ -4,7 +4,8 @@ import { useParams } from 'next/navigation';
 import { AgbonNewsSection } from '@/components/agbon/news-section';
 import type { BlockContent } from '@/core/blocks/types';
 import type { PostWithLocales } from '@/lib/cms';
-import { getLocale } from '@/lib/locale-utils';
+import { buildPostItemPath, buildPostsListingPath } from '@/lib/agbon-routes';
+import { getCategorySlugForLocale, getLocale } from '@/lib/locale-utils';
 import { asNumber, asOptionalString } from './content-helpers';
 
 function buildMonth(date: Date): string {
@@ -27,6 +28,7 @@ export function AgbonNewsSectionBlock({
     const title = getLocale(post.title as Record<string, string>, locale) ?? 'Untitled';
     const excerpt = getLocale(post.excerpt as Record<string, string> | null, locale) ?? '';
     const slug = getLocale(post.slug as Record<string, string>, locale) ?? '';
+    const categorySlug = getCategorySlugForLocale(post.category, locale);
 
     return {
       id: post.id,
@@ -37,7 +39,7 @@ export function AgbonNewsSectionBlock({
         day: String(publishedAt.getDate()).padStart(2, '0'),
         month: buildMonth(publishedAt),
       },
-      url: slug ? `/${locale}/${slug}` : `/${locale}`,
+      url: slug && categorySlug ? buildPostItemPath(locale, categorySlug, slug) : buildPostsListingPath(locale),
     };
   });
 

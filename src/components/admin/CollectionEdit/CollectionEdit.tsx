@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { slugify } from '@/lib/utils';
 import { useAdminLocale } from '@/components/providers/AdminLocaleProvider';
 import type { CollectionMeta, CollectionFieldMeta } from '@/lib/collections-data';
 import { BlockContentEditor } from '@/components/admin/BlockContentEditor';
@@ -328,16 +329,37 @@ export function CollectionEdit({
     const ariaLabel = `${getFieldLabel(field)} (${activeLocale.toUpperCase()})`;
 
     if (localizedAs === 'text') {
+      const isPostSlugField = isPostCollection && field.name === 'slug';
+      const titleMap = (formData.title as Record<string, unknown>) ?? {};
+      const titleValue = titleMap[activeLocale];
+      const generatedSlug =
+        typeof titleValue === 'string' && titleValue.trim() ? slugify(titleValue) : '';
+
       return (
-        <input
-          id={inputId}
-          type="text"
-          aria-label={ariaLabel}
-          value={String(localeValue)}
-          onChange={(e) => updateLocalizedField(field.name, activeLocale, e.target.value)}
-          required={field.required && activeLocale === collectionLocales[0]}
-          className={cn(baseInput, 'h-10')}
-        />
+        <div className="flex items-center gap-2">
+          <input
+            id={inputId}
+            type="text"
+            aria-label={ariaLabel}
+            value={String(localeValue)}
+            onChange={(e) => updateLocalizedField(field.name, activeLocale, e.target.value)}
+            required={field.required && activeLocale === collectionLocales[0]}
+            placeholder={isPostSlugField ? 'Leave empty to auto-generate from title' : undefined}
+            className={cn(baseInput, 'h-10')}
+          />
+          {isPostSlugField && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={!generatedSlug}
+              onClick={() => updateLocalizedField(field.name, activeLocale, generatedSlug)}
+              className="shrink-0"
+            >
+              Generate
+            </Button>
+          )}
+        </div>
       );
     }
 

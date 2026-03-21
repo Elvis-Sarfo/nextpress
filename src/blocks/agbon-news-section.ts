@@ -13,7 +13,7 @@ export const agbonNewsSectionBlock = defineBlock({
       { name: 'itemsPerPage', type: 'number', label: 'Items Per Page' },
     ],
     dataSource: {
-      collection: 'posts',
+      collection: 'news',
       defaultParams: {
         limit: 3,
         where: { status: 'published' },
