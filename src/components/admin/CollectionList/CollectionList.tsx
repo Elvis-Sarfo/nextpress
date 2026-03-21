@@ -4,15 +4,18 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   AlertTriangle,
+  Check,
   Copy,
   Download,
   Loader2,
   Pencil,
   PencilLine,
   Plus,
+  RotateCcw,
   Search,
   Trash2,
   Upload,
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAdminLocale } from '@/components/providers/AdminLocaleProvider';
@@ -51,6 +54,7 @@ export function CollectionList({ collection }: CollectionListProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [duplicateId, setDuplicateId] = useState<string | null>(null);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [moderatingId, setModeratingId] = useState<string | null>(null);
 
   const [editorOpen, setEditorOpen] = useState(false);
   const [editorIntent, setEditorIntent] = useState<EditorIntent>('create');
@@ -127,6 +131,9 @@ export function CollectionList({ collection }: CollectionListProps) {
     () => displayFields.filter((field) => ['text', 'email', 'textarea', 'select'].includes(field.type)),
     [displayFields]
   );
+
+  const commentStatusFilter = typeof filterMap.status === 'string' ? filterMap.status : '';
+  const isCommentsCollection = collection.slug === 'comments';
 
   const columns = useMemo(
     () => buildCollectionColumns(displayFields, locale),
@@ -233,6 +240,40 @@ export function CollectionList({ collection }: CollectionListProps) {
       setIsBulkDeleting(false);
     }
   };
+
+  const setCommentStatusFilter = (status: '' | 'pending' | 'approved' | 'rejected') => {
+    const nextFilters = status
+      ? [{ id: 'status', value: status }]
+      : [];
+    onColumnFiltersChange(nextFilters);
+  };
+
+  const handleCommentModeration = async (id: string, status: 'approved' | 'rejected') => {
+    setModeratingId(id);
+    try {
+      const res = await fetch(`/api/admin/collections/comments/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error ?? `Failed to mark comment as ${status}.`);
+        return;
+      }
+
+      await fetchDocs();
+    } finally {
+      setModeratingId(null);
+    }
+  };
+
+  useEffect(() => {
+    if (!isCommentsCollection) return;
+    if (columnFilters.some((filter) => filter.id === 'status')) return;
+    onColumnFiltersChange([{ id: 'status', value: 'pending' }]);
+  }, [columnFilters, isCommentsCollection, onColumnFiltersChange]);
 
   const handleImportFile = async (file: File) => {
     setImportError(null);
@@ -546,6 +587,44 @@ export function CollectionList({ collection }: CollectionListProps) {
             Delete {selectedIds.size}
           </Button>
         )}
+
+        {isCommentsCollection && (
+          <>
+            <Button
+              type="button"
+              size="sm"
+              variant={commentStatusFilter === 'pending' ? 'default' : 'outline'}
+              onClick={() => setCommentStatusFilter('pending')}
+            >
+              Pending
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={commentStatusFilter === 'approved' ? 'default' : 'outline'}
+              onClick={() => setCommentStatusFilter('approved')}
+            >
+              Approved
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={commentStatusFilter === 'rejected' ? 'default' : 'outline'}
+              onClick={() => setCommentStatusFilter('rejected')}
+            >
+              Rejected
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={commentStatusFilter === '' ? 'default' : 'outline'}
+              onClick={() => setCommentStatusFilter('')}
+            >
+              <RotateCcw className="mr-2 h-4 w-4" />
+              All
+            </Button>
+          </>
+        )}
       </div>
     </>
   );
@@ -568,6 +647,38 @@ export function CollectionList({ collection }: CollectionListProps) {
         onPaginationChange={onPaginationChange}
         renderActions={(doc) => (
           <div className="flex items-center justify-end gap-1">
+            {collection.slug === 'comments' && doc.status !== 'approved' && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleCommentModeration(String(doc.id), 'approved')}
+                disabled={moderatingId === String(doc.id)}
+                className="text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
+                title="Approve"
+              >
+                {moderatingId === String(doc.id) ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
+              </Button>
+            )}
+            {collection.slug === 'comments' && doc.status !== 'rejected' && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleCommentModeration(String(doc.id), 'rejected')}
+                disabled={moderatingId === String(doc.id)}
+                className="text-amber-600 hover:bg-amber-50 hover:text-amber-700"
+                title="Reject"
+              >
+                {moderatingId === String(doc.id) ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <X className="h-4 w-4" />
+                )}
+              </Button>
+            )}
             {collection.slug === 'blocks' && (
               <Button
                 variant="ghost"

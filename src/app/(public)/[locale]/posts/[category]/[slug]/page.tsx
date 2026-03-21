@@ -17,6 +17,7 @@ import {
   localeEngine,
   type PostWithLocales,
 } from '@/lib/cms';
+import { buildArticleStructuredData, scoreRelatedPost } from '@/lib/editorial';
 import { getCategorySlugForLocale, getLocale, getLocalizedRichTextHtml } from '@/lib/locale-utils';
 
 interface PostDetailPageProps {
@@ -52,78 +53,6 @@ function toPostCardItem(post: PostWithLocales, locale: string): AgbonNewsItem {
       month: buildMonth(publishedAt),
     },
     url: slug && categorySlug ? buildPostItemPath(locale, categorySlug, slug) : buildPostsListingPath(locale),
-  };
-}
-
-function getTagNames(tags: unknown): string[] {
-  if (!Array.isArray(tags)) return [];
-
-  return tags
-    .map((tag) => {
-      if (typeof tag === 'string') return tag.trim().toLowerCase();
-      if (tag && typeof tag === 'object' && 'tag' in tag) {
-        const value = (tag as { tag?: unknown }).tag;
-        return typeof value === 'string' ? value.trim().toLowerCase() : '';
-      }
-      return '';
-    })
-    .filter((tag): tag is string => Boolean(tag));
-}
-
-function scoreRelatedPost(candidate: PostWithLocales, currentPost: PostWithLocales): number {
-  const candidateTags = new Set(getTagNames(candidate.tags));
-  const currentTags = getTagNames(currentPost.tags);
-  const sharedTagCount = currentTags.filter((tag) => candidateTags.has(tag)).length;
-  const sameCategory = candidate.category?.id && currentPost.category?.id
-    ? candidate.category.id === currentPost.category.id
-    : false;
-  const timestamp = new Date(candidate.publishedAt ?? candidate.createdAt).getTime();
-
-  return (sameCategory ? 1000 : 0) + sharedTagCount * 100 + timestamp / 1_000_000_000_000;
-}
-
-function buildArticleStructuredData(params: {
-  locale: string;
-  categorySlug: string;
-  title: string;
-  description?: string | null;
-  authorName: string;
-  categoryName: string;
-  publishedAt: Date;
-  updatedAt: Date;
-  slug: string;
-  imageUrl?: string | null;
-}): Record<string, unknown> {
-  const {
-    locale,
-    categorySlug,
-    title,
-    description,
-    authorName,
-    categoryName,
-    publishedAt,
-    updatedAt,
-    slug,
-    imageUrl,
-  } = params;
-
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'Article',
-    headline: title,
-    description: description ?? undefined,
-    datePublished: publishedAt.toISOString(),
-    dateModified: updatedAt.toISOString(),
-    articleSection: categoryName,
-    author: {
-      '@type': 'Person',
-      name: authorName,
-    },
-    mainEntityOfPage: {
-      '@type': 'WebPage',
-      '@id': buildPostItemPath(locale, categorySlug, slug),
-    },
-    image: imageUrl ? [imageUrl] : undefined,
   };
 }
 

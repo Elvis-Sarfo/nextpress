@@ -32,13 +32,13 @@ function CommentThread({ comments, depth = 0 }: { comments: CommentWithReplies[]
       {comments.map((comment) => (
         <article
           key={comment.id}
-          className={`rounded-2xl border border-[#e8dcc5] bg-white p-5 shadow-sm ${depth > 0 ? 'ml-4 md:ml-8' : ''}`}
+          className={`rounded-2xl border border-[#e8dcc5] bg-white p-2 shadow-sm ${depth > 0 ? 'ml-4 md:ml-8' : ''}`}
         >
           <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500">
             <span className="font-semibold text-[#1a1a1a]">{getCommentAuthor(comment)}</span>
             <span>{formatDate(comment.createdAt)}</span>
           </div>
-          <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-gray-700">
+          <p className="mt-0 whitespace-pre-wrap text-sm leading-7 text-gray-700">
             {comment.content ?? ''}
           </p>
 

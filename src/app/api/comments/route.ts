@@ -1,41 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/adapters/prisma-adapter';
-
-type CommentPayload = {
-  postId?: unknown;
-  parentId?: unknown;
-  name?: unknown;
-  email?: unknown;
-  content?: unknown;
-};
-
-function asTrimmedString(value: unknown): string {
-  return typeof value === 'string' ? value.trim() : '';
-}
-
-function isValidEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
+import { validatePublicCommentPayload, type PublicCommentPayload } from '@/lib/editorial';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = (await request.json()) as CommentPayload;
+    const body = (await request.json()) as PublicCommentPayload;
+    const { postId, parentId, name, email, content, error } = validatePublicCommentPayload(body);
 
-    const postId = asTrimmedString(body.postId);
-    const parentId = asTrimmedString(body.parentId);
-    const name = asTrimmedString(body.name);
-    const email = asTrimmedString(body.email);
-    const content = asTrimmedString(body.content);
-
-    if (!postId || !name || !email || !content) {
-      return NextResponse.json(
-        { error: 'Name, email, and comment are required.' },
-        { status: 400 },
-      );
-    }
-
-    if (!isValidEmail(email)) {
-      return NextResponse.json({ error: 'Please enter a valid email address.' }, { status: 400 });
+    if (error) {
+      return NextResponse.json({ error }, { status: 400 });
     }
 
     const post = await prisma.posts.findFirst({
