@@ -360,6 +360,14 @@ export const Settings: CollectionConfig<'settings'> = {
             description: 'Show language switcher in header',
           },
         },
+        {
+          name: 'showQuickInquiry',
+          type: 'checkbox',
+          defaultValue: true,
+          admin: {
+            description: 'Show the floating quick inquiry button sitewide',
+          },
+        },
       ],
     },
   ],

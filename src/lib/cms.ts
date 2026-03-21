@@ -933,6 +933,47 @@ export async function getSetting<T = unknown>(path: string): Promise<T | undefin
   return current as T;
 }
 
+export type CountryOfficeRecord = {
+  city: string;
+  address?: string;
+  phone: string;
+  email?: string;
+  type?: string;
+};
+
+export type CountryContactRecord = {
+  id: string;
+  name: string;
+  flag?: string | null;
+  offices: CountryOfficeRecord[];
+  order: number;
+};
+
+export async function getActiveCountries(): Promise<CountryContactRecord[]> {
+  const rows = await prisma.countries.findMany({
+    where: { status: 'active' },
+    orderBy: { order: 'asc' },
+  });
+
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    flag: row.flag ?? null,
+    order: row.order,
+    offices: Array.isArray(row.offices)
+      ? (row.offices as CountryOfficeRecord[])
+          .filter((office) => office?.city && office?.phone)
+          .map((office) => ({
+            city: office.city,
+            address: office.address,
+            phone: office.phone,
+            email: office.email,
+            type: office.type,
+          }))
+      : [],
+  }));
+}
+
 // ============================================================================
 // CATALOGUE — PRODUCT CATEGORIES
 // ============================================================================

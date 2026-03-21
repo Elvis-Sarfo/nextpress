@@ -4,8 +4,9 @@ import { AgbonHeader, HeaderConfig, type HeaderNavItem } from '@/components/agbo
 import { AgbonFooter, FooterConfig } from '@/components/agbon/footer'
 import { AgbonFloatingQuickInquiry } from '@/components/agbon/floating-quick-inquiry'
 import { AgbonProductNavProvider } from '@/contexts/agbon-product-nav-context'
-import { getMenuByLocation, getSettings, localeEngine, type MenuItem } from '@/lib/cms'
+import { getActiveCountries, getMenuByLocation, getSettings, localeEngine, type MenuItem } from '@/lib/cms'
 import { buildLocalizedPath } from '@/lib/agbon-routes'
+import { getLocale } from '@/lib/locale-utils'
 
 interface LocaleLayoutProps {
   children: React.ReactNode
@@ -69,15 +70,45 @@ export default async function LocalePublicLayout({ children, params }: LocaleLay
     notFound()
   }
 
-  const [settings, primaryMenu] = await Promise.all([
+  const [settings, primaryMenu, countries] = await Promise.all([
     getSettings() as Promise<Record<string, unknown>>,
     getMenuByLocation('primary'),
+    getActiveCountries(),
   ])
   const legal = (settings.legal as Record<string, string> | null) || {}
   const newsletter = (settings.newsletter as Record<string, unknown> | null) || {}
+  const features = (settings.features as Record<string, unknown> | null) || {}
+  const footer = (settings.footer as Record<string, unknown> | null) || {}
+  const contact = (settings.contact as Record<string, unknown> | null) || {}
+  const socialMedia = (settings.socialMedia as Record<string, unknown> | null) || {}
+  const logo = (settings.logo as Record<string, unknown> | null) || {}
 
-  const logoUrl = (settings.logo as { url?: string } | null)?.url || '/logo.png'
+  const logoImage = (logo.image as { url?: string } | null) || (settings.logo as { url?: string } | null)
+  const logoUrl = logoImage?.url || '/logo.png'
   const siteName = (settings.siteName as string | null) || 'Agbon'
+  const footerDescription =
+    getLocale(footer.description as Record<string, string> | null | undefined, locale) ||
+    (settings.siteDescription as string | null) ||
+    'Leading agricultural machinery manufacturer since 2018. Providing quality equipment to farmers worldwide.'
+  const footerQuickLinks = Array.isArray(footer.quickLinks)
+    ? footer.quickLinks
+        .filter(
+          (item): item is { label: string; href: string } =>
+            typeof item === 'object' &&
+            item !== null &&
+            typeof (item as { label?: unknown }).label === 'string' &&
+            typeof (item as { href?: unknown }).href === 'string',
+        )
+        .map((item) => ({
+          label: item.label,
+          href: localizeConfiguredPath(locale, item.href, item.href),
+        }))
+    : [
+        { label: 'About', href: buildLocalizedPath(locale, '/about') },
+        { label: 'Products', href: buildLocalizedPath(locale, '/products') },
+        { label: 'After Sales', href: buildLocalizedPath(locale, '/after-sales-service') },
+        { label: 'Contact', href: buildLocalizedPath(locale, '/contact') },
+      ]
 
   const fallbackNavigation: HeaderNavItem[] = [
     {
@@ -102,45 +133,41 @@ export default async function LocalePublicLayout({ children, params }: LocaleLay
   const headerConfig: HeaderConfig = {
     logo: {
       src: logoUrl,
-      alt: siteName,
-      width: 120,
-      height: 40,
+      alt: (logo.alt as string | null) || siteName,
+      width: (logo.width as number | null) || 120,
+      height: (logo.height as number | null) || 40,
       className: 'h-8 md:h-10 w-auto',
     },
     navigation: dynamicNavigation.length > 0 ? dynamicNavigation : fallbackNavigation,
   }
 
   const footerConfig: FooterConfig = {
-    companyName: siteName,
-    description:
-      (settings.siteDescription as string | null) ||
-      'Leading agricultural machinery manufacturer since 2018. Providing quality equipment to farmers worldwide.',
+    companyName: (footer.companyName as string | null) || siteName,
+    description: footerDescription,
     logo: headerConfig.logo,
-    quickLinks: [
-      { label: 'About', href: buildLocalizedPath(locale, '/about') },
-      { label: 'Products', href: buildLocalizedPath(locale, '/products') },
-      { label: 'After Sales', href: buildLocalizedPath(locale, '/after-sales-service') },
-      { label: 'Contact', href: buildLocalizedPath(locale, '/contact') },
-    ],
+    quickLinks: footerQuickLinks,
     contact: {
-      phone: (settings.phone as string | null) || '+1 (555) 123-4567',
-      email: (settings.email as string | null) || 'info@agbon.com',
-      address: (settings.address as string | null) || 'Industrial Park, Zone A',
+      phone: (contact.phone as string | null) || '+1 (555) 123-4567',
+      email: (contact.email as string | null) || 'info@agbon.com',
+      address: (contact.address as string | null) || 'Industrial Park, Zone A',
     },
     socialMedia: {
-      facebook: (settings.facebook as string | null) || undefined,
-      linkedin: (settings.linkedin as string | null) || undefined,
-      twitter: (settings.twitter as string | null) || undefined,
+      facebook: (socialMedia.facebook as string | null) || undefined,
+      linkedin: (socialMedia.linkedin as string | null) || undefined,
+      twitter: (socialMedia.twitter as string | null) || undefined,
     },
     newsletter: {
       enabled: (newsletter.enabled as boolean | undefined) ?? true,
-      placeholder: (newsletter.placeholder as string | null) || 'Your email',
+      placeholder:
+        getLocale(newsletter.placeholder as Record<string, string> | null | undefined, locale) ||
+        'Your email',
     },
     legal: {
       privacy: localizeConfiguredPath(locale, legal.privacyPolicy || '', '/privacy-policy'),
       terms: localizeConfiguredPath(locale, legal.termsOfService || '', '/terms-of-service'),
     },
-    copyright: `© ${new Date().getFullYear()} ${siteName}. All rights reserved.`,
+    copyright:
+      (footer.copyright as string | null) || `© ${new Date().getFullYear()} ${siteName}. All rights reserved.`,
   }
 
   return (
@@ -149,7 +176,7 @@ export default async function LocalePublicLayout({ children, params }: LocaleLay
       <AgbonProductNavProvider>
         <main className="flex-1">{children}</main>
       </AgbonProductNavProvider>
-      <AgbonFloatingQuickInquiry />
+      {features.showQuickInquiry !== false ? <AgbonFloatingQuickInquiry countries={countries} /> : null}
       <AgbonFooter config={footerConfig} locale={locale} />
     </div>
   )
