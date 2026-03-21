@@ -119,7 +119,7 @@ function getLocalizedValue(value: unknown, locale: string): string | undefined {
 // ============================================================================
 
 const DEFAULT_LOCALE = 'en';
-const SUPPORTED_LOCALES = ['en', 'fr', 'de', 'es'] as const;
+const SUPPORTED_LOCALES = ['en', 'fr'] as const;
 
 export const localeEngine = {
   getDefaultLocale: () => DEFAULT_LOCALE,

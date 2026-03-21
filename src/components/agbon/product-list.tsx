@@ -27,7 +27,7 @@ function getLocalized(field: unknown, locale: string): string {
   if (typeof field === 'string') return field
   if (typeof field === 'object') {
     const obj = field as Record<string, string>
-    return obj[locale] || obj.en || obj.fr || obj.zh || Object.values(obj)[0] || ''
+    return obj[locale] || obj.en || obj.fr || Object.values(obj)[0] || ''
   }
   return ''
 }

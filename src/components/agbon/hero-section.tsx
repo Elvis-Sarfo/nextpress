@@ -37,16 +37,14 @@ function getTextColorClass(color: 'white' | 'black' | 'orange') {
 export function AgbonHeroSection({ slides = [], locale = 'en' }: HeroSectionProps) {
   const fallbackSlides: HeroSlideRecord[] = [
     {
-      title: locale === 'fr' ? 'Des machines fiables pour chaque saison.' : locale === 'zh' ? '每个季节都可靠的农机。' : 'Reliable machinery for every season.',
+      title: locale === 'fr' ? 'Des machines fiables pour chaque saison.' : 'Reliable machinery for every season.',
       subtitle: locale === 'fr'
         ? 'Équipez votre exploitation avec des solutions conçues pour les réalités africaines.'
-        : locale === 'zh'
-          ? '为非洲农业场景打造的设备解决方案。'
-          : 'Equip your operation with solutions built for African farming realities.',
+        : 'Equip your operation with solutions built for African farming realities.',
       imageUrl: '/images/banner/1.png',
       mobileImageUrl: '/images/banner/1.png',
       videoUrl: null,
-      ctaText: locale === 'fr' ? 'Explorer les produits' : locale === 'zh' ? '浏览产品' : 'Explore Products',
+      ctaText: locale === 'fr' ? 'Explorer les produits' : 'Explore Products',
       ctaLink: '/products',
       textPosition: {
         desktopAlignment: 'center',

@@ -7,7 +7,6 @@ import { replaceLocaleInPath } from '@/lib/agbon-routes'
 const LANGUAGES = [
   { code: 'en', label: 'English', flag: '🇬🇧' },
   { code: 'fr', label: 'Français', flag: '🇫🇷' },
-  { code: 'zh', label: '中文', flag: '🇨🇳' },
 ] as const
 
 interface HeaderLanguageSwitcherProps {

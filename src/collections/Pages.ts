@@ -174,7 +174,7 @@ export const Pages: CollectionConfig<'pages'> = {
   },
 
   localization: {
-    locales: ['en', 'fr', 'de'],
+    locales: ['en', 'fr'],
     defaultLocale: 'en',
     fallback: true,
   },

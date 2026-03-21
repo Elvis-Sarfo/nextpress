@@ -95,7 +95,7 @@ export function CollectionEdit({
 
   // ── Locale state ────────────────────────────────────────────────────────────
   const { locale: adminLocale } = useAdminLocale();
-  const collectionLocales = collection.localization?.locales ?? ['en', 'fr', 'de', 'es'];
+  const collectionLocales = collection.localization?.locales ?? ['en', 'fr'];
   const [activeLocale, setActiveLocale] = useState(() => adminLocale);
   const hasLocalizedFields = collection.fields.some((f) => f.localized);
 

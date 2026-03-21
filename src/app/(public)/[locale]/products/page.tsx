@@ -55,7 +55,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const siteConfig = await getSiteConfig(locale);
 
   return {
-    title: locale === 'fr' ? 'Produits' : locale === 'zh' ? '产品' : 'Products',
+    title: locale === 'fr' ? 'Produits' : 'Products',
     description: siteConfig.seo.description,
   };
 }

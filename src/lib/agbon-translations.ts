@@ -7,9 +7,9 @@
  *   <p>{t('nav.home', locale)}</p>
  */
 
-type Locale = 'en' | 'fr' | 'zh'
+type Locale = 'en' | 'fr'
 
-const translations: Record<Locale, Record<string, string>> = {
+const translations: Record<string, Record<string, string>> = {
   en: {
     // Home Feature Cards
     'homeFeatures.1.title': 'Advancing Sustainable Forestry',
@@ -441,8 +441,8 @@ const translations: Record<Locale, Record<string, string>> = {
  * Returns the key itself if not found anywhere.
  */
 export function t(key: string, locale: string = 'en'): string {
-  const loc = (translations[locale as Locale] ? locale : 'en') as Locale
-  return translations[loc][key] ?? translations['en'][key] ?? key
+  const loc = translations[locale] ? locale : 'en'
+  return translations[loc][key] ?? translations.en[key] ?? key
 }
 
 export type { Locale }

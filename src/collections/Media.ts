@@ -177,7 +177,7 @@ export const Media: CollectionConfig<'media'> = {
   },
 
   localization: {
-    locales: ['en', 'fr', 'zh'],
+    locales: ['en', 'fr'],
     defaultLocale: 'en',
     fallback: true,
   },

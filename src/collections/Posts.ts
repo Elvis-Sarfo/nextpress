@@ -176,7 +176,7 @@ export const Posts: CollectionConfig<'posts'> = {
   },
 
   localization: {
-    locales: ['en', 'fr', 'de'],
+    locales: ['en', 'fr'],
     defaultLocale: 'en',
     fallback: true,
   },

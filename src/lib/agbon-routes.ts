@@ -39,6 +39,6 @@ export function buildNewsItemPath(locale: string, slug: string): string {
 }
 
 export function replaceLocaleInPath(pathname: string, locale: string): string {
-  const nextPath = pathname.replace(/^\/(en|fr|zh)(?=\/|$)/, `/${locale}`)
+  const nextPath = pathname.replace(/^\/(en|fr)(?=\/|$)/, `/${locale}`)
   return nextPath === pathname ? buildLocalizedPath(locale, pathname) : nextPath
 }

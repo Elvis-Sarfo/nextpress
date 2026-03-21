@@ -178,7 +178,7 @@ function ScalarFieldInput({ field, value, onChange, activeLocale, locales: _loca
 export function SettingsEditor({ meta, documentId }: SettingsEditorProps) {
   const { locale: adminLocale } = useAdminLocale();
   const [activeLocale, setActiveLocale] = useState(() => adminLocale);
-  const locales = meta.localization?.locales ?? ['en', 'fr', 'de', 'es'];
+  const locales = meta.localization?.locales ?? ['en', 'fr'];
 
   // Sync active locale when global admin locale changes
   useEffect(() => {

@@ -16,7 +16,7 @@ interface CategoryCardProps {
 
 function getLocalized(field: Record<string, string> | null | undefined, locale: string): string {
   if (!field) return ''
-  return field[locale] || field.en || field.fr || field.zh || Object.values(field)[0] || ''
+  return field[locale] || field.en || field.fr || Object.values(field)[0] || ''
 }
 
 export function AgbonCategoryCard({

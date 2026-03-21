@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 
-const SUPPORTED_LOCALES = ['en', 'fr', 'de', 'es'] as const;
+const SUPPORTED_LOCALES = ['en', 'fr'] as const;
 type SupportedLocale = typeof SUPPORTED_LOCALES[number];
 const DEFAULT_LOCALE: SupportedLocale = 'en';
 const STORAGE_KEY = 'nextpress-admin-locale';
