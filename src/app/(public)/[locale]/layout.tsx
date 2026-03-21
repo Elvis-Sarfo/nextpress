@@ -97,7 +97,12 @@ export default async function LocalePublicLayout({ children, params }: LocaleLay
     {
       label: 'About AGBON',
       items: [
-        { label: 'Brand Introduction', href: buildLocalizedPath(locale, '/about') },
+        {
+          label: 'Brand Introduction',
+          href: locale === 'fr'
+            ? buildLocalizedPath(locale, '/a-propos/presentation-de-la-marque')
+            : buildLocalizedPath(locale, '/about/brand-introduction'),
+        },
         { label: 'Business Map', href: buildLocalizedPath(locale, '/about#business-map') },
       ],
     },

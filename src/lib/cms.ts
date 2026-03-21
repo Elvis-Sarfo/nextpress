@@ -246,17 +246,14 @@ async function buildPagePathMatch(
 
   const pathByLocale: Record<string, string[]> = {};
 
+  for (const locale of SUPPORTED_LOCALES) {
+    pathByLocale[locale] = [];
+  }
+
   for (const entry of chain) {
-    const slugMap =
-      entry.slug && typeof entry.slug === 'object' && !Array.isArray(entry.slug)
-        ? (entry.slug as Record<string, string>)
-        : null;
-
-    if (!slugMap) return null;
-
-    for (const [locale, slug] of Object.entries(slugMap)) {
-      if (!slug) continue;
-      if (!pathByLocale[locale]) pathByLocale[locale] = [];
+    for (const locale of SUPPORTED_LOCALES) {
+      const slug = getLocalizedValue(entry.slug, locale);
+      if (!slug) return null;
       pathByLocale[locale].push(slug);
     }
   }
@@ -658,12 +655,13 @@ async function resolveMenuItems(row: MenuRow, locale: string = DEFAULT_LOCALE): 
   if (pageIds.length > 0) {
     const pages = await prisma.pages.findMany({
       where: { id: { in: pageIds } },
-      select: { id: true, slug: true },
+      select: { id: true, parentId: true, slug: true },
     });
     const slugMap: Record<string, Record<string, string>> = {};
     for (const p of pages) {
-      if (p.slug && typeof p.slug === 'object') {
-        slugMap[p.id] = p.slug as Record<string, string>;
+      const match = await buildPagePathMatch(p);
+      if (match) {
+        slugMap[p.id] = match.pathByLocale;
       }
     }
     injectPageUrls(items, slugMap);

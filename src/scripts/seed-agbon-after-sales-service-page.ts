@@ -230,9 +230,12 @@ async function main() {
       documentId_status: { documentId: PAGE_DOCUMENT_ID, status: 'published' },
     },
     update: {
-      title: { en: 'After Sales Service' },
-      slug: { en: 'after-sales-service' },
-      excerpt: { en: 'Support, coverage, and partnership opportunities across Africa.' },
+      title: { en: 'After Sales Service', fr: 'Service apres-vente' },
+      slug: { en: 'after-sales-service', fr: 'service-apres-vente' },
+      excerpt: {
+        en: 'Support, coverage, and partnership opportunities across Africa.',
+        fr: 'Support, couverture et opportunites de partenariat en Afrique.',
+      },
       sections: buildSections({
         pageBannerId,
         serviceAreasId,
@@ -245,9 +248,12 @@ async function main() {
     create: {
       documentId: PAGE_DOCUMENT_ID,
       status: 'published',
-      title: { en: 'After Sales Service' },
-      slug: { en: 'after-sales-service' },
-      excerpt: { en: 'Support, coverage, and partnership opportunities across Africa.' },
+      title: { en: 'After Sales Service', fr: 'Service apres-vente' },
+      slug: { en: 'after-sales-service', fr: 'service-apres-vente' },
+      excerpt: {
+        en: 'Support, coverage, and partnership opportunities across Africa.',
+        fr: 'Support, couverture et opportunites de partenariat en Afrique.',
+      },
       sections: buildSections({
         pageBannerId,
         serviceAreasId,
@@ -259,7 +265,7 @@ async function main() {
     },
   });
 
-  console.log('Seeded /after-sales-service page configuration');
+  console.log('Seeded /after-sales-service and /service-apres-vente page configuration');
 }
 
 main()

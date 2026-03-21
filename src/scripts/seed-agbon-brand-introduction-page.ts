@@ -113,17 +113,17 @@ async function main() {
       documentId_status: { documentId: ABOUT_DOCUMENT_ID, status: 'published' },
     },
     update: {
-      title: { en: 'About AGBON' },
-      slug: { en: 'about' },
-      excerpt: { en: 'Learn more about AGBON.' },
+      title: { en: 'About AGBON', fr: "A propos d'AGBON" },
+      slug: { en: 'about', fr: 'a-propos' },
+      excerpt: { en: 'Learn more about AGBON.', fr: "En savoir plus sur AGBON." },
       createdBy: 'system',
     },
     create: {
       documentId: ABOUT_DOCUMENT_ID,
       status: 'published',
-      title: { en: 'About AGBON' },
-      slug: { en: 'about' },
-      excerpt: { en: 'Learn more about AGBON.' },
+      title: { en: 'About AGBON', fr: "A propos d'AGBON" },
+      slug: { en: 'about', fr: 'a-propos' },
+      excerpt: { en: 'Learn more about AGBON.', fr: "En savoir plus sur AGBON." },
       createdBy: 'system',
     },
   });
@@ -261,9 +261,12 @@ async function main() {
       documentId_status: { documentId: PAGE_DOCUMENT_ID, status: 'published' },
     },
     update: {
-      title: { en: 'The Agbon Brand' },
-      slug: { en: 'brand-introduction' },
-      excerpt: { en: 'Discover the AGBON brand story and continental presence.' },
+      title: { en: 'The Agbon Brand', fr: 'La marque AGBON' },
+      slug: { en: 'brand-introduction', fr: 'presentation-de-la-marque' },
+      excerpt: {
+        en: 'Discover the AGBON brand story and continental presence.',
+        fr: "Decouvrez l'histoire de la marque AGBON et sa presence continentale.",
+      },
       parentId: aboutPage.id,
       sections: await buildSections({
         pageBannerId,
@@ -277,9 +280,12 @@ async function main() {
     create: {
       documentId: PAGE_DOCUMENT_ID,
       status: 'published',
-      title: { en: 'The Agbon Brand' },
-      slug: { en: 'brand-introduction' },
-      excerpt: { en: 'Discover the AGBON brand story and continental presence.' },
+      title: { en: 'The Agbon Brand', fr: 'La marque AGBON' },
+      slug: { en: 'brand-introduction', fr: 'presentation-de-la-marque' },
+      excerpt: {
+        en: 'Discover the AGBON brand story and continental presence.',
+        fr: "Decouvrez l'histoire de la marque AGBON et sa presence continentale.",
+      },
       parentId: aboutPage.id,
       sections: await buildSections({
         pageBannerId,
@@ -292,7 +298,7 @@ async function main() {
     },
   });
 
-  console.log('Seeded /about/brand-introduction page configuration');
+  console.log('Seeded /about/brand-introduction and /a-propos/presentation-de-la-marque page configuration');
 }
 
 main()

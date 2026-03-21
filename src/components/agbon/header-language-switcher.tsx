@@ -29,10 +29,28 @@ export function HeaderLanguageSwitcher({
   const searchParams = useSearchParams()
   const router = useRouter()
 
-  const handleSelect = (code: string) => {
-    const nextPath = replaceLocaleInPath(pathname || '/', code)
+  const handleSelect = async (code: string) => {
+    let nextPath = replaceLocaleInPath(pathname || '/', code)
     const query = searchParams.toString()
     const hash = typeof window !== 'undefined' ? window.location.hash : ''
+
+    if (pathname) {
+      try {
+        const response = await fetch(
+          `/api/localization/path?pathname=${encodeURIComponent(pathname)}&locale=${encodeURIComponent(code)}`,
+          { cache: 'no-store' }
+        )
+
+        if (response.ok) {
+          const payload = (await response.json()) as { path?: string }
+          if (payload.path) {
+            nextPath = payload.path
+          }
+        }
+      } catch {
+        // Fall back to simple locale-prefix replacement when alternate resolution fails.
+      }
+    }
 
     onClose()
     router.push(`${nextPath}${query ? `?${query}` : ''}${hash}`)
