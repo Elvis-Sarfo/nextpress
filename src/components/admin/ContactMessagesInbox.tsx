@@ -54,13 +54,13 @@ function formatDate(value: unknown): string {
 function statusTone(status: string): string {
   switch (status) {
     case 'resolved':
-      return 'bg-green-100 text-green-700';
+      return 'bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-300';
     case 'in_progress':
-      return 'bg-blue-100 text-blue-700';
+      return 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300';
     case 'spam':
-      return 'bg-red-100 text-red-700';
+      return 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300';
     default:
-      return 'bg-amber-100 text-amber-700';
+      return 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300';
   }
 }
 
@@ -334,38 +334,38 @@ export function ContactMessagesInbox({ collection }: { collection: CollectionMet
       </div>
 
       <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm dark:border-slate-800 dark:bg-slate-950">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">New</div>
-              <div className="truncate text-xs text-slate-500">Awaiting first follow-up</div>
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">New</div>
+              <div className="truncate text-xs text-slate-500 dark:text-slate-400">Awaiting first follow-up</div>
             </div>
             <div className="shrink-0 text-2xl font-bold leading-none text-[#FF6B35]">{newMessagesCount}</div>
           </div>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm dark:border-slate-800 dark:bg-slate-950">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">In Progress</div>
-              <div className="truncate text-xs text-slate-500">Currently being handled</div>
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">In Progress</div>
+              <div className="truncate text-xs text-slate-500 dark:text-slate-400">Currently being handled</div>
             </div>
             <div className="shrink-0 text-2xl font-bold leading-none text-[#1677ff]">{inProgressCount}</div>
           </div>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm dark:border-slate-800 dark:bg-slate-950">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Resolved</div>
-              <div className="truncate text-xs text-slate-500">Closed successfully</div>
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Resolved</div>
+              <div className="truncate text-xs text-slate-500 dark:text-slate-400">Closed successfully</div>
             </div>
             <div className="shrink-0 text-2xl font-bold leading-none text-green-600">{resolvedCount}</div>
           </div>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm dark:border-slate-800 dark:bg-slate-950">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Spam</div>
-              <div className="truncate text-xs text-slate-500">Filtered from follow-up</div>
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Spam</div>
+              <div className="truncate text-xs text-slate-500 dark:text-slate-400">Filtered from follow-up</div>
             </div>
             <div className="shrink-0 text-2xl font-bold leading-none text-red-600">{spamCount}</div>
           </div>
@@ -373,8 +373,8 @@ export function ContactMessagesInbox({ collection }: { collection: CollectionMet
       </div>
 
       {selectedBulkIds.length > 0 ? (
-        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-          <span className="mr-1 text-sm font-semibold text-slate-900">
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+          <span className="mr-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
             {selectedBulkIds.length} selected
           </span>
           <Button
@@ -420,14 +420,14 @@ export function ContactMessagesInbox({ collection }: { collection: CollectionMet
       ) : null}
 
       {fetchError ? (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-5 py-3 text-sm text-red-600">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-5 py-3 text-sm text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
           {fetchError}
         </div>
       ) : null}
 
       {selectedMessage ? (
-        <div className="min-h-0 flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm xl:flex xl:flex-col">
-          <div className="border-b border-slate-200 px-5 py-3 xl:shrink-0">
+        <div className="min-h-0 flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950 xl:flex xl:flex-col">
+          <div className="border-b border-slate-200 px-5 py-3 dark:border-slate-800 xl:shrink-0">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap items-center gap-2">
                 <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => setSelectedId(null)}>
@@ -455,7 +455,7 @@ export function ContactMessagesInbox({ collection }: { collection: CollectionMet
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
-                <span className="ml-1 text-xs text-slate-400">
+                <span className="ml-1 text-xs text-slate-400 dark:text-slate-500">
                   {selectedIndex + 1} of {docs.length}
                 </span>
               </div>
@@ -536,12 +536,12 @@ export function ContactMessagesInbox({ collection }: { collection: CollectionMet
           </div>
 
           <div className="flex-1 px-6 py-5 xl:min-h-0 xl:overflow-y-auto">
-            <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-5">
+            <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-5 dark:border-slate-800">
               <div className="min-w-0">
-                <h2 className="truncate text-2xl font-semibold text-slate-900">
+                <h2 className="truncate text-2xl font-semibold text-slate-900 dark:text-slate-100">
                   {asString(selectedMessage.subject) || 'No subject'}
                 </h2>
-                <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-slate-500">
+                <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-slate-500 dark:text-slate-400">
                   <span className="inline-flex items-center gap-2">
                     <User className="h-4 w-4" />
                     {asString(selectedMessage.name) || 'Unknown sender'}
@@ -552,14 +552,14 @@ export function ContactMessagesInbox({ collection }: { collection: CollectionMet
                   </span>
                 </div>
               </div>
-              <div className="text-xs text-slate-400">
+              <div className="text-xs text-slate-400 dark:text-slate-500">
                 {formatDate(selectedMessage.submittedAt)}
               </div>
             </div>
 
             <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-              <div className="rounded-2xl border border-slate-200 bg-white p-5">
-                <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-950">
+                <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                   Assigned To
                 </div>
                 <select
@@ -582,13 +582,13 @@ export function ContactMessagesInbox({ collection }: { collection: CollectionMet
                     </option>
                   ))}
                 </select>
-                <div className="mt-2 text-xs text-slate-400">
+                <div className="mt-2 text-xs text-slate-400 dark:text-slate-500">
                   {savingAssignee ? 'Saving assignment...' : 'Choose the admin responsible for follow-up.'}
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-white p-5">
-                <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-950">
+                <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                   Internal Notes
                 </div>
                 <textarea
@@ -598,7 +598,7 @@ export function ContactMessagesInbox({ collection }: { collection: CollectionMet
                   className="min-h-28 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
                 />
                 <div className="mt-3 flex items-center justify-between gap-3">
-                  <p className="text-xs text-slate-400">Notes are only visible in admin.</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-500">Notes are only visible in admin.</p>
                   <Button type="button" size="sm" onClick={() => void saveNotes()} disabled={savingNotes}>
                     {savingNotes ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                     Save Notes
@@ -609,47 +609,47 @@ export function ContactMessagesInbox({ collection }: { collection: CollectionMet
 
             <div className="mt-6 grid gap-4 md:grid-cols-3">
               {asString(selectedMessage.phone) ? (
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="mb-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
+                  <div className="mb-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                     <Phone className="h-4 w-4 text-[#FF6B35]" />
                     Phone
                   </div>
-                  <p className="text-sm text-slate-900">{asString(selectedMessage.phone)}</p>
+                  <p className="text-sm text-slate-900 dark:text-slate-100">{asString(selectedMessage.phone)}</p>
                 </div>
               ) : null}
               {asString(selectedMessage.company) ? (
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
+                  <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                     Company
                   </div>
-                  <p className="text-sm text-slate-900">{asString(selectedMessage.company)}</p>
+                  <p className="text-sm text-slate-900 dark:text-slate-100">{asString(selectedMessage.company)}</p>
                 </div>
               ) : null}
             </div>
 
-            <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6">
-              <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950">
+              <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 Message
               </div>
-              <div className="whitespace-pre-wrap text-sm leading-7 text-slate-800">
+              <div className="whitespace-pre-wrap text-sm leading-7 text-slate-800 dark:text-slate-200">
                 {asString(selectedMessage.message)}
               </div>
             </div>
           </div>
         </div>
       ) : (
-        <div className="min-h-0 flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm xl:flex xl:flex-col">
-          <div className="border-b border-slate-200 px-4 py-3 xl:shrink-0">
+        <div className="min-h-0 flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950 xl:flex xl:flex-col">
+          <div className="border-b border-slate-200 px-4 py-3 dark:border-slate-800 xl:shrink-0">
             <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+              <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
                 <Mail className="h-4 w-4 text-[#FF6B35]" />
                 Primary
               </div>
-              <div className="flex items-center gap-2 text-xs text-slate-500">
+              <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                 <button
                   type="button"
                   onClick={toggleSelectAllVisible}
-                  className="rounded-md border border-slate-200 px-2 py-1 font-semibold transition-colors hover:bg-slate-50"
+                  className="rounded-md border border-slate-200 px-2 py-1 font-semibold transition-colors hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-900"
                 >
                   {docs.length > 0 && docs.every((doc) => selectedBulkIds.includes(String(doc.id)))
                     ? 'Clear all'
@@ -663,10 +663,10 @@ export function ContactMessagesInbox({ collection }: { collection: CollectionMet
           <div className="xl:min-h-0 xl:flex-1 xl:overflow-y-auto">
             {isLoading ? (
               <div className="flex items-center justify-center py-16">
-                <Loader2 className="h-6 w-6 animate-spin text-[#1677ff]" />
+                <Loader2 className="h-6 w-6 animate-spin text-[#1677ff] dark:text-blue-400" />
               </div>
             ) : docs.length === 0 ? (
-              <div className="px-6 py-16 text-center text-sm text-slate-500">
+              <div className="px-6 py-16 text-center text-sm text-slate-500 dark:text-slate-400">
                 No messages found.
               </div>
             ) : (
@@ -681,8 +681,8 @@ export function ContactMessagesInbox({ collection }: { collection: CollectionMet
                     type="button"
                     onClick={() => setSelectedId(id)}
                     className={cn(
-                      'grid w-full grid-cols-[auto_minmax(9rem,14rem)_minmax(0,1fr)_auto] items-center gap-3 border-b border-slate-200 px-4 py-2 text-left text-sm transition-colors hover:bg-slate-50',
-                      isUnread ? 'bg-[#fffaf7]' : 'bg-white'
+                      'grid w-full grid-cols-[auto_minmax(9rem,14rem)_minmax(0,1fr)_auto] items-center gap-3 border-b border-slate-200 px-4 py-2 text-left text-sm transition-colors hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900',
+                      isUnread ? 'bg-[#fffaf7] dark:bg-[#2b1b14]' : 'bg-white dark:bg-slate-950'
                     )}
                   >
                     <div className="flex items-center gap-3">
@@ -697,20 +697,22 @@ export function ContactMessagesInbox({ collection }: { collection: CollectionMet
                       {isUnread ? <span className="h-2.5 w-2.5 rounded-full bg-[#FF6B35]" /> : <span className="h-2.5 w-2.5 rounded-full bg-transparent" />}
                     </div>
                     <div className={cn('truncate pr-2 text-sm text-slate-900', isUnread ? 'font-bold' : 'font-medium')}>
+                      <span className="dark:text-slate-100">
                       {asString(doc.name) || 'Unknown sender'}
+                      </span>
                     </div>
-                    <div className="min-w-0 truncate text-sm text-slate-700">
-                      <span className={cn(isUnread ? 'font-semibold text-slate-900' : 'font-medium')}>
+                    <div className="min-w-0 truncate text-sm text-slate-700 dark:text-slate-300">
+                      <span className={cn(isUnread ? 'font-semibold text-slate-900 dark:text-slate-100' : 'font-medium')}>
                         {asString(doc.subject) || 'No subject'}
                       </span>
-                      <span className="mx-2 text-slate-300">-</span>
-                      <span className="text-slate-500">{asString(doc.message)}</span>
+                      <span className="mx-2 text-slate-300 dark:text-slate-600">-</span>
+                      <span className="text-slate-500 dark:text-slate-400">{asString(doc.message)}</span>
                     </div>
-                    <div className="flex items-center gap-3 pl-2 text-xs text-slate-400">
+                    <div className="flex items-center gap-3 pl-2 text-xs text-slate-400 dark:text-slate-500">
                       <span className={cn('rounded-full px-2 py-0.5 font-semibold capitalize', statusTone(status))}>
                         {status.replace('_', ' ')}
                       </span>
-                      <span className={cn(isUnread ? 'font-semibold text-slate-600' : '')}>
+                      <span className={cn(isUnread ? 'font-semibold text-slate-600 dark:text-slate-300' : '')}>
                         {formatDate(doc.submittedAt)}
                       </span>
                     </div>

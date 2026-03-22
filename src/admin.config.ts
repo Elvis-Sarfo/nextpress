@@ -72,16 +72,16 @@ const adminConfig: NextPressAdminConfig = {
     // Keyed by collection slug. Only specify what you want to override.
     collections: {
       // Catalogue
-      products:              { icon: 'Package', group: 'catalogue', order: 1 },
-      'product-categories':  { icon: 'Tag', group: 'catalogue', order: 2, parent: 'products' },
-      countries:             { icon: 'Map', group: 'catalogue', order: 3 },
-      jobs:                  { icon: 'BriefcaseBusiness', group: 'catalogue', order: 4 },
+      products:              { icon: 'Package', group: 'catalogue', order: 1, showAddNew: false },
+      'product-categories':  { group: 'catalogue', order: 2, parent: 'products', showAddNew: false },
+      countries:             { icon: 'Map', group: 'catalogue', order: 3, showAddNew: false },
+      jobs:                  { icon: 'BriefcaseBusiness', group: 'catalogue', order: 4, showAddNew: false },
 
       // Content
-      pages:       { icon: 'LayoutTemplate', group: 'content', order: 1 },
+      pages:       { icon: 'LayoutTemplate', group: 'content', order: 1, showAddNew: false },
       posts:       { icon: 'FileText', group: 'content', order: 2, showAddNew: false },
       categories:  { icon: undefined, group: 'content', order: 3, parent: 'posts', showAddNew: false },
-      comments:    { icon: 'MessageSquare', group: 'content', order: 4 },
+      comments:    { icon: 'MessageSquare', group: 'content', order: 4, showAddNew: false },
       'contact-messages': { icon: 'Mail', group: 'content', order: 5, showAddNew: false, standalone: true },
 
       // Media
@@ -89,13 +89,13 @@ const adminConfig: NextPressAdminConfig = {
 
       // Appearance
       // 'hero-slides': { icon: 'SlidersHorizontal', group: 'appearance', order: 1 },
-      blocks:      { icon: 'SquareDashedBottom', group: 'appearance', order: 2 },
-      menus:       { icon: 'MenuSquare', group: 'appearance', order: 3 },
+      blocks:      { icon: 'SquareDashedBottom', group: 'appearance', order: 2, showAddNew: false },
+      menus:       { icon: 'MenuSquare', group: 'appearance', order: 3, showAddNew: false },
 
       // User management
-      users:       { icon: 'Users', group: 'user-management', order: 1 },
-      roles:       { icon: 'Shield', group: 'user-management', order: 2 },
-      permissions: { icon: 'Key', group: 'user-management', order: 3 },
+      users:       { icon: 'Users', group: 'user-management', order: 1, showAddNew: false },
+      roles:       { icon: 'Shield', group: 'user-management', order: 2, showAddNew: false },
+      permissions: { icon: 'Key', group: 'user-management', order: 3, showAddNew: false },
 
       // System
       // Settings is a singleton — hide the "Add New" sub-item

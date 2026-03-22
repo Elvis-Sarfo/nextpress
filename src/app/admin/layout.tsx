@@ -18,7 +18,7 @@ export default async function AdminLayout({
   return (
     <ThemeProviderClient>
       <AdminLocaleProvider>
-        <div className="h-screen overflow-hidden bg-background [--admin-topbar-height:2.5rem] [--admin-sidebar-width:12rem] xl:[--admin-sidebar-width:13rem]">
+        <div className="h-screen overflow-hidden bg-background [--admin-topbar-height:4.9rem] [--admin-sidebar-width:12rem] xl:[--admin-topbar-height:3rem] xl:[--admin-sidebar-width:13rem]">
           <AdminBar />
           <AdminSidebar />
           <main className="fixed right-0 bottom-0 left-0 top-[var(--admin-topbar-height)] z-10 overflow-y-auto bg-[#f4f7fb] md:left-[var(--admin-sidebar-width)] dark:bg-background">
