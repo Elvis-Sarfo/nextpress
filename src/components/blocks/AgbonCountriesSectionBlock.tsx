@@ -4,19 +4,49 @@ import { AgbonCountriesSection } from '@/components/agbon/countries-section';
 import type { BlockContent } from '@/core/blocks/types';
 import { asBoolean, asElements, asNumber, asOptionalString, parseJsonArray } from './content-helpers';
 
+function getLocalizedString(value: unknown): string | undefined {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed || undefined;
+  }
+
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    const localized = value as Record<string, unknown>;
+    const candidate =
+      localized.en ??
+      localized.fr ??
+      Object.values(localized).find((entry) => typeof entry === 'string');
+
+    if (typeof candidate === 'string') {
+      const trimmed = candidate.trim();
+      return trimmed || undefined;
+    }
+  }
+
+  return undefined;
+}
+
 type OfficeRecord = {
-  city?: string;
-  address?: string;
+  city?: string | Record<string, string>;
+  address?: string | Record<string, string>;
   phone?: string;
+  email?: string;
+  type?: string;
+};
+
+type NormalizedOfficeRecord = {
+  city: string;
+  address?: string;
+  phone: string;
   email?: string;
   type?: string;
 };
 
 type CountryRecord = {
   id?: string;
-  name?: string;
+  name?: string | Record<string, string>;
   flag?: string | null;
-  description?: string | null;
+  description?: string | Record<string, string> | null;
   color?: string | null;
   offices?: OfficeRecord[] | null;
   backgroundImage?: { url?: string | null } | null;
@@ -30,11 +60,11 @@ export function AgbonCountriesSectionBlock({
   data?: unknown[];
 }) {
   const manualCountries = asElements(content._elements).map((item, index) => {
-    const offices = parseJsonArray<OfficeRecord>(item.officesJson)
+    const offices: NormalizedOfficeRecord[] = parseJsonArray<OfficeRecord>(item.officesJson)
       ?.filter((office) => office.city && office.phone)
       .map((office) => ({
-        city: office.city ?? '',
-        address: office.address,
+        city: getLocalizedString(office.city) ?? '',
+        address: getLocalizedString(office.address),
         phone: office.phone ?? '',
         email: office.email,
         type: office.type,
@@ -54,22 +84,24 @@ export function AgbonCountriesSectionBlock({
   const dataCountries = Array.isArray(data)
     ? (data as CountryRecord[]).map((item, index) => ({
         id: item.id ?? `country-${index}`,
-        name: item.name ?? `Country ${index + 1}`,
+        name: getLocalizedString(item.name) ?? `Country ${index + 1}`,
         flag: item.flag ?? undefined,
-        description: item.description ?? undefined,
+        description: getLocalizedString(item.description),
         color: item.color ?? undefined,
         backgroundImage: item.backgroundImage?.url ?? undefined,
-        offices: Array.isArray(item.offices)
+        offices: (Array.isArray(item.offices)
           ? item.offices
+              .map(
+                (office): NormalizedOfficeRecord => ({
+                  city: getLocalizedString(office.city) ?? '',
+                  address: getLocalizedString(office.address),
+                  phone: office.phone ?? '',
+                  email: office.email,
+                  type: office.type,
+                }),
+              )
               .filter((office) => office.city && office.phone)
-              .map((office) => ({
-                city: office.city ?? '',
-                address: office.address,
-                phone: office.phone ?? '',
-                email: office.email,
-                type: office.type,
-              }))
-          : [],
+          : []) as NormalizedOfficeRecord[],
       }))
     : [];
 

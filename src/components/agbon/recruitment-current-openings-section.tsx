@@ -61,7 +61,7 @@ export function RecruitmentCurrentOpeningsSection({
           {jobs.map((job) => (
             <div
               key={job.id}
-              className="group relative bg-white p-2 rounded-2xl shadow-lg border border-l-8 border-l-[#FF6B35] hover:shadow-2xl hover:scale-[1.01] transition-all duration-300 overflow-hidden"
+              className="group relative bg-white p-2 rounded-2xl shadow-lg border border-l-8 border-l-[#FF6B35] hover:shadow-2xl hover:scale-[1.01] hover:border-l-[10px] transition-all duration-300 overflow-hidden"
               style={{
                 boxShadow:
                   '-4px 0 0 0 rgba(255, 107, 53, 0.1), 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
@@ -81,8 +81,10 @@ export function RecruitmentCurrentOpeningsSection({
               />
 
               <div className="absolute bottom-1 right-1 md:bottom-4 md:right-4 z-20">
-                <div className="text-8xl md:text-8xl lg:text-10xl opacity-20 transition-opacity duration-300">
-                  {job.flag || getCountryFlag(job.location)}
+                <div className="relative group/flag">
+                  <div className="text-8xl md:text-8xl lg:text-10xl opacity-20 group-hover/flag:opacity-40 transition-opacity duration-300">
+                    {job.flag || getCountryFlag(job.location)}
+                  </div>
                 </div>
               </div>
 
@@ -116,7 +118,10 @@ export function RecruitmentCurrentOpeningsSection({
                 </div>
 
                 {job.description ? (
-                  <p className="text-body text-gray-700 mb-0">{job.description}</p>
+                  <div
+                    className="recruitment-richtext text-body text-gray-700 mb-0 [&_p]:mb-0 [&_strong]:font-semibold"
+                    dangerouslySetInnerHTML={{ __html: job.description }}
+                  />
                 ) : null}
 
                 {job.requirements.length > 0 ? (
