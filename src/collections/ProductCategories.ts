@@ -7,6 +7,7 @@ export const ProductCategories: CollectionConfig = {
     useAsTitle: 'name',
     defaultColumns: ['name', 'slug', 'order'],
     group: { key: 'catalogue', label: 'Catalogue', order: 2 },
+    editorView: 'slider',
   },
   fields: [
     {
@@ -71,4 +72,9 @@ export const ProductCategories: CollectionConfig = {
       },
     },
   ],
+  localization: {
+    locales: ['en', 'fr'],
+    defaultLocale: 'en',
+    fallback: true,
+  },
 };

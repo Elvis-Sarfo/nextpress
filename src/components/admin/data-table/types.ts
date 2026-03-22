@@ -4,6 +4,7 @@ export interface AdminColumnMeta {
   filterable?: boolean;
   headerClassName?: string;
   cellClassName?: string;
+  getFilterValues?: (row: Record<string, unknown>) => string[];
 }
 
 export type AdminTableColumn<Row extends object> = ColumnDef<Row> & {

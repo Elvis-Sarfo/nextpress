@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Loader2, Search, Tag, X } from 'lucide-react'
+import { Briefcase, Building2, Loader2, Search, Tag, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { t as agbonT } from '@/lib/agbon-translations'
 
@@ -14,7 +14,7 @@ interface HeaderSearchDialogProps {
 
 interface CatalogueSearchResult {
   id: string
-  type: 'product' | 'product-category'
+  type: 'product' | 'product-category' | 'country' | 'job'
   title: string
   subtitle: string
   description?: string
@@ -81,19 +81,19 @@ export function HeaderSearchDialog({ locale, isOpen, onClose }: HeaderSearchDial
     if (trimmed.length < 2) {
       return {
         icon: <Search size={60} className="text-gray-300" />,
-        title: 'Start typing to search the catalogue...',
+        title: 'Start typing to search catalogue and data...',
       }
     }
     if (isLoading) {
       return {
         icon: <Loader2 size={42} className="animate-spin text-gray-300" />,
-        title: 'Searching catalogue...',
+        title: 'Searching catalogue and data...',
       }
     }
     if (results.length === 0) {
       return {
         icon: <Search size={60} className="text-gray-300" />,
-        title: 'No catalogue results found.',
+        title: 'No results found.',
       }
     }
     return null
@@ -112,31 +112,31 @@ export function HeaderSearchDialog({ locale, isOpen, onClose }: HeaderSearchDial
         role="dialog"
         aria-modal="true"
         aria-label={agbonT('search.openSearch', locale)}
-        className="relative z-[121] mx-4 w-full max-w-3xl overflow-hidden rounded-[28px] bg-white shadow-xl"
+        className="relative z-[121] mx-4 w-full max-w-4xl overflow-hidden rounded-[28px] bg-white shadow-xl"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 py-5 md:px-8 md:py-6">
-          <h2 className="text-2xl font-semibold text-black md:text-3xl">Search Catalogue</h2>
+          <h2 className="text-xl font-semibold text-black md:text-2xl">Search Catalogue & Data</h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close search"
             className="text-black transition hover:opacity-70"
           >
-            <X size={28} />
+            <X size={22} />
           </button>
         </div>
 
         <div className="border-y border-gray-200 px-4 py-5 md:px-7 md:py-7">
-          <div className="flex items-center gap-3 rounded-[22px] border-4 border-[#ff6b35] px-4 py-4 md:gap-4 md:px-6 md:py-5">
-            <Search size={32} className="shrink-0 text-gray-400 md:h-11 md:w-11" />
+          <div className="flex items-center gap-3 rounded-[22px] border-4 border-[#ff6b35] px-4 py-4 md:gap-4 md:px-6 md:py-4">
+            <Search size={26} className="shrink-0 text-gray-400 md:h-8 md:w-8" />
             <input
               type="text"
               autoFocus
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search products, categories, model numbers, or descriptions"
-              className="w-full text-lg text-gray-700 outline-none placeholder:text-gray-400 md:text-2xl"
+              placeholder="Search products, categories, countries, jobs, model numbers, or descriptions"
+              className="w-full text-base text-gray-700 outline-none placeholder:text-gray-400 md:text-xl"
               onKeyDown={(event) => {
                 if (event.key === 'Escape') onClose()
                 if (event.key === 'Enter' && results[0]) {
@@ -152,7 +152,7 @@ export function HeaderSearchDialog({ locale, isOpen, onClose }: HeaderSearchDial
           {emptyState ? (
             <div className="flex min-h-[300px] flex-col items-center justify-center gap-5 px-6 py-12 text-center text-gray-500 md:min-h-[360px] md:gap-6 md:px-8 md:py-16">
               {emptyState.icon}
-              <p className="text-xl md:text-3xl">{emptyState.title}</p>
+              <p className="text-lg md:text-2xl">{emptyState.title}</p>
             </div>
           ) : (
             <ul className="divide-y divide-gray-100">
@@ -165,17 +165,23 @@ export function HeaderSearchDialog({ locale, isOpen, onClose }: HeaderSearchDial
                       router.push(result.href)
                       onClose()
                     }}
-                  >
-                    <div className="mt-1 rounded-full bg-[#fff1ea] p-3 text-[#ff6b35]">
-                      {result.type === 'product' ? <Search size={18} /> : <Tag size={18} />}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-3">
-                        <h3 className="text-lg font-semibold text-black">{result.title}</h3>
-                        <span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium uppercase tracking-wide text-gray-500">
-                          {result.type === 'product' ? agbonT('nav.products', locale) : agbonT('common.categories', locale)}
-                        </span>
+                    >
+                      <div className="mt-1 rounded-full bg-[#fff1ea] p-3 text-[#ff6b35]">
+                        {result.type === 'product' ? <Search size={18} /> : null}
+                        {result.type === 'product-category' ? <Tag size={18} /> : null}
+                        {result.type === 'country' ? <Building2 size={18} /> : null}
+                        {result.type === 'job' ? <Briefcase size={18} /> : null}
                       </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <h3 className="text-lg font-semibold text-black">{result.title}</h3>
+                          <span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium uppercase tracking-wide text-gray-500">
+                            {result.type === 'product' ? agbonT('nav.products', locale) : null}
+                            {result.type === 'product-category' ? agbonT('common.categories', locale) : null}
+                            {result.type === 'country' ? 'Countries' : null}
+                            {result.type === 'job' ? 'Jobs' : null}
+                          </span>
+                        </div>
                       <p className="mt-1 text-sm text-gray-500">{result.subtitle}</p>
                       {result.description && (
                         <p className="mt-2 line-clamp-2 text-sm text-gray-600">{result.description}</p>

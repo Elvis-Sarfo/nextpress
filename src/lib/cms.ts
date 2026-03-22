@@ -967,20 +967,39 @@ export type CountryContactRecord = {
   order: number;
 };
 
-export async function getActiveCountries(): Promise<CountryContactRecord[]> {
-  const rows = await prisma.countries.findMany({
-    where: { status: 'active' },
-    orderBy: { order: 'asc' },
-  });
+function getLocalizedStringOrFallback(value: unknown, locale: string): string {
+  if (typeof value === 'string') return value;
+  return getLocalizedValue(value, locale) ?? '';
+}
+
+export async function getActiveCountries(locale: string = DEFAULT_LOCALE): Promise<CountryContactRecord[]> {
+  let rows: Awaited<ReturnType<typeof prisma.countries.findMany>>;
+
+  try {
+    rows = await prisma.countries.findMany({
+      where: { status: 'active' },
+      orderBy: { order: 'asc' },
+    });
+  } catch (error) {
+    console.error('[getActiveCountries] Failed to load countries. Returning empty list.', error);
+    return [];
+  }
 
   return rows.map((row) => ({
     id: row.id,
-    name: row.name,
+    name: getLocalizedStringOrFallback(row.name, locale),
     flag: row.flag ?? null,
     order: row.order,
     offices: Array.isArray(row.offices)
-      ? (row.offices as CountryOfficeRecord[])
-          .filter((office) => office?.city && office?.phone)
+      ? (row.offices as Array<Record<string, unknown>>)
+          .map((office) => ({
+            city: getLocalizedStringOrFallback(office?.city, locale),
+            address: getLocalizedStringOrFallback(office?.address, locale) || undefined,
+            phone: typeof office?.phone === 'string' ? office.phone : '',
+            email: typeof office?.email === 'string' ? office.email : undefined,
+            type: typeof office?.type === 'string' ? office.type : undefined,
+          }))
+          .filter((office) => office.city && office.phone)
           .map((office) => ({
             city: office.city,
             address: office.address,

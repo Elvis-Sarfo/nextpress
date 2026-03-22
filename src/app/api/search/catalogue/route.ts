@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/adapters/prisma-adapter'
-import { buildProductCategoryPath, buildProductPath } from '@/lib/agbon-routes'
+import { buildLocalizedPath, buildProductCategoryPath, buildProductPath } from '@/lib/agbon-routes'
 
 type CatalogueSearchResult = {
   id: string
-  type: 'product' | 'product-category'
+  type: 'product' | 'product-category' | 'country' | 'job'
   title: string
   subtitle: string
   description?: string
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ results: [] })
   }
 
-  const [products, categories] = await Promise.all([
+  const [products, categories, countries, jobs] = await Promise.all([
     prisma.products.findMany({
       include: {
         category: { select: { id: true, name: true } },
@@ -56,6 +56,14 @@ export async function GET(request: NextRequest) {
       take: 200,
     }),
     prisma.productCategories.findMany({
+      orderBy: { order: 'asc' },
+      take: 100,
+    }),
+    prisma.countries.findMany({
+      orderBy: { order: 'asc' },
+      take: 100,
+    }),
+    prisma.jobs.findMany({
       orderBy: { order: 'asc' },
       take: 100,
     }),
@@ -107,7 +115,61 @@ export async function GET(request: NextRequest) {
     })
     .filter((entry): entry is NonNullable<typeof entry> => entry !== null)
 
-  const results = [...productResults, ...categoryResults]
+  const countryResults = countries
+    .map((country) => {
+      const title = getLocalizedText(country.name, locale) || country.code || 'Country'
+      const description = stripHtml(getLocalizedText(country.description, locale)).slice(0, 140)
+      const offices = Array.isArray(country.offices) ? country.offices : []
+      const officeCities = offices
+        .map((office) => {
+          if (!office || typeof office !== 'object') return ''
+          const city = (office as Record<string, unknown>).city
+          return typeof city === 'string' ? city : ''
+        })
+        .filter(Boolean)
+      const score = scoreMatch([title, description, country.code ?? '', ...officeCities], query)
+
+      if (score < 0) return null
+
+      return {
+        score,
+        result: {
+          id: country.id,
+          type: 'country' as const,
+          title,
+          subtitle: officeCities.length > 0 ? officeCities.slice(0, 2).join(', ') : 'Country office',
+          description: description || undefined,
+          href: buildLocalizedPath(locale, '/contact'),
+        },
+      }
+    })
+    .filter((entry): entry is NonNullable<typeof entry> => entry !== null)
+
+  const jobResults = jobs
+    .map((job) => {
+      const title = getLocalizedText(job.title, locale) || 'Job opening'
+      const location = getLocalizedText(job.location, locale)
+      const employmentType = getLocalizedText(job.employmentType, locale)
+      const description = stripHtml(getLocalizedText(job.description, locale)).slice(0, 140)
+      const score = scoreMatch([title, location, employmentType, description], query)
+
+      if (score < 0) return null
+
+      return {
+        score,
+        result: {
+          id: job.id,
+          type: 'job' as const,
+          title,
+          subtitle: [location, employmentType].filter(Boolean).join(' • ') || 'Job opening',
+          description: description || undefined,
+          href: buildLocalizedPath(locale, '/join-us/recruitment'),
+        },
+      }
+    })
+    .filter((entry): entry is NonNullable<typeof entry> => entry !== null)
+
+  const results = [...productResults, ...categoryResults, ...countryResults, ...jobResults]
     .sort((a, b) => b.score - a.score || a.result.title.localeCompare(b.result.title))
     .slice(0, 12)
     .map((entry) => entry.result)

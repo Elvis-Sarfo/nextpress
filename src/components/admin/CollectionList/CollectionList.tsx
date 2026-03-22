@@ -59,7 +59,7 @@ export function CollectionList({ collection }: CollectionListProps) {
   const [editorOpen, setEditorOpen] = useState(false);
   const [editorIntent, setEditorIntent] = useState<EditorIntent>('create');
   const [editorDocId, setEditorDocId] = useState<string | null>(null);
-  const [editorExpanded, setEditorExpanded] = useState(false);
+  const [editorExpanded, setEditorExpanded] = useState(true);
 
   const [importOpen, setImportOpen] = useState(false);
   const [importHeaders, setImportHeaders] = useState<string[]>([]);
@@ -153,7 +153,7 @@ export function CollectionList({ collection }: CollectionListProps) {
     }
     setEditorIntent('create');
     setEditorDocId(null);
-    setEditorExpanded(false);
+    setEditorExpanded(true);
     setEditorOpen(true);
   };
 
@@ -164,7 +164,7 @@ export function CollectionList({ collection }: CollectionListProps) {
     }
     setEditorIntent('edit');
     setEditorDocId(id);
-    setEditorExpanded(false);
+    setEditorExpanded(true);
     setEditorOpen(true);
   };
 

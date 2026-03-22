@@ -7,13 +7,14 @@ export const Jobs: CollectionConfig = {
     useAsTitle: 'title',
     defaultColumns: ['title', 'location', 'employmentType', 'order'],
     group: { key: 'catalogue', label: 'Catalogue', order: 2 },
-    editorView: 'page',
+    editorView: 'slider',
   },
   fields: [
     {
       name: 'title',
       type: 'text',
       required: true,
+      localized: true,
       admin: {
         description: 'Job title displayed in the openings list.',
       },
@@ -22,6 +23,7 @@ export const Jobs: CollectionConfig = {
       name: 'location',
       type: 'text',
       required: true,
+      localized: true,
       admin: {
         description: 'Job location, e.g. "Accra, Ghana" or "Remote (Africa)".',
       },
@@ -52,6 +54,7 @@ export const Jobs: CollectionConfig = {
     {
       name: 'salary',
       type: 'text',
+      localized: true,
       defaultValue: 'Competitive',
       admin: {
         description: 'Compensation label shown in the job meta row.',
@@ -59,10 +62,12 @@ export const Jobs: CollectionConfig = {
     },
     {
       name: 'description',
-      type: 'textarea',
+      type: 'richText',
       required: true,
+      localized: true,
       admin: {
-        description: 'Short overview of the role.',
+        localizedAs: 'richText',
+        description: 'Rich text overview of the role.',
       },
     },
     {
@@ -76,12 +81,14 @@ export const Jobs: CollectionConfig = {
           name: 'value',
           type: 'text',
           required: true,
+          localized: true,
         },
       ],
     },
     {
       name: 'applyLabel',
       type: 'text',
+      localized: true,
       defaultValue: 'Apply Now',
       admin: {
         description: 'Optional button label override for this role.',
@@ -103,4 +110,9 @@ export const Jobs: CollectionConfig = {
       },
     },
   ],
+  localization: {
+    locales: ['en', 'fr'],
+    defaultLocale: 'en',
+    fallback: true,
+  },
 };

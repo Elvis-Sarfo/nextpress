@@ -277,11 +277,11 @@ model ContactMessages {
 model Countries {
   id String @id @default(uuid())
   status String @db.VarChar(20)
-  name String @db.VarChar(255)
+  name Json
   code String? @db.VarChar(255)
   flag String? @db.VarChar(255)
   color String @db.VarChar(255) @default("#FF6B35")
-  description String? @db.Text
+  description Json?
   backgroundImageId String? @db.VarChar(255)
   offices Json?
   order Int @default(0)
@@ -297,14 +297,14 @@ model Countries {
 model Jobs {
   id String @id @default(uuid())
   status String @db.VarChar(20)
-  title String @db.VarChar(255)
-  location String @db.VarChar(255)
+  title Json
+  location Json
   flag String? @db.VarChar(255)
   employmentType String @db.VarChar(100) @default("Full-time")
-  salary String @db.VarChar(255) @default("Competitive")
-  description String @db.Text
+  salary Json?
+  description Json
   requirements Json?
-  applyLabel String @db.VarChar(255) @default("Apply Now")
+  applyLabel Json?
   applyLink String? @db.VarChar(255)
   order Int @default(0)
   metadata Json?

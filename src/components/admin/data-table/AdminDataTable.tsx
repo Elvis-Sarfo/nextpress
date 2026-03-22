@@ -68,19 +68,19 @@ function getColumnOptionValues<Row extends object>(
   column: Column<Row, unknown>
 ): string[] {
   const values = new Set<string>();
+  const getFilterValues = column.columnDef.meta?.getFilterValues;
 
   for (const row of table.getCoreRowModel().rows) {
-    const rawValue = row.getValue(column.id);
-    if (rawValue === null || rawValue === undefined) continue;
-
-    if (Array.isArray(rawValue)) {
-      for (const item of rawValue) {
-        const text = String(item).trim();
+    if (getFilterValues) {
+      for (const value of getFilterValues(row.original as Record<string, unknown>)) {
+        const text = value.trim();
         if (text) values.add(text);
       }
       continue;
     }
 
+    const rawValue = row.getValue(column.id);
+    if (rawValue === null || rawValue === undefined) continue;
     const text = String(rawValue).trim();
     if (text) values.add(text);
   }

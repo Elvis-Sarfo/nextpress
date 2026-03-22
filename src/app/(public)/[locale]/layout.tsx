@@ -90,7 +90,7 @@ export default async function LocalePublicLayout({ children, params }: LocaleLay
   const [siteConfig, primaryMenu, countries] = await Promise.all([
     getSiteConfig(locale),
     getMenuByLocation('primary', locale),
-    getActiveCountries(),
+    getActiveCountries(locale),
   ])
 
   const fallbackNavigation: HeaderNavItem[] = [

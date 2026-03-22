@@ -83,7 +83,7 @@ export function ContactMessagesInbox({ collection }: { collection: CollectionMet
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
-  const [editorExpanded, setEditorExpanded] = useState(false);
+  const [editorExpanded, setEditorExpanded] = useState(true);
   const [statusAction, setStatusAction] = useState<string | null>(null);
   const [selectedBulkIds, setSelectedBulkIds] = useState<string[]>([]);
   const [users, setUsers] = useState<UserOption[]>([]);

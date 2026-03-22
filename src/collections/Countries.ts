@@ -7,13 +7,14 @@ export const Countries: CollectionConfig = {
     useAsTitle: 'name',
     defaultColumns: ['name', 'code', 'order'],
     group: { key: 'catalogue', label: 'Catalogue', order: 2 },
-    editorView: 'page',
+    editorView: 'slider',
   },
   fields: [
     {
       name: 'name',
       type: 'text',
       required: true,
+      localized: true,
       admin: {
         description: 'Country display name',
       },
@@ -43,7 +44,9 @@ export const Countries: CollectionConfig = {
     {
       name: 'description',
       type: 'textarea',
+      localized: true,
       admin: {
+        localizedAs: 'textarea',
         description: 'Optional short description',
       },
     },
@@ -66,10 +69,15 @@ export const Countries: CollectionConfig = {
           name: 'city',
           type: 'text',
           required: true,
+          localized: true,
         },
         {
           name: 'address',
           type: 'textarea',
+          localized: true,
+          admin: {
+            localizedAs: 'textarea',
+          },
         },
         {
           name: 'phone',
@@ -103,4 +111,9 @@ export const Countries: CollectionConfig = {
       },
     },
   ],
+  localization: {
+    locales: ['en', 'fr'],
+    defaultLocale: 'en',
+    fallback: true,
+  },
 };
