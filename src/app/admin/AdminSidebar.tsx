@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import {
   BarChart2,
   BookOpen,
+  BriefcaseBusiness,
   ChevronDown,
   ChevronRight,
   Database,
@@ -15,21 +16,26 @@ import {
   Key,
   LayoutDashboard,
   LayoutTemplate,
+  Mail,
+  Map as MapIcon,
   MenuSquare,
   MessageSquare,
+  Package,
   Palette,
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
   Settings2,
   Shield,
+  ShoppingBag,
+  SlidersHorizontal,
   SquareDashedBottom,
   Tag,
   Users,
 } from 'lucide-react';
 import { type ElementType, useEffect, useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
-import { getCollectionsByGroup, getGroupedCollections } from '@/lib/collections-data';
+import { getCollections } from '@/lib/collections-data';
 import adminConfig from '@/admin.config';
 import type { NextPressAdminSidebarLinkConfig } from '@/core/types';
 
@@ -39,18 +45,24 @@ import type { NextPressAdminSidebarLinkConfig } from '@/core/types';
 const ICON_REGISTRY: Record<string, ElementType> = {
   BarChart2,
   BookOpen,
+  BriefcaseBusiness,
   Database,
   FileText,
   Image,
   Key,
   LayoutDashboard,
   LayoutTemplate,
+  Mail,
+  Map: MapIcon,
   MenuSquare,
   MessageSquare,
+  Package,
   Palette,
   Settings,
   Settings2,
   Shield,
+  ShoppingBag,
+  SlidersHorizontal,
   SquareDashedBottom,
   Tag,
   Users,
@@ -86,41 +98,64 @@ type GroupItem = {
   collections: CollectionItem[];
 };
 
+type StandaloneEntry = {
+  kind: 'standalone';
+  key: string;
+  order: number;
+  collection: CollectionItem;
+};
+
+type GroupEntry = {
+  kind: 'group';
+  key: string;
+  order: number;
+  group: GroupItem;
+};
+
+type NavEntry = StandaloneEntry | GroupEntry;
+
 // ── Nav builder ───────────────────────────────────────────────────────────
 
-function buildNavGroups(): GroupItem[] {
+function buildNav(): { entries: NavEntry[] } {
   const sidebarCfg = adminConfig.sidebar ?? {};
   const configGroups = sidebarCfg.groups ?? [];
   const configCollections = sidebarCfg.collections ?? {};
+  const collections = getCollections();
 
-  // Config group lookup by key
-  const groupCfgMap = new Map(configGroups.map((g) => [g.key, g]));
+  function getFallbackGroupKey(
+    group: (typeof collections)[number]['admin']['group']
+  ): string {
+    if (typeof group === 'object' && group !== null && group.key) {
+      return group.key;
+    }
+    if (typeof group === 'string' && group.trim()) {
+      return group.toLowerCase();
+    }
+    return 'content';
+  }
 
-  // Data groups (derived from collection definitions)
-  const dataGroups = getGroupedCollections();
-  const collectionsByGroup = getCollectionsByGroup();
+  function getFallbackGroupLabel(
+    collection: (typeof collections)[number]
+  ): string {
+    if (typeof collection.admin.group === 'object' && collection.admin.group !== null) {
+      return collection.admin.group.label || collection.admin.group.key;
+    }
+    if (typeof collection.admin.group === 'string' && collection.admin.group.trim()) {
+      return collection.admin.group;
+    }
+    return 'Content';
+  }
 
-  // Merge data groups with config overrides, then sort by config order
-  const merged = dataGroups.map((dg) => {
-    const cfg = groupCfgMap.get(dg.key);
-    return {
-      key: dg.key,
-      label: cfg?.label ?? dg.label,
-      icon: resolveIcon(cfg?.icon),
-      order: cfg?.order ?? dg.order,
-    };
-  });
-  merged.sort((a, b) => a.order - b.order);
+  function getFallbackGroupOrder(
+    collection: (typeof collections)[number]
+  ): number {
+    if (typeof collection.admin.group === 'object' && collection.admin.group !== null) {
+      return collection.admin.group.order ?? 99;
+    }
+    return 99;
+  }
 
-  // Slugs that are configured as children of another collection
-  const childSlugs = new Set(
-    Object.entries(configCollections)
-      .filter(([, cfg]) => cfg.parent)
-      .map(([slug]) => slug)
-  );
-
-  // Helper: build a CollectionItem for a given collection slug + definition
-  function buildItem(col: { slug: string; labels: { plural: string } }): CollectionItem {
+  function buildItem(col: (typeof collections)[number]): CollectionItem {
     const colCfg = configCollections[col.slug] ?? {};
     const showAddNew = colCfg.showAddNew !== false;
     return {
@@ -136,40 +171,130 @@ function buildNavGroups(): GroupItem[] {
     };
   }
 
-  // Build ALL collection items (keyed by slug) — needed to resolve parents
-  const allItems = new Map<string, CollectionItem>();
-  for (const [, collections] of collectionsByGroup) {
-    for (const col of collections) {
-      if (!configCollections[col.slug]?.hidden) {
-        allItems.set(col.slug, buildItem(col));
-      }
-    }
-  }
+  const visibleCollections = collections.filter((collection) => !configCollections[collection.slug]?.hidden);
+  const allItems = new Map(visibleCollections.map((collection) => [collection.slug, buildItem(collection)]));
+  const standaloneSlugs = new Set(
+    visibleCollections
+      .filter((collection) => configCollections[collection.slug]?.standalone)
+      .map((collection) => collection.slug)
+  );
 
-  // Attach child collections to their configured parents
-  for (const [slug, cfg] of Object.entries(configCollections)) {
-    if (!cfg.parent) continue;
-    const child = allItems.get(slug);
-    const parent = allItems.get(cfg.parent);
-    if (child && parent) {
+  const childSlugs = new Set<string>();
+  for (const collection of visibleCollections) {
+    const parentSlug = configCollections[collection.slug]?.parent;
+    if (!parentSlug) continue;
+    const parent = allItems.get(parentSlug);
+    const child = allItems.get(collection.slug);
+    if (parent && child) {
       parent.subCollections.push(child);
+      childSlugs.add(collection.slug);
     }
   }
 
-  // Build groups — exclude collections that are nested under a parent
-  return merged
-    .map(({ key, label, icon }) => {
-      const collections = collectionsByGroup.get(key) ?? [];
+  const groupDefinitions = new Map<
+    string,
+    { key: string; label: string; icon: ElementType | undefined; order: number; items?: string[] }
+  >();
 
-      const visibleCollections = collections
-        .filter((col) => !configCollections[col.slug]?.hidden && !childSlugs.has(col.slug))
-        .map((col) => allItems.get(col.slug)!)
-        .filter(Boolean);
+  for (const group of configGroups) {
+    groupDefinitions.set(group.key, {
+      key: group.key,
+      label: group.label ?? group.key,
+      icon: resolveIcon(group.icon),
+      order: group.order ?? 99,
+      items: group.items,
+    });
+  }
 
-      if (visibleCollections.length === 0) return null;
-      return { key, label, icon, collections: visibleCollections } satisfies GroupItem;
+  for (const collection of visibleCollections) {
+    const colCfg = configCollections[collection.slug] ?? {};
+    const groupKey = colCfg.group ?? getFallbackGroupKey(collection.admin.group);
+    if (groupDefinitions.has(groupKey)) continue;
+    groupDefinitions.set(groupKey, {
+      key: groupKey,
+      label: getFallbackGroupLabel(collection),
+      icon: undefined,
+      order: getFallbackGroupOrder(collection),
+    });
+  }
+
+  const sortedGroups = Array.from(groupDefinitions.values()).sort((a, b) => a.order - b.order);
+
+  const standaloneEntries = visibleCollections
+    .filter((collection) => standaloneSlugs.has(collection.slug) && !childSlugs.has(collection.slug))
+    .sort((a, b) => {
+      const groupKeyA = configCollections[a.slug]?.group ?? getFallbackGroupKey(a.admin.group);
+      const groupKeyB = configCollections[b.slug]?.group ?? getFallbackGroupKey(b.admin.group);
+      const groupOrderA = groupDefinitions.get(groupKeyA)?.order ?? getFallbackGroupOrder(a);
+      const groupOrderB = groupDefinitions.get(groupKeyB)?.order ?? getFallbackGroupOrder(b);
+      if (groupOrderA !== groupOrderB) return groupOrderA - groupOrderB;
+      const orderA = configCollections[a.slug]?.order ?? Number.MAX_SAFE_INTEGER;
+      const orderB = configCollections[b.slug]?.order ?? Number.MAX_SAFE_INTEGER;
+      if (orderA !== orderB) return orderA - orderB;
+      return a.labels.plural.localeCompare(b.labels.plural);
     })
-    .filter((g): g is GroupItem => g !== null);
+    .map((collection) => {
+      const item = allItems.get(collection.slug);
+      if (!item) return null;
+      const groupKey = configCollections[collection.slug]?.group ?? getFallbackGroupKey(collection.admin.group);
+      const groupOrder = groupDefinitions.get(groupKey)?.order ?? getFallbackGroupOrder(collection);
+      const itemOrder = configCollections[collection.slug]?.order ?? Number.MAX_SAFE_INTEGER;
+      return {
+        kind: 'standalone',
+        key: collection.slug,
+        order: groupOrder * 1000 + itemOrder,
+        collection: item,
+      } satisfies StandaloneEntry;
+    })
+    .filter((entry): entry is StandaloneEntry => Boolean(entry));
+
+  const groupEntries = sortedGroups
+    .map((group) => {
+      const explicitItems = (group.items ?? [])
+        .map((slug) => allItems.get(slug))
+        .filter((item): item is CollectionItem => Boolean(item))
+        .filter((item) => !childSlugs.has(item.key) && !standaloneSlugs.has(item.key));
+
+      const configuredSlugs = new Set(group.items ?? []);
+      const fallbackItems = visibleCollections
+        .filter((collection) => {
+          const colCfg = configCollections[collection.slug] ?? {};
+          const groupKey = colCfg.group ?? getFallbackGroupKey(collection.admin.group);
+          return (
+            groupKey === group.key &&
+            !childSlugs.has(collection.slug) &&
+            !configuredSlugs.has(collection.slug) &&
+            !standaloneSlugs.has(collection.slug)
+          );
+        })
+        .sort((a, b) => {
+          const orderA = configCollections[a.slug]?.order ?? Number.MAX_SAFE_INTEGER;
+          const orderB = configCollections[b.slug]?.order ?? Number.MAX_SAFE_INTEGER;
+          if (orderA !== orderB) return orderA - orderB;
+          return a.labels.plural.localeCompare(b.labels.plural);
+        })
+        .map((collection) => allItems.get(collection.slug))
+        .filter((item): item is CollectionItem => Boolean(item));
+
+      const groupCollections = [...explicitItems, ...fallbackItems];
+      if (groupCollections.length === 0) return null;
+
+      return {
+        kind: 'group',
+        key: group.key,
+        order: group.order * 1000,
+        group: {
+          key: group.key,
+          label: group.label,
+          icon: group.icon,
+          collections: groupCollections,
+        },
+      } satisfies GroupEntry;
+    })
+    .filter((entry): entry is GroupEntry => Boolean(entry));
+
+  const entries = [...standaloneEntries, ...groupEntries].sort((a, b) => a.order - b.order);
+  return { entries };
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────
@@ -197,20 +322,25 @@ function getInitialGroupState(
 }
 
 function getInitialCollectionState(
-  navGroups: GroupItem[],
+  collections: CollectionItem[],
   pathname: string
 ): Record<string, boolean> {
   const state: Record<string, boolean> = {};
-  for (const group of navGroups) {
-    for (const col of group.collections) {
-      // Auto-expand parent if a sub-collection is active
-      state[col.key] = colIsActive(pathname, col);
-      for (const sub of col.subCollections) {
-        state[sub.key] = isPathActive(pathname, sub.href);
-      }
+  for (const col of collections) {
+    state[col.key] = colIsActive(pathname, col);
+    for (const sub of col.subCollections) {
+      state[sub.key] = isPathActive(pathname, sub.href);
     }
   }
   return state;
+}
+
+function getAllCollectionItems(
+  navEntries: NavEntry[]
+): CollectionItem[] {
+  return navEntries.flatMap((entry) =>
+    entry.kind === 'standalone' ? [entry.collection] : entry.group.collections
+  );
 }
 
 // ── Sidebar link (custom top/footer links) ────────────────────────────────
@@ -249,7 +379,18 @@ function SidebarLink({
 
 export function AdminSidebar() {
   const pathname = usePathname();
-  const navGroups = useMemo(() => buildNavGroups(), []);
+  const nav = useMemo(() => buildNav(), []);
+  const navEntries = nav.entries;
+  const navGroups = navEntries
+    .filter((entry): entry is GroupEntry => entry.kind === 'group')
+    .map((entry) => entry.group);
+  const standaloneCollections = navEntries
+    .filter((entry): entry is StandaloneEntry => entry.kind === 'standalone')
+    .map((entry) => entry.collection);
+  const navCollections = useMemo(
+    () => getAllCollectionItems(navEntries),
+    [navEntries]
+  );
   const [mobileOpen, setMobileOpen] = useState(false);
   const [newContactMessagesCount, setNewContactMessagesCount] = useState(0);
 
@@ -260,7 +401,7 @@ export function AdminSidebar() {
     getInitialGroupState(navGroups, pathname)
   );
   const [openCollections, setOpenCollections] = useState<Record<string, boolean>>(() =>
-    getInitialCollectionState(navGroups, pathname)
+    getInitialCollectionState(navCollections, pathname)
   );
 
   // Auto-expand groups / collections when the route changes
@@ -277,21 +418,19 @@ export function AdminSidebar() {
     setOpenCollections((prev) => {
       let changed = false;
       const next = { ...prev };
-      for (const group of navGroups) {
-        for (const col of group.collections) {
-          if (colIsActive(pathname, col) && !next[col.key]) {
-            next[col.key] = true; changed = true;
-          }
-          for (const sub of col.subCollections) {
-            if (isPathActive(pathname, sub.href) && !next[sub.key]) {
-              next[sub.key] = true; changed = true;
-            }
+      for (const col of navCollections) {
+        if (colIsActive(pathname, col) && !next[col.key]) {
+          next[col.key] = true; changed = true;
+        }
+        for (const sub of col.subCollections) {
+          if (isPathActive(pathname, sub.href) && !next[sub.key]) {
+            next[sub.key] = true; changed = true;
           }
         }
       }
       return changed ? next : prev;
     });
-  }, [pathname, navGroups]);
+  }, [pathname, navCollections, navGroups]);
 
   // Restore collapsed/expanded state from localStorage
   useEffect(() => {
@@ -405,8 +544,99 @@ export function AdminSidebar() {
                 </li>
               ))}
 
-              {/* Collection groups */}
-              {navGroups.map((group) => {
+              {navEntries.map((entry) => {
+                if (entry.kind === 'standalone') {
+                  const col = entry.collection;
+                  const isColOpen = openCollections[col.key] ?? false;
+                  const isColActive = isPathActive(pathname, col.href);
+                  const ColIcon = col.icon;
+                  const isSingleItem =
+                    col.children.length === 1 && col.subCollections.length === 0;
+
+                  return (
+                    <li key={col.key} className="pt-1">
+                      {isSingleItem ? (
+                        <Link
+                          href={col.href}
+                          className={cn(
+                            'flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs transition-colors',
+                            isColActive
+                              ? 'bg-primary/10 text-primary'
+                              : 'hover:bg-secondary'
+                          )}
+                        >
+                          {ColIcon && <ColIcon className="h-4 w-4 shrink-0" />}
+                          <span className="flex min-w-0 items-center gap-2">
+                            <span className="truncate">{col.label}</span>
+                            {col.key === 'contact-messages' && newContactMessagesCount > 0 ? (
+                              <span className="rounded-full bg-[#FFF1EB] px-1.5 py-0.5 text-[10px] font-semibold text-[#FF6B35]">
+                                {newContactMessagesCount}
+                              </span>
+                            ) : null}
+                          </span>
+                        </Link>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setOpenCollections((prev) => ({
+                                ...prev,
+                                [col.key]: !isColOpen,
+                              }))
+                            }
+                            className={cn(
+                              'flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-xs transition-colors',
+                              isColActive
+                                ? 'bg-primary/10 text-primary'
+                                : 'hover:bg-secondary'
+                            )}
+                          >
+                            <span className="flex min-w-0 items-center gap-1.5">
+                              {ColIcon && <ColIcon className="h-4 w-4 shrink-0" />}
+                              <span className="flex min-w-0 items-center gap-2">
+                                <span className="truncate">{col.label}</span>
+                                {col.key === 'contact-messages' && newContactMessagesCount > 0 ? (
+                                  <span className="rounded-full bg-[#FFF1EB] px-1.5 py-0.5 text-[10px] font-semibold text-[#FF6B35]">
+                                    {newContactMessagesCount}
+                                  </span>
+                                ) : null}
+                              </span>
+                            </span>
+                            {isColOpen
+                              ? <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+                              : <ChevronRight className="h-3.5 w-3.5 shrink-0" />}
+                          </button>
+
+                          {isColOpen && (
+                            <ul className="mt-0.5 space-y-0.5 pl-5">
+                              {col.children.map((child) => (
+                                <li key={child.href}>
+                                  <Link
+                                    href={child.href}
+                                    className={cn(
+                                      'flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs transition-colors',
+                                      pathname === child.href
+                                        ? 'bg-primary/10 text-primary'
+                                        : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                                    )}
+                                  >
+                                    {child.label === 'Add New' && (
+                                      <FilePlus2 className="h-3.5 w-3.5" />
+                                    )}
+                                    <span className="truncate">{child.label}</span>
+                                  </Link>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </>
+                      )}
+                    </li>
+                  );
+                }
+
+                const group = entry.group;
                 const isGroupOpen = openGroups[group.key] ?? false;
                 const GroupIcon = group.icon;
 

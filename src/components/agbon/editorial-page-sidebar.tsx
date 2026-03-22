@@ -79,7 +79,7 @@ export function EditorialPageSidebar({
       </aside>
 
       {productCategories.length > 0 ? (
-        <div className="w-16 md:w-64 lg:w-72 shrink-0 sticky top-5 self-start w-1/4">
+        <div className="w-16 md:w-64 lg:w-72 shrink-0 sticky top-5 self-start">
           <AgbonProductNavProvider mode="navigation" syncWithUrl={false} locale={locale}>
             <ProductPageSidebar locale={locale} categories={productCategories} />
           </AgbonProductNavProvider>

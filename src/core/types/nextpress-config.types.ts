@@ -101,7 +101,7 @@ export interface NextPressStorageConfig {
 
 /** A single sidebar navigation group definition */
 export interface NextPressAdminSidebarGroupConfig {
-  /** Matches the group key used in collection.admin.group */
+  /** Stable group key referenced by sidebar collection config */
   key: string;
   /** Display label shown in the sidebar */
   label?: string;
@@ -114,6 +114,11 @@ export interface NextPressAdminSidebarGroupConfig {
   order?: number;
   /** Whether the group starts collapsed (default: false) */
   defaultCollapsed?: boolean;
+  /**
+   * Optional explicit collection order for this group.
+   * When omitted, the sidebar falls back to collection sidebar config order.
+   */
+  items?: Array<string>;
 }
 
 /** Per-collection sidebar overrides */
@@ -126,6 +131,15 @@ export interface NextPressAdminSidebarCollectionConfig {
   hidden?: boolean;
   /** Show the "Add New" sub-item (default: true) */
   showAddNew?: boolean;
+  /**
+   * Sidebar group key.
+   * When omitted, falls back to collection.admin.group.
+   */
+  group?: string;
+  /** Sort order within the resolved sidebar group */
+  order?: number;
+  /** Render this collection as a true top-level sidebar item with no group header */
+  standalone?: boolean;
   /**
    * Nest this collection inside another collection's menu item.
    * Provide the parent collection's slug (e.g. 'posts').

@@ -22,42 +22,49 @@ const adminConfig: NextPressAdminConfig = {
         label: 'Catalogue',
         icon: 'ShoppingBag',
         order: 1,
+        items: ['products', 'product-categories', 'countries', 'jobs'],
       },
       {
         key: 'content',
-        label: 'Content',
+        label: 'Content Management',
         icon: 'FileText',
         order: 2,
+        items: ['pages', 'posts', 'categories', 'comments', 'contact-messages'],
       },
       {
         key: 'media',
         label: 'Media',
         icon: 'Image',
         order: 3,
+        items: [],
       },
       {
         key: 'data',
         label: 'Data',
         icon: 'Database',
         order: 4,
+        items: [],
       },
       {
         key: 'appearance',
         label: 'Appearance',
         icon: 'Palette',
         order: 5,
+        items: ['hero-slides', 'blocks', 'menus'],
       },
       {
         key: 'user-management',
         label: 'User Management',
         icon: 'Users',
         order: 6,
+        items: ['users', 'roles', 'permissions'],
       },
       {
         key: 'system',
         label: 'System',
         icon: 'Settings',
         order: 7,
+        items: ['settings'],
       }
     ],
 
@@ -65,23 +72,34 @@ const adminConfig: NextPressAdminConfig = {
     // Keyed by collection slug. Only specify what you want to override.
     collections: {
       // Catalogue
-      'hero-slides':         { icon: 'SlidersHorizontal' },
-      'product-categories':  { icon: 'Tag', parent: 'products' },
-      products:              { icon: 'Package' },
+      products:              { icon: 'Package', group: 'catalogue', order: 1 },
+      'product-categories':  { icon: 'Tag', group: 'catalogue', order: 2, parent: 'products' },
+      countries:             { icon: 'Map', group: 'catalogue', order: 3 },
+      jobs:                  { icon: 'BriefcaseBusiness', group: 'catalogue', order: 4 },
 
       // Content
-      users:       { icon: 'Users'          },
-      roles:       { icon: 'Shield'         },
-      permissions: { icon: 'Key'            },
-      media:       { icon: 'Image'          },
-      pages:       { icon: 'LayoutTemplate' },
-      posts:       { icon: 'FileText', showAddNew: false },
-      categories:  { icon: undefined, parent: 'posts', showAddNew: false },
-      comments:    { icon: 'MessageSquare'  },
-      blocks:      { icon: 'SquareDashedBottom' },
-      menus:       { icon: 'MenuSquare'     },
+      pages:       { icon: 'LayoutTemplate', group: 'content', order: 1 },
+      posts:       { icon: 'FileText', group: 'content', order: 2, showAddNew: false },
+      categories:  { icon: undefined, group: 'content', order: 3, parent: 'posts', showAddNew: false },
+      comments:    { icon: 'MessageSquare', group: 'content', order: 4 },
+      'contact-messages': { icon: 'Mail', group: 'content', order: 5, showAddNew: false, standalone: true },
+
+      // Media
+      media:       { icon: 'Image', group: 'media', order: 1, showAddNew: false, standalone: true },
+
+      // Appearance
+      // 'hero-slides': { icon: 'SlidersHorizontal', group: 'appearance', order: 1 },
+      blocks:      { icon: 'SquareDashedBottom', group: 'appearance', order: 2 },
+      menus:       { icon: 'MenuSquare', group: 'appearance', order: 3 },
+
+      // User management
+      users:       { icon: 'Users', group: 'user-management', order: 1 },
+      roles:       { icon: 'Shield', group: 'user-management', order: 2 },
+      permissions: { icon: 'Key', group: 'user-management', order: 3 },
+
+      // System
       // Settings is a singleton — hide the "Add New" sub-item
-      settings:    { icon: 'Settings2', showAddNew: false },
+      settings:    { icon: 'Settings2', group: 'system', order: 7, showAddNew: false, standalone: true  },
     },
 
     // ── Top links ─────────────────────────────────────────────────────────────
