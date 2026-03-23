@@ -62,6 +62,11 @@ export const Products: CollectionConfig = {
       relationTo: 'product-categories',
       admin: {
         description: 'Product category',
+        quickAdd: {
+          enabled: true,
+          label: 'New category',
+          editorView: 'modal',
+        },
       },
     },
     {

@@ -14,6 +14,7 @@ import {
   Eye,
   Globe,
   GlobeLock,
+  Plus,
   PencilLine,
   Save,
   Trash2,
@@ -33,6 +34,8 @@ import { DataSourceBuilder, type DataSourceValue } from '@/components/admin/Data
 import { RichtextEditor } from '@/components/admin/RichtextEditor';
 import { ArrayFieldEditor, GroupFieldEditor } from '@/components/admin/GroupFieldEditor/GroupFieldEditor';
 import { ProductMediaEditor } from '@/components/admin/ProductMediaEditor';
+import { QuickAddCollectionDialog } from '@/components/admin/QuickAddCollectionDialog';
+import { getCollection } from '@/lib/collections-data';
 
 interface CollectionEditProps {
   collection: CollectionMeta;
@@ -95,6 +98,7 @@ export function CollectionEdit({
   const [relationOptions, setRelationOptions] = useState<
     Record<string, { id: string; label: string }[]>
   >({});
+  const [quickAddFieldName, setQuickAddFieldName] = useState<string | null>(null);
 
   // ── Locale state ────────────────────────────────────────────────────────────
   const { locale: adminLocale } = useAdminLocale();
@@ -146,6 +150,28 @@ export function CollectionEdit({
       .finally(() => setIsLoading(false));
   }, [collection.fields, collection.slug, documentId]);
 
+  const loadRelationOptions = useCallback(async (field: CollectionFieldMeta) => {
+    if (field.type !== 'relationship' || !field.relationTo) return;
+
+    const target = field.relationTo;
+    try {
+      const response = await fetch(`/api/admin/collections/${target}?limit=200`);
+      if (!response.ok) {
+        throw new Error(`${response.status}`);
+      }
+
+      const data = await response.json();
+      const options = ((data.docs as Array<Record<string, unknown>>) ?? []).map((doc) => ({
+        id: doc.id as string,
+        label: getOptionLabel(doc, activeLocale),
+      }));
+
+      setRelationOptions((prev) => ({ ...prev, [field.name]: options }));
+    } catch (error) {
+      console.error(`Failed to load options for ${target}`, error);
+    }
+  }, [activeLocale]);
+
   // ── Load relationship options ───────────────────────────────────────────────
   useEffect(() => {
     const relFields = collection.fields.filter(
@@ -154,19 +180,9 @@ export function CollectionEdit({
     if (relFields.length === 0) return;
 
     for (const field of relFields) {
-      const target = field.relationTo!;
-      fetch(`/api/admin/collections/${target}?limit=200`)
-        .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`${r.status}`))))
-        .then((data) => {
-          const options = ((data.docs as Array<Record<string, unknown>>) ?? []).map((doc) => ({
-            id: doc.id as string,
-            label: getOptionLabel(doc, activeLocale),
-          }));
-          setRelationOptions((prev) => ({ ...prev, [field.name]: options }));
-        })
-        .catch((e) => console.error(`Failed to load options for ${target}`, e));
+      void loadRelationOptions(field);
     }
-  }, [activeLocale, collection.fields]);
+  }, [collection.fields, loadRelationOptions]);
 
   // ── Save ───────────────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
@@ -516,23 +532,45 @@ export function CollectionEdit({
       }
 
       case 'relationship': {
+        const targetCollection = field.relationTo ? getCollection(field.relationTo) : undefined;
+        const quickAddEnabled = Boolean(field.quickAdd?.enabled && targetCollection);
+        const quickAddLabel = field.quickAdd?.label ?? `New ${targetCollection?.labels.singular ?? 'Item'}`;
+
         if (!field.hasMany) {
           // Single relationship — simple select
           const opts = relationOptions[field.name] ?? [];
           return (
-            <select
-              id={field.name}
-              value={(value as string) || ''}
-              onChange={(e) => updateField(field.name, e.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              <option value="">— None —</option>
-              {opts.map((opt) => (
-                <option key={opt.id} value={opt.id}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <select
+                  id={field.name}
+                  value={(value as string) || ''}
+                  onChange={(e) => updateField(field.name, e.target.value)}
+                  className="flex h-10 w-full min-w-0 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <option value="">— None —</option>
+                  {opts.map((opt) => (
+                    <option key={opt.id} value={opt.id}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                {quickAddEnabled && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="shrink-0"
+                    onClick={() => setQuickAddFieldName(field.name)}
+                    title={quickAddLabel}
+                    aria-label={quickAddLabel}
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span className="sr-only">{quickAddLabel}</span>
+                  </Button>
+                )}
+              </div>
+            </div>
           );
         }
 
@@ -813,6 +851,11 @@ export function CollectionEdit({
   const getFieldLabel = (field: CollectionFieldMeta) =>
     field.label || field.name.charAt(0).toUpperCase() + field.name.slice(1).replace(/([A-Z])/g, ' $1');
 
+  const quickAddField = quickAddFieldName
+    ? collection.fields.find((field) => field.name === quickAddFieldName && field.type === 'relationship')
+    : undefined;
+  const quickAddCollection = quickAddField?.relationTo ? getCollection(quickAddField.relationTo) : undefined;
+
   const visibleFields = collection.fields.filter((f) => {
     if (f.hidden) return false;
     // Block content is edited on its own dedicated page (/admin/blocks/[id]/content)
@@ -885,7 +928,8 @@ export function CollectionEdit({
   }
 
   const formBody = (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    <>
+      <form onSubmit={handleSubmit} className="space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -1384,7 +1428,32 @@ export function CollectionEdit({
           )}
         </div>
       </div>
-    </form>
+      </form>
+
+      {quickAddField && quickAddCollection && (
+        <QuickAddCollectionDialog
+          collection={quickAddCollection}
+          open={Boolean(quickAddFieldName)}
+          onClose={() => setQuickAddFieldName(null)}
+          onCreated={async (doc) => {
+            await loadRelationOptions(quickAddField);
+
+            const createdId = typeof doc.id === 'string' ? doc.id : null;
+            if (!createdId) return;
+
+            if (quickAddField.hasMany) {
+              const current = (formData[quickAddField.name] as string[]) ?? [];
+              if (!current.includes(createdId)) {
+                updateField(quickAddField.name, [...current, createdId]);
+              }
+              return;
+            }
+
+            updateField(quickAddField.name, createdId);
+          }}
+        />
+      )}
+    </>
   );
 
   return formBody;

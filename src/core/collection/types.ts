@@ -211,6 +211,12 @@ export interface FieldAdminConfig {
   localizedAs?: 'text' | 'textarea' | 'json' | 'richText';
   /** Custom admin component name to render for this field instead of the default input */
   component?: string;
+  /** Enables inline creation of related documents from relationship fields */
+  quickAdd?: boolean | {
+    enabled?: boolean;
+    label?: string;
+    editorView?: 'modal' | 'slider' | 'page';
+  };
 }
 
 // ============================================================================

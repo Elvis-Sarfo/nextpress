@@ -40,12 +40,12 @@ export function MediaPickerModal({ open, onClose, onSelect }: MediaPickerModalPr
 
   const modal = (
     <div
-      className="fixed inset-0 z-[90] flex flex-col bg-black/60"
+      className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="relative mx-auto mt-6 mb-4 flex h-[calc(100vh-3rem)] w-full max-w-7xl flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl">
+      <div className="relative flex h-[min(90vh,64rem)] w-full max-w-7xl flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl">
         <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">

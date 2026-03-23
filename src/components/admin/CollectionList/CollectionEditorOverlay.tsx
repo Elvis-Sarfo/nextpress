@@ -36,11 +36,38 @@ export function CollectionEditorOverlay({
   onDeleted,
 }: CollectionEditorOverlayProps) {
   const [mounted, setMounted] = useState(false);
+  const [sliderVisible, setSliderVisible] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     return () => setMounted(false);
   }, []);
+
+  useEffect(() => {
+    if (!open || editorView === 'page') {
+      setSliderVisible(false);
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      setSliderVisible(true);
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [open, editorView]);
+
+  useEffect(() => {
+    if (!open || editorView === 'page') return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open, editorView, onClose]);
 
   if (!open || editorView === 'page') return null;
   if (!mounted) return null;
@@ -68,12 +95,13 @@ export function CollectionEditorOverlay({
       />
 
       {editorView === 'modal' ? (
-        <div
-          className={cn(
-            'absolute left-1/2 top-[calc(var(--admin-topbar-height)+0.5rem)] max-h-[calc(100vh-var(--admin-topbar-height)-1rem)] -translate-x-1/2 overflow-y-auto rounded-lg border bg-background shadow-xl',
-            editorExpanded ? 'w-[min(98vw,96rem)]' : 'w-[min(96vw,72rem)]'
-          )}
-        >
+        <div className="absolute inset-0 flex items-center justify-center p-4">
+          <div
+            className={cn(
+              'flex h-[min(90vh,64rem)] w-full flex-col overflow-hidden rounded-2xl border bg-background shadow-xl',
+              editorExpanded ? 'max-w-[min(96vw,96rem)]' : 'max-w-[min(92vw,72rem)]'
+            )}
+          >
           <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-background px-4 py-2">
             <h2 className="text-sm font-semibold">{title}</h2>
             <div className="flex items-center gap-1">
@@ -95,14 +123,16 @@ export function CollectionEditorOverlay({
               </Button>
             </div>
           </div>
-          <div className={cn('p-4', editorExpanded && 'px-5 pb-5')}>
+          <div className={cn('min-h-0 flex-1 overflow-y-auto p-4', editorExpanded && 'px-5 pb-5')}>
             <CollectionEdit {...editProps} mode="modal" />
           </div>
+        </div>
         </div>
       ) : (
         <div
           className={cn(
-            'absolute right-0 top-[var(--admin-topbar-height)] h-[calc(100vh-var(--admin-topbar-height))] w-full overflow-y-auto border-l bg-background shadow-xl',
+            'absolute right-0 top-[var(--admin-topbar-height)] flex h-screen w-full flex-col overflow-y-auto border-l bg-background shadow-xl transition-transform duration-300 ease-out will-change-transform',
+            sliderVisible ? 'translate-x-0' : 'translate-x-full',
             editorExpanded ? 'max-w-[min(98vw,88rem)]' : 'max-w-[min(94vw,56rem)]'
           )}
         >
@@ -127,7 +157,7 @@ export function CollectionEditorOverlay({
               </Button>
             </div>
           </div>
-          <div className={cn('p-4', editorExpanded && 'px-5 pb-5')}>
+          <div className={cn('min-h-0 flex-1 overflow-y-auto p-4', editorExpanded && 'px-5 pb-5')}>
             <CollectionEdit {...editProps} mode="slider" />
           </div>
         </div>

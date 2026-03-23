@@ -15,25 +15,61 @@ import { getCollection } from '@/lib/collections-data';
 import { slugify } from '@/lib/utils';
 
 // Collections that have many-to-many relations we want to include in responses
+const MEDIA_SELECT = {
+  id: true,
+  url: true,
+  altText: true,
+  filename: true,
+  mimeType: true,
+  filesize: true,
+} as const;
+
 const INCLUDE_MAP: Record<string, object> = {
   users: { roles: { select: { id: true, name: true, displayName: true } } },
   roles: { permissions: { select: { id: true, name: true, resource: true, action: true, scope: true } } },
-  pages: { featuredImage: { select: { id: true, url: true, altText: true, filename: true, type: true, size: true } } },
+  pages: { featuredImage: { select: MEDIA_SELECT } },
   'contact-messages': { assignedTo: { select: { id: true, name: true, email: true } } },
-  countries: { backgroundImage: { select: { id: true, url: true, altText: true, filename: true, type: true, size: true } } },
-  'product-categories': { image: { select: { id: true, url: true, altText: true, filename: true, type: true, size: true } } },
+  countries: { backgroundImage: { select: MEDIA_SELECT } },
+  'product-categories': { image: { select: MEDIA_SELECT } },
   products: {
     category: { select: { id: true, name: true, slug: true } },
   },
   posts: {
     category: { select: { id: true, name: true, color: true } },
-    featuredImage: { select: { id: true, url: true, altText: true, filename: true, type: true, size: true } },
+    featuredImage: { select: MEDIA_SELECT },
     author: { select: { id: true, name: true, email: true } },
   },
   comments: {
     author: { select: { id: true, name: true, email: true } },
   },
 };
+
+function normalizeMediaValue(value: unknown): void {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return;
+  const media = value as Record<string, unknown>;
+  media.type = media.mimeType ?? media.type ?? '';
+  media.size = media.filesize ?? media.size ?? 0;
+}
+
+function normalizeIncludedMedia(collection: string, value: unknown): void {
+  if (Array.isArray(value)) {
+    for (const item of value) normalizeIncludedMedia(collection, item);
+    return;
+  }
+
+  if (!value || typeof value !== 'object') return;
+  const doc = value as Record<string, unknown>;
+
+  if (collection === 'pages' || collection === 'posts') {
+    normalizeMediaValue(doc.featuredImage);
+  }
+  if (collection === 'countries') {
+    normalizeMediaValue(doc.backgroundImage);
+  }
+  if (collection === 'product-categories') {
+    normalizeMediaValue(doc.image);
+  }
+}
 
 function getLocalizedValue(value: unknown, locale: string): string | undefined {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
@@ -187,6 +223,22 @@ function getFilterableFields(collection: string): Set<string> {
   );
 }
 
+function getDefaultSortField(collection: string): string | null {
+  const candidates = ['createdAt', 'updatedAt', 'displayName', 'name', 'title', 'id'];
+  return candidates.find((fieldName) => modelHasField(collection, fieldName)) ?? null;
+}
+
+function getOrderBy(collection: string, sortField: string, sortDir: 'asc' | 'desc'): Record<string, 'asc' | 'desc'> | undefined {
+  if (modelHasField(collection, sortField)) {
+    return { [sortField]: sortDir };
+  }
+
+  const fallbackField = getDefaultSortField(collection);
+  if (!fallbackField) return undefined;
+
+  return { [fallbackField]: sortDir };
+}
+
 function createDocumentId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
@@ -270,85 +322,96 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ collection: string }> }
 ) {
-  const session = await auth();
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const { collection } = await params;
-
-  if (!ALLOWED.has(collection)) {
-    return NextResponse.json({ error: 'Collection not found' }, { status: 404 });
-  }
-
-  const model = getPrismaModel(collection);
-  if (!model) {
-    return NextResponse.json({ error: 'Collection not found' }, { status: 404 });
-  }
-
-  const { searchParams } = new URL(request.url);
-  const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10));
-  const limit = Math.min(100, parseInt(searchParams.get('limit') ?? '20', 10));
-  const search = searchParams.get('search') ?? '';
-  const sortField = searchParams.get('sortField') ?? 'createdAt';
-  const sortDir = searchParams.get('sortDir') === 'asc' ? 'asc' : 'desc';
-  const rawFilters = searchParams.get('filters');
-
-  const skip = (page - 1) * limit;
-
-  const searchableFields = getSearchableFields(collection);
-  const filterableFields = getFilterableFields(collection);
-  let parsedFilters: Record<string, string> = {};
-  if (rawFilters) {
-    try {
-      const candidate = JSON.parse(rawFilters) as Record<string, unknown>;
-      const next: Record<string, string> = {};
-      for (const [k, v] of Object.entries(candidate)) {
-        if (
-          typeof k === 'string' &&
-          typeof v === 'string' &&
-          v.trim().length > 0 &&
-          filterableFields.has(k)
-        ) {
-          next[k] = v;
-        }
-      }
-      parsedFilters = next;
-    } catch {
-      parsedFilters = {};
-    }
-  }
-
-  const andClauses: Array<Record<string, unknown>> = [];
-  if (search && searchableFields.length > 0) {
-    andClauses.push({
-      OR: searchableFields.map((field) => buildContainsFilter(field, search)),
-    });
-  }
-
-  for (const [field, rawValue] of Object.entries(parsedFilters)) {
-    const value = rawValue.trim();
-    if (!value) continue;
-    andClauses.push(buildContainsFilter(field, value));
-  }
-
-  const where = andClauses.length > 0 ? { AND: andClauses } : {};
-
-  const include = INCLUDE_MAP[collection];
-
-  let docs: unknown[] = [];
-  let total = 0;
   try {
-    [docs, total] = await Promise.all([
-      model.findMany({ where, skip, take: limit, include, orderBy: { [sortField]: sortDir } }),
-      model.count({ where }),
-    ]);
-  } catch {
-    [docs, total] = await Promise.all([
-      model.findMany({ where, skip, take: limit, include, orderBy: { createdAt: 'desc' } }),
-      model.count({ where }),
-    ]);
-  }
+    const session = await auth();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { collection } = await params;
+
+    if (!ALLOWED.has(collection)) {
+      return NextResponse.json({ error: 'Collection not found' }, { status: 404 });
+    }
+
+    const model = getPrismaModel(collection);
+    if (!model) {
+      return NextResponse.json({ error: 'Collection not found' }, { status: 404 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10));
+    const limit = Math.min(100, parseInt(searchParams.get('limit') ?? '20', 10));
+    const search = searchParams.get('search') ?? '';
+    const sortField = searchParams.get('sortField') ?? 'createdAt';
+    const sortDir = searchParams.get('sortDir') === 'asc' ? 'asc' : 'desc';
+    const rawFilters = searchParams.get('filters');
+
+    const skip = (page - 1) * limit;
+
+    const searchableFields = getSearchableFields(collection);
+    const filterableFields = getFilterableFields(collection);
+    let parsedFilters: Record<string, string> = {};
+    if (rawFilters) {
+      try {
+        const candidate = JSON.parse(rawFilters) as Record<string, unknown>;
+        const next: Record<string, string> = {};
+        for (const [k, v] of Object.entries(candidate)) {
+          if (
+            typeof k === 'string' &&
+            typeof v === 'string' &&
+            v.trim().length > 0 &&
+            filterableFields.has(k)
+          ) {
+            next[k] = v;
+          }
+        }
+        parsedFilters = next;
+      } catch {
+        parsedFilters = {};
+      }
+    }
+
+    const andClauses: Array<Record<string, unknown>> = [];
+    if (search && searchableFields.length > 0) {
+      andClauses.push({
+        OR: searchableFields.map((field) => buildContainsFilter(field, search)),
+      });
+    }
+
+    for (const [field, rawValue] of Object.entries(parsedFilters)) {
+      const value = rawValue.trim();
+      if (!value) continue;
+      andClauses.push(buildContainsFilter(field, value));
+    }
+
+    const where = andClauses.length > 0 ? { AND: andClauses } : {};
+
+    const include = INCLUDE_MAP[collection];
+    const orderBy = getOrderBy(collection, sortField, sortDir);
+    const fallbackOrderBy = getOrderBy(collection, 'createdAt', 'desc');
+
+    let docs: unknown[] = [];
+    let total = 0;
+
+    try {
+      [docs, total] = await Promise.all([
+        model.findMany({ where, skip, take: limit, include, ...(orderBy ? { orderBy } : {}) }),
+        model.count({ where }),
+      ]);
+    } catch {
+      try {
+        [docs, total] = await Promise.all([
+          model.findMany({ where, skip, take: limit, ...(fallbackOrderBy ? { orderBy: fallbackOrderBy } : {}) }),
+          model.count({ where }),
+        ]);
+      } catch {
+        [docs, total] = await Promise.all([
+          model.findMany({ where, skip, take: limit }),
+          model.count({ where }),
+        ]);
+      }
+    }
 
   // Strip sensitive fields
   if (collection === 'users') {
@@ -357,7 +420,13 @@ export async function GET(
     }
   }
 
+  normalizeIncludedMedia(collection, docs);
+
   return NextResponse.json({ docs, total, page, limit });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -547,6 +616,8 @@ export async function POST(
     if (collection === 'users' && body.id) {
       invalidatePrincipalCache(body.id as string);
     }
+
+    normalizeIncludedMedia(collection, doc);
 
     return NextResponse.json({ doc }, { status: 201 });
   } catch (error) {

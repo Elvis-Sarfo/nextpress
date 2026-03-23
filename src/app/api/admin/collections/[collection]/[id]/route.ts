@@ -14,25 +14,61 @@ import { invalidateSettingsCache } from '@/lib/cms';
 import { getCollection } from '@/lib/collections-data';
 import { slugify } from '@/lib/utils';
 
+const MEDIA_SELECT = {
+  id: true,
+  url: true,
+  altText: true,
+  filename: true,
+  mimeType: true,
+  filesize: true,
+} as const;
+
 const INCLUDE_MAP: Record<string, object> = {
   users: { roles: { select: { id: true, name: true, displayName: true } } },
   roles: { permissions: { select: { id: true, name: true, resource: true, action: true, scope: true } } },
-  pages: { featuredImage: { select: { id: true, url: true, altText: true, filename: true, type: true, size: true } } },
+  pages: { featuredImage: { select: MEDIA_SELECT } },
   'contact-messages': { assignedTo: { select: { id: true, name: true, email: true } } },
-  countries: { backgroundImage: { select: { id: true, url: true, altText: true, filename: true, type: true, size: true } } },
-  'product-categories': { image: { select: { id: true, url: true, altText: true, filename: true, type: true, size: true } } },
+  countries: { backgroundImage: { select: MEDIA_SELECT } },
+  'product-categories': { image: { select: MEDIA_SELECT } },
   products: {
     category: { select: { id: true, name: true, slug: true } },
   },
   posts: {
     category: { select: { id: true, name: true, color: true } },
-    featuredImage: { select: { id: true, url: true, altText: true, filename: true, type: true, size: true } },
+    featuredImage: { select: MEDIA_SELECT },
     author: { select: { id: true, name: true, email: true } },
   },
   comments: {
     author: { select: { id: true, name: true, email: true } },
   },
 };
+
+function normalizeMediaValue(value: unknown): void {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return;
+  const media = value as Record<string, unknown>;
+  media.type = media.mimeType ?? media.type ?? '';
+  media.size = media.filesize ?? media.size ?? 0;
+}
+
+function normalizeIncludedMedia(collection: string, value: unknown): void {
+  if (Array.isArray(value)) {
+    for (const item of value) normalizeIncludedMedia(collection, item);
+    return;
+  }
+
+  if (!value || typeof value !== 'object') return;
+  const doc = value as Record<string, unknown>;
+
+  if (collection === 'pages' || collection === 'posts') {
+    normalizeMediaValue(doc.featuredImage);
+  }
+  if (collection === 'countries') {
+    normalizeMediaValue(doc.backgroundImage);
+  }
+  if (collection === 'product-categories') {
+    normalizeMediaValue(doc.image);
+  }
+}
 
 const ALLOWED = new Set([
   'users', 'roles', 'permissions', 'media', 'pages', 'settings', 'blocks', 'menus',
@@ -191,6 +227,8 @@ export async function GET(
     const d = doc as Record<string, unknown>;
     delete d.passwordHash;
   }
+
+  normalizeIncludedMedia(collection, doc);
 
   return NextResponse.json({ doc });
 }
@@ -385,6 +423,8 @@ export async function PUT(
       const d = doc as Record<string, unknown>;
       delete d.passwordHash;
     }
+
+    normalizeIncludedMedia(collection, doc);
 
     return NextResponse.json({ doc });
   } catch (error) {

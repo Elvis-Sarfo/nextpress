@@ -43,6 +43,12 @@ export interface CollectionFieldMeta {
   localizedAs?: 'text' | 'textarea' | 'json' | 'richText';
   /** Custom admin component to render for this field (e.g. 'menu-items') */
   adminComponent?: string;
+  /** Optional quick-add configuration for relationship fields */
+  quickAdd?: {
+    enabled: boolean;
+    label?: string;
+    editorView?: 'modal' | 'slider' | 'page';
+  };
   /** Sub-fields for group and array types — drives recursive UI rendering */
   fields?: CollectionFieldMeta[];
 }
@@ -108,6 +114,20 @@ function mapField(f: Field): CollectionFieldMeta {
     adminComponent: (f.admin as { component?: string })?.component,
     description: (f.admin as { description?: string })?.description,
   };
+
+  const quickAddConfig = (f.admin as {
+    quickAdd?: boolean | CollectionFieldMeta['quickAdd'];
+  })?.quickAdd;
+
+  if (typeof quickAddConfig === 'boolean') {
+    meta.quickAdd = { enabled: quickAddConfig };
+  } else if (quickAddConfig?.enabled) {
+    meta.quickAdd = {
+      enabled: true,
+      label: quickAddConfig.label,
+      editorView: quickAddConfig.editorView,
+    };
+  }
 
   if (f.type === 'select') {
     const sf = f as { options?: { label: string; value: string }[] };
