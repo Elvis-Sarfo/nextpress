@@ -579,7 +579,6 @@ export function generatePrismaSchema(
   // Phase 3: render to string
   let schema = `generator client {
   provider = "prisma-client-js"
-  output   = "../../../../../node_modules/.prisma/client"
 }
 
 datasource db {
