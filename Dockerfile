@@ -33,8 +33,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 # Prisma client native binaries (not auto-bundled in standalone mode)
+# Generator outputs to node_modules/.prisma/client (explicit output path in schema-engine)
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
 
 # Create uploads dir and declare as volume so Docker always treats it
 # as a mount point — never an image layer. This fixes the Coolify volume issue.
