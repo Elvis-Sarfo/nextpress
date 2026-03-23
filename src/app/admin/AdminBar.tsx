@@ -97,23 +97,34 @@ const workspaceActions: ActionLink[] = [
   },
 ];
 
+const compactActions: ActionLink[] = [
+  ...createActions,
+  ...workspaceActions,
+];
+
 function ActionMenu({
   label,
   icon: Icon,
   items,
   align = 'start',
+  compact = false,
 }: {
   label: string;
   icon: React.ElementType;
   items: ActionLink[];
   align?: 'start' | 'end' | 'center';
+  compact?: boolean;
 }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          className="h-7 rounded-lg border border-white/10 bg-white/[0.04] px-2 text-[11px] font-medium text-slate-100 hover:bg-white/[0.08] hover:text-white"
+          className={
+            compact
+              ? 'h-7 rounded-lg border border-white/10 bg-white/[0.04] px-2 text-[11px] font-medium text-slate-100 hover:bg-white/[0.08] hover:text-white'
+              : 'h-7 rounded-lg border border-white/10 bg-white/[0.04] px-2 text-[11px] font-medium text-slate-100 hover:bg-white/[0.08] hover:text-white'
+          }
         >
           <Icon className="mr-1.5 h-3.5 w-3.5" />
           {label}
@@ -160,7 +171,7 @@ export async function AdminBar() {
   return (
     <header className="fixed left-0 right-0 top-0 z-[60] border-b border-slate-800/80 bg-[linear-gradient(180deg,#0f172a_0%,#131d30_100%)] text-white shadow-[0_12px_30px_rgba(2,6,23,0.22)]">
       <div className="flex h-12 items-center justify-between gap-2 px-3 sm:px-4 lg:px-5">
-        <div className="flex min-w-0 items-center gap-3">
+        <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
           <Link
             href="/admin"
             className="flex min-w-0 items-center gap-2 rounded-lg px-1.5 py-0.5 transition-colors hover:bg-white/[0.06]"
@@ -174,13 +185,17 @@ export async function AdminBar() {
             </span>
           </Link>
 
+          <div className="hidden items-center gap-2 lg:flex xl:hidden">
+            <ActionMenu label="More" icon={Plus} items={compactActions} />
+          </div>
+
           <div className="hidden items-center gap-2 xl:flex">
             <ActionMenu label="Create" icon={Plus} items={createActions} />
             <ActionMenu label="Open" icon={Home} items={workspaceActions} />
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <div className="hidden lg:block">
             <LocaleSwitcher />
           </div>
@@ -297,17 +312,6 @@ export async function AdminBar() {
               </form>
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-1.5 overflow-x-auto border-t border-white/[0.06] px-3 py-1 xl:hidden">
-        <ActionMenu label="Create" icon={Plus} items={createActions} />
-        <ActionMenu label="Open" icon={Home} items={workspaceActions} />
-        <div className="shrink-0 rounded-lg border border-white/10 bg-white/[0.04] px-1 py-0.5">
-          <LocaleSwitcher />
-        </div>
-        <div className="shrink-0 rounded-lg border border-white/10 bg-white/[0.04] px-1 py-0.5">
-          <ThemeSwitcher />
         </div>
       </div>
     </header>
