@@ -23,10 +23,6 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Non-root user for security
-RUN addgroup --system --gid 1001 nodejs \
- && adduser --system --uid 1001 nextjs
-
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.next ./.next
@@ -35,11 +31,8 @@ COPY --from=builder /app/next.config.mjs ./next.config.mjs
 
 # Create uploads dir and declare as volume so Docker always treats it
 # as a mount point — never an image layer. This fixes the Coolify volume issue.
-RUN mkdir -p /app/public/uploads/media \
- && chown -R nextjs:nodejs /app/public/uploads
+RUN mkdir -p /app/public/uploads/media
 VOLUME ["/app/public/uploads/media"]
-
-USER nextjs
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
