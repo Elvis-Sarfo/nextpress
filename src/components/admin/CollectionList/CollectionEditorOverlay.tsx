@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ExternalLink, Maximize2, Minimize2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -33,7 +35,15 @@ export function CollectionEditorOverlay({
   onSaved,
   onDeleted,
 }: CollectionEditorOverlayProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
   if (!open || editorView === 'page') return null;
+  if (!mounted) return null;
 
   const title =
     editorIntent === 'create'
@@ -48,7 +58,7 @@ export function CollectionEditorOverlay({
     onDeleted,
   } as const;
 
-  return (
+  const overlay = (
     <div className="fixed inset-0 z-[80]">
       <button
         type="button"
@@ -124,5 +134,6 @@ export function CollectionEditorOverlay({
       )}
     </div>
   );
-}
 
+  return createPortal(overlay, document.body);
+}

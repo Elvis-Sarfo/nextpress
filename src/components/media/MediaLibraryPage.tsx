@@ -20,6 +20,7 @@ import {
   X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import type { MediaValue } from '@/components/admin/MediaSelector';
 import type { MediaRecord } from '@/lib/media/types';
 import { useMediaLibrary } from './useMediaLibrary';
 import { MediaDropzone } from './MediaDropzone';
@@ -43,7 +44,7 @@ interface TrimEditState {
 
 interface MediaLibraryPageProps {
   pickerMode?: boolean;
-  onPickerSelect?: (media: { id: string; url: string }) => void;
+  onPickerSelect?: (media: MediaValue) => void;
 }
 
 export function MediaLibraryPage({ pickerMode = false, onPickerSelect }: MediaLibraryPageProps = {}) {
@@ -157,7 +158,15 @@ export function MediaLibraryPage({ pickerMode = false, onPickerSelect }: MediaLi
   const openItemAt = (index: number) => {
     if (pickerMode && onPickerSelect) {
       const item = media.items[index];
-      if (item) onPickerSelect({ id: item.id, url: item.url || item.filename });
+      if (item) {
+        onPickerSelect({
+          id: item.id,
+          url: item.url || item.filename,
+          filename: item.filename,
+          type: item.type,
+          size: item.size,
+        });
+      }
       return;
     }
     setSelectedIndex(index);
@@ -290,11 +299,15 @@ export function MediaLibraryPage({ pickerMode = false, onPickerSelect }: MediaLi
   );
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 p-4 md:p-8">
+    <div className={pickerMode ? 'mx-auto max-w-7xl space-y-5 p-5 md:p-6' : 'mx-auto max-w-7xl space-y-6 p-4 md:p-8'}>
       <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Media Library</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Manage uploads and metadata in one place.</p>
+          <h1 className={pickerMode ? 'text-2xl font-semibold tracking-tight' : 'text-3xl font-semibold tracking-tight'}>
+            {pickerMode ? 'Choose from your library' : 'Media Library'}
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {pickerMode ? 'Search, filter, upload, and click any card to select it.' : 'Manage uploads and metadata in one place.'}
+          </p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -318,17 +331,18 @@ export function MediaLibraryPage({ pickerMode = false, onPickerSelect }: MediaLi
       <MediaDropzone
         onFilesSelected={onFiles}
         uploadState={media.uploadState}
-        dropLabel="Drag and drop files here, or click to browse"
+        dropLabel={pickerMode ? 'Drop files here to add them instantly' : 'Drag and drop files here, or click to browse'}
+        subLabel={pickerMode ? 'Upload without leaving the picker.' : undefined}
       />
 
-      <section className="flex flex-col gap-3 md:flex-row md:items-center">
+      <section className={pickerMode ? 'flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:flex-row md:items-center' : 'flex flex-col gap-3 md:flex-row md:items-center'}>
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             value={media.query}
             onChange={(e) => media.setQuery(e.target.value)}
             placeholder="Search by name, title, alt text..."
-            className="w-full rounded-md border bg-background py-2 pl-9 pr-3 text-sm"
+            className={pickerMode ? 'w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-sm' : 'w-full rounded-md border bg-background py-2 pl-9 pr-3 text-sm'}
           />
         </div>
 
@@ -339,7 +353,7 @@ export function MediaLibraryPage({ pickerMode = false, onPickerSelect }: MediaLi
             media.setTypeFilter(e.target.value);
             media.setPage(1);
           }}
-          className="rounded-md border bg-background px-3 py-2 text-sm"
+          className={pickerMode ? 'rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm' : 'rounded-md border bg-background px-3 py-2 text-sm'}
         >
           {typeOptions.map((opt) => (
             <option key={opt.value} value={opt.value}>
@@ -364,27 +378,46 @@ export function MediaLibraryPage({ pickerMode = false, onPickerSelect }: MediaLi
           No media found.
         </div>
       ) : view === 'grid' ? (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+        <div className={pickerMode ? 'grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5' : 'grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'}>
           {media.items.map((item, index) => (
             <button
               key={item.id}
-              className={`group overflow-hidden rounded-xl border bg-card text-left transition-all ${pickerMode ? 'hover:ring-2 hover:ring-primary' : ''}`}
+              className={`group overflow-hidden border bg-card text-left transition-all ${
+                pickerMode
+                  ? 'rounded-2xl border-slate-200 bg-white shadow-sm hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md hover:ring-2 hover:ring-primary/20'
+                  : 'rounded-xl'
+              }`}
               onClick={() => openItemAt(index)}
               title={pickerMode ? `Select: ${item.title || item.filename}` : undefined}
             >
-              <div className="relative aspect-square bg-muted">
+              <div className={`relative ${pickerMode ? 'aspect-[1.05/1]' : 'aspect-square'} bg-muted`}>
                 <MediaThumb item={item} />
                 {pickerMode && (
-                  <div className="absolute inset-0 flex items-end justify-center bg-black/0 group-hover:bg-black/30 transition-colors">
-                    <span className="mb-2 rounded bg-primary px-2 py-0.5 text-xs text-primary-foreground opacity-0 group-hover:opacity-100 transition-opacity">
-                      Select
-                    </span>
-                  </div>
+                  <>
+                    <div className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-medium text-slate-600 shadow-sm">
+                      {item.kind}
+                    </div>
+                    <div className="absolute inset-0 flex items-end justify-center bg-black/0 transition-colors group-hover:bg-black/20">
+                      <span className="mb-3 rounded-full bg-slate-950 px-3 py-1 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
+                        Select media
+                      </span>
+                    </div>
+                  </>
                 )}
               </div>
-              <div className="p-2">
-                <p className="truncate text-sm font-medium">{item.title || item.filename}</p>
-                <p className="truncate text-xs text-muted-foreground">{formatBytes(item.size)}</p>
+              <div className={pickerMode ? 'space-y-2 p-3.5' : 'p-2'}>
+                <div>
+                  <p className="truncate text-sm font-medium">{item.title || item.filename}</p>
+                  {pickerMode && <p className="mt-1 truncate text-xs text-muted-foreground">{item.filename}</p>}
+                </div>
+                {pickerMode ? (
+                  <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                    <span>{formatBytes(item.size)}</span>
+                    <span>{formatShortDate(item.uploadedAt)}</span>
+                  </div>
+                ) : (
+                  <p className="truncate text-xs text-muted-foreground">{formatBytes(item.size)}</p>
+                )}
               </div>
             </button>
           ))}
@@ -730,6 +763,12 @@ function formatDateTime(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleString();
+}
+
+function formatShortDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString();
 }
 
 function toAbsoluteUrl(url: string): string {

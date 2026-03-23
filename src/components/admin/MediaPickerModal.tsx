@@ -1,17 +1,26 @@
 'use client';
 
-import { useEffect } from 'react';
-import { X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { ImagePlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import type { MediaValue } from '@/components/admin/MediaSelector';
 import { MediaLibraryPage } from '@/components/media/MediaLibraryPage';
 
 interface MediaPickerModalProps {
   open: boolean;
   onClose: () => void;
-  onSelect: (media: { id: string; url: string }) => void;
+  onSelect: (media: MediaValue) => void;
 }
 
 export function MediaPickerModal({ open, onClose, onSelect }: MediaPickerModalProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
   useEffect(() => {
     if (!open) return;
     const handleKey = (e: KeyboardEvent) => {
@@ -22,31 +31,41 @@ export function MediaPickerModal({ open, onClose, onSelect }: MediaPickerModalPr
   }, [open, onClose]);
 
   if (!open) return null;
+  if (!mounted) return null;
 
-  const handleSelect = (media: { id: string; url: string }) => {
+  const handleSelect = (media: MediaValue) => {
     onSelect(media);
     onClose();
   };
 
-  return (
+  const modal = (
     <div
-      className="fixed inset-0 z-50 flex flex-col bg-black/60"
+      className="fixed inset-0 z-[90] flex flex-col bg-black/60"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="relative mx-auto mt-8 mb-4 flex h-[calc(100vh-4rem)] w-full max-w-6xl flex-col overflow-hidden rounded-xl border bg-background shadow-2xl">
-        <div className="flex items-center justify-between border-b px-4 py-3">
-          <h2 className="text-lg font-semibold">Select Media</h2>
+      <div className="relative mx-auto mt-6 mb-4 flex h-[calc(100vh-3rem)] w-full max-w-7xl flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+              <ImagePlus className="h-3.5 w-3.5" />
+              Media Library
+            </div>
+            <h2 className="mt-3 text-2xl font-semibold text-slate-950">Select Media</h2>
+            <p className="mt-1 text-sm text-slate-500">Choose an existing asset or upload something new.</p>
+          </div>
           <Button variant="ghost" size="icon" onClick={onClose} type="button">
             <X className="h-5 w-5" />
           </Button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50/70">
           <MediaLibraryPage pickerMode onPickerSelect={handleSelect} />
         </div>
       </div>
     </div>
   );
+
+  return createPortal(modal, document.body);
 }

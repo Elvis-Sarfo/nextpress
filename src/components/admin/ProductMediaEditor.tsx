@@ -69,6 +69,7 @@ export function ProductMediaEditor({ value, onChange }: ProductMediaEditorProps)
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <select
+                title='select'
                   value={item.type ?? 'image'}
                   onChange={(e) => updateItem(index, { type: e.target.value === 'video' ? 'video' : 'image' })}
                   className="flex h-9 rounded-md border border-input bg-background px-3 py-2 text-sm"
@@ -142,6 +143,7 @@ export function ProductMediaEditor({ value, onChange }: ProductMediaEditorProps)
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Alt text</label>
               <input
+                title='Alt text'
                 type="text"
                 value={item.alt ?? ''}
                 onChange={(e) => updateItem(index, { alt: e.target.value })}

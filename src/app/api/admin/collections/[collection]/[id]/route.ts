@@ -17,16 +17,16 @@ import { slugify } from '@/lib/utils';
 const INCLUDE_MAP: Record<string, object> = {
   users: { roles: { select: { id: true, name: true, displayName: true } } },
   roles: { permissions: { select: { id: true, name: true, resource: true, action: true, scope: true } } },
-  pages: { featuredImage: { select: { id: true, url: true, altText: true } } },
+  pages: { featuredImage: { select: { id: true, url: true, altText: true, filename: true, type: true, size: true } } },
   'contact-messages': { assignedTo: { select: { id: true, name: true, email: true } } },
-  countries: { backgroundImage: { select: { id: true, url: true, altText: true } } },
-  'product-categories': { image: { select: { id: true, url: true, altText: true } } },
+  countries: { backgroundImage: { select: { id: true, url: true, altText: true, filename: true, type: true, size: true } } },
+  'product-categories': { image: { select: { id: true, url: true, altText: true, filename: true, type: true, size: true } } },
   products: {
     category: { select: { id: true, name: true, slug: true } },
   },
   posts: {
     category: { select: { id: true, name: true, color: true } },
-    featuredImage: { select: { id: true, url: true, altText: true } },
+    featuredImage: { select: { id: true, url: true, altText: true, filename: true, type: true, size: true } },
     author: { select: { id: true, name: true, email: true } },
   },
   comments: {
