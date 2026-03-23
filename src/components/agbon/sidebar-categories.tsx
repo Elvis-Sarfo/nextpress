@@ -31,6 +31,28 @@ interface SidebarCategoriesProps {
   showCategoryHeading?: boolean
 }
 
+function buildCategoryTree(categories: ProductCategoryRecord[]): ProductCategoryRecord[] {
+  const sorted = [...categories].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+  const byParent = new Map<string | null, ProductCategoryRecord[]>()
+
+  for (const category of sorted) {
+    const parentId = category.parentCategoryId ?? null
+    const group = byParent.get(parentId) ?? []
+    group.push({ ...category, children: [] })
+    byParent.set(parentId, group)
+  }
+
+  const attach = (parentId: string | null): ProductCategoryRecord[] => {
+    const nodes = byParent.get(parentId) ?? []
+    return nodes.map((node) => ({
+      ...node,
+      children: attach(node.id),
+    }))
+  }
+
+  return attach(null)
+}
+
 export function AgbonSidebarCategories({
   categories,
   locale = 'en',
@@ -53,7 +75,7 @@ export function AgbonSidebarCategories({
     navigateToProducts,
   } = useAgbonProductNav()
 
-  const sorted = [...categories].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+  const categoryTree = buildCategoryTree(categories)
   const isCompact = layoutMode === 'compact'
   const isResponsive = layoutMode === 'responsive'
   const usesCompactLayout = isCompact || isResponsive
@@ -186,26 +208,28 @@ export function AgbonSidebarCategories({
         )}
 
         <div className="space-y-0">
-          {sorted.map((cat) => {
-            const name = getLocalized(cat.name, locale) || 'Category'
-            const imageUrl = cat.imageUrl || null
+          {categoryTree.map((cat) => {
+            const renderCategory = (category: ProductCategoryRecord, depth = 0): React.ReactNode => {
+            const name = getLocalized(category.name, locale) || 'Category'
+            const imageUrl = category.imageUrl || null
 
             return (
+              <div key={category.id}>
               <button
                 type="button"
-                key={cat.id}
-                onClick={() => setCategory(selectedCategory === cat.id ? null : cat.id)}
+                onClick={() => setCategory(selectedCategory === category.id ? null : category.id)}
                 className={
                   usesCompactLayout
-                    ? `${compactItemBase} ${selectedCategory === cat.id ? compactActive : compactInactive}`
+                    ? `${compactItemBase} ${selectedCategory === category.id ? compactActive : compactInactive}`
                     : `w-full transition border-b border-gray-800 last:border-b-0 ${
-                        selectedCategory === cat.id
+                        selectedCategory === category.id
                           ? 'bg-[#1a1a1a] text-white'
                           : 'hover:bg-gray-900 text-white'
                       } flex items-center gap-2 md:gap-3 p-2 md:p-3 text-left`
                 }
+                style={depth > 0 ? { paddingLeft: `${depth * 16 + 8}px` } : undefined}
               >
-                {usesCompactLayout && selectedCategory === cat.id && (
+                {usesCompactLayout && selectedCategory === category.id && (
                   <span className="absolute inset-y-0 left-0 w-1 bg-[#ff8a2a] md:hidden" />
                 )}
                 {imageUrl ? (
@@ -213,13 +237,17 @@ export function AgbonSidebarCategories({
                     <Image src={imageUrl} alt={name} fill className="object-contain" unoptimized />
                   </div>
                 ) : (
-                  <span className={`shrink-0 ${usesCompactLayout ? 'text-2xl md:text-base lg:text-xl' : 'text-base md:text-xl'}`}>{cat.icon || '📦'}</span>
+                  <span className={`shrink-0 ${usesCompactLayout ? 'text-2xl md:text-base lg:text-xl' : 'text-base md:text-xl'}`}>{category.icon || '📦'}</span>
                 )}
                 <span className={`whitespace-normal ${usesCompactLayout ? `${compactLabel} md:text-sm md:flex-1` : 'text-xs md:text-sm flex-1'}`}>
-                  {name}
+                  {depth > 0 ? `— ${name}` : name}
                 </span>
               </button>
+              {category.children?.map((child) => renderCategory(child, depth + 1))}
+              </div>
             )
+            }
+            return renderCategory(cat)
           })}
         </div>
       </div>

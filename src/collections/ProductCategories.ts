@@ -54,12 +54,12 @@ export const ProductCategories: CollectionConfig = {
       },
     },
     {
-      // Stored as a plain text ID to avoid a self-referencing Prisma ambiguity
       name: 'parentCategoryId',
-      type: 'text',
+      type: 'relationship',
+      relationTo: 'product-categories',
+      label: 'Parent Category',
       admin: {
-        hidden: true,
-        description: 'Parent category ID — leave empty for top-level categories',
+        description: 'Optional parent category for nested catalogue hierarchy',
       },
     },
     {

@@ -1095,7 +1095,27 @@ export async function getProducts(options?: {
   const { categoryId, search, featured, limit = 24, page = 1 } = options ?? {};
 
   const where: Record<string, unknown> = {};
-  if (categoryId) where.categoryId = categoryId;
+  if (categoryId) {
+    const categories = await prisma.productCategories.findMany({
+      select: { id: true, parentCategoryId: true },
+    });
+
+    const matchingIds = new Set<string>([categoryId]);
+    let changed = true;
+
+    while (changed) {
+      changed = false;
+      for (const category of categories) {
+        if (!category.parentCategoryId || matchingIds.has(category.id)) continue;
+        if (matchingIds.has(category.parentCategoryId)) {
+          matchingIds.add(category.id);
+          changed = true;
+        }
+      }
+    }
+
+    where.categoryId = { in: Array.from(matchingIds) };
+  }
   if (featured !== undefined) where.featured = featured;
   if (search) {
     // Basic search on slug (JSON name search not supported at DB level without raw query)

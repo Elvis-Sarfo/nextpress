@@ -32,6 +32,29 @@ function getLocalized(field: unknown, locale: string): string {
   return ''
 }
 
+function getDescendantCategoryIds(categories: ProductCategoryRecord[], rootId: string): Set<string> {
+  const ids = new Set<string>([rootId])
+  let changed = true
+
+  while (changed) {
+    changed = false
+    for (const category of categories) {
+      if (!category.parentCategoryId || ids.has(category.id)) continue
+      if (ids.has(category.parentCategoryId)) {
+        ids.add(category.id)
+        changed = true
+      }
+    }
+  }
+
+  return ids
+}
+
+function findCategoryName(categories: ProductCategoryRecord[], categoryId: string, locale: string): string {
+  const category = categories.find((entry) => entry.id === categoryId)
+  return getLocalized(category?.name, locale)
+}
+
 export function AgbonProductList({
   products,
   categories = [],
@@ -61,9 +84,10 @@ export function AgbonProductList({
   }
 
   if (selectedCategory) {
+    const matchingCategoryIds = getDescendantCategoryIds(categories, selectedCategory)
     filtered = filtered.filter((p) => {
       const catId = typeof p.category === 'string' ? p.category : (p.category as any)?.id
-      return catId === selectedCategory
+      return catId ? matchingCategoryIds.has(catId) : false
     })
   }
 
@@ -86,7 +110,7 @@ export function AgbonProductList({
 
   // Category name for header
   const categoryName = selectedCategory
-    ? getLocalized(categories.find((c) => c.id === selectedCategory)?.name, locale)
+    ? findCategoryName(categories, selectedCategory, locale)
     : featuredOnly
       ? agbonT('home.hotSellingProducts', locale)
       : agbonT('common.allProducts', locale)

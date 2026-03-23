@@ -82,6 +82,53 @@ function getLocalizedString(
   return typeof candidate === 'string' ? candidate : '';
 }
 
+function buildHierarchicalRelationOptions(
+  docs: Array<Record<string, unknown>>,
+  locale: string,
+  excludeId?: string
+): Array<{ id: string; label: string }> {
+  const byParent = new Map<string | null, Array<Record<string, unknown>>>();
+
+  for (const doc of docs) {
+    const parentId = typeof doc.parentCategoryId === 'string' && doc.parentCategoryId.trim()
+      ? doc.parentCategoryId
+      : null;
+    const group = byParent.get(parentId) ?? [];
+    group.push(doc);
+    byParent.set(parentId, group);
+  }
+
+  for (const group of byParent.values()) {
+    group.sort((a, b) => {
+      const orderA = typeof a.order === 'number' ? a.order : 0;
+      const orderB = typeof b.order === 'number' ? b.order : 0;
+      if (orderA !== orderB) return orderA - orderB;
+      return getOptionLabel(a, locale).localeCompare(getOptionLabel(b, locale));
+    });
+  }
+
+  const options: Array<{ id: string; label: string }> = [];
+  const seen = new Set<string>();
+
+  const walk = (parentId: string | null, depth: number) => {
+    const children = byParent.get(parentId) ?? [];
+    for (const doc of children) {
+      const id = typeof doc.id === 'string' ? doc.id : '';
+      if (!id || seen.has(id) || id === excludeId) continue;
+      seen.add(id);
+      const prefix = depth > 0 ? `${'— '.repeat(depth)}` : '';
+      options.push({
+        id,
+        label: `${prefix}${getOptionLabel(doc, locale)}`,
+      });
+      walk(id, depth + 1);
+    }
+  };
+
+  walk(null, 0);
+  return options;
+}
+
 export function CollectionEdit({
   collection,
   documentId,
@@ -179,16 +226,19 @@ export function CollectionEdit({
       }
 
       const data = await response.json();
-      const options = ((data.docs as Array<Record<string, unknown>>) ?? []).map((doc) => ({
-        id: doc.id as string,
-        label: getOptionLabel(doc, activeLocale),
-      }));
+      const docs = (data.docs as Array<Record<string, unknown>>) ?? [];
+      const options = target === 'product-categories'
+        ? buildHierarchicalRelationOptions(docs, activeLocale, field.name === 'parentCategoryId' ? documentId ?? undefined : undefined)
+        : docs.map((doc) => ({
+            id: doc.id as string,
+            label: getOptionLabel(doc, activeLocale),
+          }));
 
       setRelationOptions((prev) => ({ ...prev, [field.name]: options }));
     } catch (error) {
       console.error(`Failed to load options for ${target}`, error);
     }
-  }, [activeLocale]);
+  }, [activeLocale, documentId]);
 
   // ── Load relationship options ───────────────────────────────────────────────
   useEffect(() => {
@@ -1305,7 +1355,7 @@ export function CollectionEdit({
                       )}
                       {sidebarFields.find((f) => f.name === 'parentCategoryId') && (
                         <div className="space-y-1.5">
-                          <label className="text-xs text-muted-foreground">Parent Category ID</label>
+                          <label className="text-xs text-muted-foreground">Parent Category</label>
                           {renderField(sidebarFields.find((f) => f.name === 'parentCategoryId')!)}
                         </div>
                       )}
