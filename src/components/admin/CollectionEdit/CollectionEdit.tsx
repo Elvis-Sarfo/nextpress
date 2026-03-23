@@ -26,7 +26,7 @@ import { useAdminLocale } from '@/components/providers/AdminLocaleProvider';
 import type { CollectionMeta, CollectionFieldMeta } from '@/lib/collections-data';
 import { BlockContentEditor } from '@/components/admin/BlockContentEditor';
 import { JsonCodeEditor } from '@/components/admin/JsonCodeEditor';
-import { MediaSelector } from '@/components/admin/MediaSelector';
+import { MediaSelector, type MediaValue } from '@/components/admin/MediaSelector';
 import { PageSectionsEditor } from '@/components/admin/PageSectionsEditor';
 import { MenuItemsEditor, type MenuItem } from '@/components/admin/MenuItemsEditor/MenuItemsEditor';
 import { DataSourceBuilder, type DataSourceValue } from '@/components/admin/DataSourceBuilder/DataSourceBuilder';
@@ -689,7 +689,7 @@ export function CollectionEdit({
       case 'upload':
         return (
           <MediaSelector
-            value={value as { id: string; url: string } | null}
+            value={value as MediaValue | null}
             onChange={(m) => updateField(field.name, m)}
           />
         );

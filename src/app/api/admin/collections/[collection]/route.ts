@@ -90,7 +90,7 @@ const SEARCH_FIELDS: Record<string, string[]> = {
   media: ['filename', 'alt', 'caption'],
   pages: [],
   settings: ['siteName'],
-  blocks: ['name', 'templateName'],
+  blocks: ['label', 'name', 'templateName', 'status'],
   'contact-messages': ['name', 'email', 'phone', 'company', 'subject', 'status', 'sourcePage', 'locale'],
   menus: ['name', 'location'],
   countries: ['name', 'code', 'flag'],

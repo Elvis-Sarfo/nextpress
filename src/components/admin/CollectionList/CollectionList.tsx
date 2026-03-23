@@ -38,6 +38,7 @@ import { useCollectionTable } from '@/components/admin/data-table/useCollectionT
 import { CollectionEditorOverlay } from './CollectionEditorOverlay';
 import { CollectionImportDialog } from './CollectionImportDialog';
 import { CollectionExportDialog } from './CollectionExportDialog';
+import { BlocksCardGrid } from './BlocksCardGrid';
 
 interface CollectionListProps {
   collection: CollectionMeta;
@@ -93,8 +94,10 @@ export function CollectionList({ collection }: CollectionListProps) {
     fetchError,
     selectedIds,
     fetchDocs,
+    setPage,
     setPageSize,
     setSearchQuery,
+    clearColumnFilters,
     sortField,
     sortDir,
     onSortingChange,
@@ -106,6 +109,7 @@ export function CollectionList({ collection }: CollectionListProps) {
   const editorView = collection.admin.editorView ?? 'slider';
   const useInlineEditor = editorView !== 'page';
   const configuredColumns = collection.admin.defaultColumns ?? ['id', 'createdAt'];
+  const isBlocksCollection = collection.slug === 'blocks';
 
   const displayFields = useMemo(
     () =>
@@ -245,6 +249,11 @@ export function CollectionList({ collection }: CollectionListProps) {
     const nextFilters = status
       ? [{ id: 'status', value: status }]
       : [];
+    onColumnFiltersChange(nextFilters);
+  };
+
+  const setBlocksStatusFilter = (status: '' | 'draft' | 'published') => {
+    const nextFilters = status ? [{ id: 'status', value: status }] : [];
     onColumnFiltersChange(nextFilters);
   };
 
@@ -631,102 +640,172 @@ export function CollectionList({ collection }: CollectionListProps) {
 
   return (
     <div className="space-y-3">
-      <AdminDataTable
-        rows={docs}
-        columns={columns}
-        rowKey={(row) => String(row.id)}
-        loading={isLoading}
-        error={fetchError}
-        sorting={sorting}
-        onSortingChange={onSortingChange}
-        columnFilters={columnFilters}
-        onColumnFiltersChange={onColumnFiltersChange}
-        rowSelection={rowSelection}
-        onRowSelectionChange={onRowSelectionChange}
-        pagination={pagination}
-        onPaginationChange={onPaginationChange}
-        renderActions={(doc) => (
-          <div className="flex items-center justify-end gap-1">
-            {collection.slug === 'comments' && doc.status !== 'approved' && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handleCommentModeration(String(doc.id), 'approved')}
-                disabled={moderatingId === String(doc.id)}
-                className="text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
-                title="Approve"
-              >
-                {moderatingId === String(doc.id) ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Check className="h-4 w-4" />
-                )}
-              </Button>
-            )}
-            {collection.slug === 'comments' && doc.status !== 'rejected' && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handleCommentModeration(String(doc.id), 'rejected')}
-                disabled={moderatingId === String(doc.id)}
-                className="text-amber-600 hover:bg-amber-50 hover:text-amber-700"
-                title="Reject"
-              >
-                {moderatingId === String(doc.id) ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <X className="h-4 w-4" />
-                )}
-              </Button>
-            )}
-            {collection.slug === 'blocks' && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => router.push(`/admin/blocks/${doc.id}/content`)}
-                title="Edit Content"
-              >
-                <PencilLine className="h-4 w-4" />
-              </Button>
-            )}
-            <Button variant="ghost" size="icon" onClick={() => openEdit(String(doc.id))} title="Edit">
-              <Pencil className="h-4 w-4" />
-            </Button>
-            {collection.slug === 'pages' && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handleDuplicate(String(doc.id))}
-                disabled={duplicateId === String(doc.id)}
-                title="Duplicate"
-              >
-                {duplicateId === String(doc.id) ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
-              </Button>
-            )}
+      {isBlocksCollection ? (
+        <>
+          <div className="flex flex-wrap items-center justify-end gap-2">
             <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => handleDelete(String(doc.id))}
-              disabled={deleteId === String(doc.id)}
-              className="text-red-500 hover:bg-red-50 hover:text-red-600"
-              title="Delete"
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setExportOpen(true);
+                setExportSearch(searchQuery);
+                setExportFilters(filterMap);
+              }}
             >
-              {deleteId === String(doc.id) ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Trash2 className="h-4 w-4" />
-              )}
+              <Download className="mr-2 h-4 w-4" />
+              Export
+            </Button>
+            <Button type="button" variant="outline" size="sm" onClick={() => setImportOpen(true)}>
+              <Upload className="mr-2 h-4 w-4" />
+              Import
+            </Button>
+            <Button type="button" size="sm" onClick={openCreate}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add {collection.labels.singular}
             </Button>
           </div>
-        )}
-        toolbar={toolbar}
-        totalPages={totalPages}
-        total={total}
-      />
+          <BlocksCardGrid
+            collection={collection}
+            docs={docs}
+            total={total}
+            totalPages={totalPages}
+            page={pagination.pageIndex + 1}
+            pageSize={pageSize}
+            searchQuery={searchQuery}
+            statusFilter={typeof filterMap.status === 'string' ? filterMap.status : ''}
+            selectedIds={selectedIds}
+            isLoading={isLoading}
+            fetchError={fetchError}
+            deleteId={deleteId}
+            isBulkDeleting={isBulkDeleting}
+            onSearchChange={setSearchQuery}
+            onStatusFilterChange={(value) => setBlocksStatusFilter(value === 'published' || value === 'draft' ? value : '')}
+            onPageSizeChange={setPageSize}
+            onPageChange={setPage}
+            onToggleSelect={(id, checked) =>
+              onRowSelectionChange((prev) => ({
+                ...prev,
+                [id]: checked,
+              }))
+            }
+            onToggleSelectAllVisible={(checked) =>
+              onRowSelectionChange((prev) => {
+                const next = { ...prev };
+                for (const doc of docs) {
+                  next[String(doc.id)] = checked;
+                }
+                return next;
+              })
+            }
+            onClearFilters={() => {
+              setSearchQuery('');
+              clearColumnFilters();
+            }}
+            onBulkDelete={handleBulkDelete}
+            onEditContent={(id) => router.push(`/admin/blocks/${id}/content`)}
+            onEditSettings={openEdit}
+            onDelete={handleDelete}
+          />
+        </>
+      ) : (
+        <AdminDataTable
+          rows={docs}
+          columns={columns}
+          rowKey={(row) => String(row.id)}
+          loading={isLoading}
+          error={fetchError}
+          sorting={sorting}
+          onSortingChange={onSortingChange}
+          columnFilters={columnFilters}
+          onColumnFiltersChange={onColumnFiltersChange}
+          rowSelection={rowSelection}
+          onRowSelectionChange={onRowSelectionChange}
+          pagination={pagination}
+          onPaginationChange={onPaginationChange}
+          renderActions={(doc) => (
+            <div className="flex items-center justify-end gap-1">
+              {collection.slug === 'comments' && doc.status !== 'approved' && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleCommentModeration(String(doc.id), 'approved')}
+                  disabled={moderatingId === String(doc.id)}
+                  className="text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
+                  title="Approve"
+                >
+                  {moderatingId === String(doc.id) ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Check className="h-4 w-4" />
+                  )}
+                </Button>
+              )}
+              {collection.slug === 'comments' && doc.status !== 'rejected' && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleCommentModeration(String(doc.id), 'rejected')}
+                  disabled={moderatingId === String(doc.id)}
+                  className="text-amber-600 hover:bg-amber-50 hover:text-amber-700"
+                  title="Reject"
+                >
+                  {moderatingId === String(doc.id) ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <X className="h-4 w-4" />
+                  )}
+                </Button>
+              )}
+              {collection.slug === 'blocks' && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => router.push(`/admin/blocks/${doc.id}/content`)}
+                  title="Edit Content"
+                >
+                  <PencilLine className="h-4 w-4" />
+                </Button>
+              )}
+              <Button variant="ghost" size="icon" onClick={() => openEdit(String(doc.id))} title="Edit">
+                <Pencil className="h-4 w-4" />
+              </Button>
+              {collection.slug === 'pages' && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleDuplicate(String(doc.id))}
+                  disabled={duplicateId === String(doc.id)}
+                  title="Duplicate"
+                >
+                  {duplicateId === String(doc.id) ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleDelete(String(doc.id))}
+                disabled={deleteId === String(doc.id)}
+                className="text-red-500 hover:bg-red-50 hover:text-red-600"
+                title="Delete"
+              >
+                {deleteId === String(doc.id) ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          )}
+          toolbar={toolbar}
+          totalPages={totalPages}
+          total={total}
+        />
+      )}
 
       <CollectionEditorOverlay
         collection={collection}

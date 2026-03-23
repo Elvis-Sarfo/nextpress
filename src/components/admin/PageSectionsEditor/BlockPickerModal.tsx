@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Grid3X3, LayoutTemplate, Loader2, Search, SquareStack, X } from 'lucide-react';
+import { Filter, Grid3X3, LayoutTemplate, Loader2, RotateCcw, Search, SquareStack, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getBlockComponent } from '@/core/blocks/registry';
 import { AgbonProductNavProvider } from '@/contexts/agbon-product-nav-context';
@@ -24,10 +24,23 @@ interface BlockPickerModalProps {
   onSelect: (blockId: string) => void;
 }
 
+type PreviewKind =
+  | 'banner'
+  | 'form'
+  | 'stats'
+  | 'cards'
+  | 'list'
+  | 'split'
+  | 'testimonial'
+  | 'generic';
+
+type PickerFilter = 'all' | PreviewKind;
+
 export function BlockPickerModal({ open, onClose, onSelect }: BlockPickerModalProps) {
   const [blocks, setBlocks] = useState<BlockDoc[]>([]);
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState<PickerFilter>('all');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -56,23 +69,7 @@ export function BlockPickerModal({ open, onClose, onSelect }: BlockPickerModalPr
 
   if (!open) return null;
 
-  const filtered = query.trim()
-    ? blocks.filter(
-        (b) =>
-          b.name.toLowerCase().includes(query.toLowerCase()) ||
-          (b.label?.toLowerCase().includes(query.toLowerCase()) ?? false)
-      )
-    : blocks;
-
-  function getPreviewKind(block: BlockDoc):
-    | 'banner'
-    | 'form'
-    | 'stats'
-    | 'cards'
-    | 'list'
-    | 'split'
-    | 'testimonial'
-    | 'generic' {
+  function getPreviewKind(block: BlockDoc): PreviewKind {
     const value = `${block.name} ${block.label ?? ''}`.toLowerCase();
 
     if (value.includes('banner') || value.includes('hero')) return 'banner';
@@ -107,6 +104,33 @@ export function BlockPickerModal({ open, onClose, onSelect }: BlockPickerModalPr
     }
 
     return 'generic';
+  }
+
+  const filtered = blocks.filter((block) => {
+    const matchesQuery =
+      query.trim().length === 0 ||
+      block.name.toLowerCase().includes(query.toLowerCase()) ||
+      (block.label?.toLowerCase().includes(query.toLowerCase()) ?? false);
+
+    if (!matchesQuery) return false;
+
+    return activeFilter === 'all' ? true : getPreviewKind(block) === activeFilter;
+  });
+
+  const filters: Array<{ value: PickerFilter; label: string }> = [
+    { value: 'all', label: 'All blocks' },
+    { value: 'banner', label: 'Banners' },
+    { value: 'cards', label: 'Cards' },
+    { value: 'list', label: 'Lists' },
+    { value: 'split', label: 'Split' },
+    { value: 'form', label: 'Forms' },
+    { value: 'stats', label: 'Stats' },
+    { value: 'testimonial', label: 'Testimonials' },
+    { value: 'generic', label: 'Generic' },
+  ];
+
+  function getElementFieldCount(block: BlockDoc) {
+    return block.contentDefinition?.elements?.fields?.length ?? 0;
   }
 
   function PreviewChrome({ children, tone = 'light' }: { children: ReactNode; tone?: 'light' | 'dark' }) {
@@ -885,15 +909,15 @@ export function BlockPickerModal({ open, onClose, onSelect }: BlockPickerModalPr
             : 520;
 
     return (
-      <div className="relative h-44 overflow-hidden rounded-lg border border-slate-200 bg-white">
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white/60 z-10" />
+      <div className="relative h-56 overflow-hidden rounded-[20px] bg-white">
+        <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-b from-transparent via-transparent to-white/60" />
         <div className="absolute inset-0 overflow-hidden">
           <div
             className="absolute left-1/2 top-0"
             style={{
               width: `${canvasWidth}px`,
               minHeight: `${canvasMinHeight}px`,
-              transform: `translateX(-50%) scale(${scale})`,
+              transform: `translateX(-50%) scale(${scale * 1.08})`,
               transformOrigin: 'top center',
             }}
           >
@@ -914,60 +938,102 @@ export function BlockPickerModal({ open, onClose, onSelect }: BlockPickerModalPr
       className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="flex h-[78vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl border bg-background shadow-2xl">
-        <div className="flex items-center justify-between border-b px-4 py-3">
-          <h2 className="text-lg font-semibold">Add Block</h2>
+      <div className="flex h-[84vh] w-full max-w-[1400px] flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-slate-200 px-8 py-6">
+          <h2 className="text-2xl font-semibold text-slate-950">Add Block</h2>
           <Button variant="ghost" size="icon" onClick={onClose} type="button">
             <X className="h-5 w-5" />
           </Button>
         </div>
 
-        <div className="border-b px-4 py-2">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              autoFocus
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by name or label…"
-              className="w-full rounded-md border bg-background py-2 pl-9 pr-3 text-sm"
-            />
+        <div className="border-b border-slate-200 px-8 py-4">
+          <div className="flex flex-col gap-3">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+              <input
+                autoFocus
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search by name or label..."
+                className="h-16 w-full rounded-2xl border-2 border-blue-500 bg-white py-3 pl-16 pr-4 text-base text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-600"
+              />
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+                <Filter className="h-4 w-4" />
+                Filter
+              </div>
+              {filters.map((filter) => (
+                <button
+                  key={filter.value}
+                  type="button"
+                  onClick={() => setActiveFilter(filter.value)}
+                  className={`rounded-full border px-3 py-2 text-sm transition-colors ${
+                    activeFilter === filter.value
+                      ? 'border-slate-900 bg-slate-900 text-white'
+                      : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900'
+                  }`}
+                >
+                  {filter.label}
+                </button>
+              ))}
+              {(query.trim().length > 0 || activeFilter !== 'all') && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setQuery('');
+                    setActiveFilter('all');
+                  }}
+                >
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  Reset
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="border-b border-slate-200 px-8 py-3 text-sm text-slate-500">
+          {filtered.length} {filtered.length === 1 ? 'block' : 'blocks'} available
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50/60">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : filtered.length === 0 ? (
             <p className="py-12 text-center text-sm text-muted-foreground">
-              {query ? 'No blocks match your search.' : 'No blocks available.'}
+              {query || activeFilter !== 'all' ? 'No blocks match the current search or filter.' : 'No blocks available.'}
             </p>
           ) : (
-            <ul className="grid gap-4 p-4 md:grid-cols-2 xl:grid-cols-3">
+            <ul className="grid gap-6 p-6 md:grid-cols-2 xl:grid-cols-3">
               {filtered.map((block) => (
                 <li
                   key={block.id}
-                  className="overflow-hidden rounded-xl border bg-card shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+                  className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.08)] transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(15,23,42,0.12)]"
                 >
-                  <div className="border-b bg-muted/20 p-3">
+                  <div className="border-b border-slate-200 bg-white px-4 pt-4">
                     <BlockPreview block={block} />
                   </div>
-                  <div className="space-y-3 p-4">
+                  <div className="space-y-4 p-5">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">{block.label || block.name}</p>
-                      <p className="truncate text-xs text-muted-foreground">{block.name}</p>
+                      <p className="truncate text-[15px] font-semibold text-slate-950">{block.label || block.name}</p>
+                      <p className="truncate text-sm text-slate-500">{block.name}</p>
                     </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="text-[11px] text-muted-foreground">
+                    <div className="flex items-end justify-between gap-3">
+                      <div className="text-sm text-slate-500">
                         {block.contentDefinition?.content?.length ?? 0} fields
                         {' • '}
-                        {block.contentDefinition?.elements?.fields?.length ?? 0} repeatable
+                        {getElementFieldCount(block)} repeatable
                       </div>
                       <Button
                         size="sm"
                         type="button"
+                        className="rounded-xl bg-slate-900 px-5 text-white hover:bg-slate-800"
                         onClick={() => {
                           onSelect(block.id);
                           onClose();

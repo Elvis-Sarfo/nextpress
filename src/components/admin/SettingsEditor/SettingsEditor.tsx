@@ -17,7 +17,7 @@ import { Save, Loader2, Check, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAdminLocale } from '@/components/providers/AdminLocaleProvider';
 import { GroupFieldEditor } from '@/components/admin/GroupFieldEditor/GroupFieldEditor';
-import { MediaSelector } from '@/components/admin/MediaSelector';
+import { MediaSelector, type MediaValue } from '@/components/admin/MediaSelector';
 import type { CollectionMeta, CollectionFieldMeta } from '@/lib/collections-data';
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -155,7 +155,7 @@ function ScalarFieldInput({ field, value, onChange, activeLocale, locales: _loca
     case 'upload':
       return (
         <MediaSelector
-          value={value as { id: string; url: string } | null}
+          value={value as MediaValue | null}
           onChange={(m) => onChange(m as FieldValue)}
         />
       );

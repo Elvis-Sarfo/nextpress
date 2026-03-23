@@ -8,7 +8,7 @@
 
 import { useCallback } from 'react';
 import { cn } from '@/lib/utils';
-import { MediaSelector } from '@/components/admin/MediaSelector';
+import { MediaSelector, type MediaValue } from '@/components/admin/MediaSelector';
 import type { CollectionFieldMeta } from '@/lib/collections-data';
 
 interface GroupFieldEditorProps {
@@ -157,7 +157,7 @@ function SubFieldInput({ subField, value, onChange, activeLocale }: SubFieldInpu
     case 'upload':
       return (
         <MediaSelector
-          value={value as { id: string; url: string } | null}
+          value={value as MediaValue | null}
           onChange={(m) => onChange(m)}
         />
       );
