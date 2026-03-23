@@ -70,6 +70,18 @@ function getOptionLabel(
   return String(doc.id ?? 'Untitled');
 }
 
+function getLocalizedString(
+  value: unknown,
+  locale: string
+): string {
+  if (typeof value === 'string') return value;
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return '';
+
+  const localized = value as Record<string, unknown>;
+  const candidate = localized[locale] ?? localized.en ?? Object.values(localized).find((item) => typeof item === 'string');
+  return typeof candidate === 'string' ? candidate : '';
+}
+
 export function CollectionEdit({
   collection,
   documentId,
@@ -99,6 +111,8 @@ export function CollectionEdit({
     Record<string, { id: string; label: string }[]>
   >({});
   const [quickAddFieldName, setQuickAddFieldName] = useState<string | null>(null);
+  const [slugOverrides, setSlugOverrides] = useState<Record<string, boolean>>({});
+  const [localizedSlugOverrides, setLocalizedSlugOverrides] = useState<Record<string, Record<string, boolean>>>({});
 
   // ── Locale state ────────────────────────────────────────────────────────────
   const { locale: adminLocale } = useAdminLocale();
@@ -126,6 +140,8 @@ export function CollectionEdit({
         }
       }
       setFormData(defaults);
+      setSlugOverrides({});
+      setLocalizedSlugOverrides({});
       return;
     }
 
@@ -145,6 +161,8 @@ export function CollectionEdit({
           }
         }
         setFormData(doc);
+        setSlugOverrides({});
+        setLocalizedSlugOverrides({});
       })
       .catch((e) => console.error('Failed to load document', e))
       .finally(() => setIsLoading(false));
@@ -290,6 +308,13 @@ export function CollectionEdit({
     setFormData((prev) => ({ ...prev, [fieldName]: value }));
   };
 
+  const setSlugFieldValue = useCallback((fieldName: string, value: string, manual: boolean) => {
+    setFormData((prev) => ({ ...prev, [fieldName]: value }));
+    if (manual) {
+      setSlugOverrides((prev) => ({ ...prev, [fieldName]: true }));
+    }
+  }, []);
+
   // ── Update a single locale within a localized field ────────────────────────
   const updateLocalizedField = useCallback((fieldName: string, locale: string, value: unknown) => {
     setFormData((prev) => ({
@@ -301,6 +326,26 @@ export function CollectionEdit({
     }));
   }, []);
 
+  const setLocalizedSlugFieldValue = useCallback((fieldName: string, locale: string, value: string, manual: boolean) => {
+    setFormData((prev) => ({
+      ...prev,
+      [fieldName]: {
+        ...((prev[fieldName] as Record<string, unknown>) ?? {}),
+        [locale]: value,
+      },
+    }));
+
+    if (manual) {
+      setLocalizedSlugOverrides((prev) => ({
+        ...prev,
+        [fieldName]: {
+          ...(prev[fieldName] ?? {}),
+          [locale]: true,
+        },
+      }));
+    }
+  }, []);
+
   // ── Toggle a relationship ID in a multi-select ─────────────────────────────
   const toggleRelationId = (fieldName: string, id: string) => {
     const current = (formData[fieldName] as string[]) ?? [];
@@ -309,6 +354,76 @@ export function CollectionEdit({
       : [...current, id];
     updateField(fieldName, next);
   };
+
+  const getSlugSourceValue = useCallback((locale?: string) => {
+    const sourceFields = ['title', 'name'];
+    const preferredLocales = locale ? [locale] : [activeLocale, 'en'];
+
+    for (const sourceField of sourceFields) {
+      const sourceValue = formData[sourceField];
+      if (!sourceValue) continue;
+
+      for (const candidateLocale of preferredLocales) {
+        const localizedValue = getLocalizedString(sourceValue, candidateLocale).trim();
+        if (localizedValue) return localizedValue;
+      }
+
+      if (typeof sourceValue === 'string' && sourceValue.trim()) {
+        return sourceValue.trim();
+      }
+    }
+
+    return '';
+  }, [activeLocale, formData]);
+
+  useEffect(() => {
+    const slugFields = collection.fields.filter((field) => field.name === 'slug');
+    if (slugFields.length === 0) return;
+
+    let changed = false;
+    const nextFormData = { ...formData };
+
+    for (const field of slugFields) {
+      if (field.localized) {
+        const currentMap = ((nextFormData[field.name] as Record<string, unknown> | null) ?? {});
+        let nextMap: Record<string, unknown> | null = null;
+
+        for (const locale of collectionLocales) {
+          const generated = slugify(getSlugSourceValue(locale));
+          if (!generated) continue;
+
+          const currentValue = typeof currentMap[locale] === 'string' ? currentMap[locale] : '';
+          const isManual = localizedSlugOverrides[field.name]?.[locale] ?? false;
+          if (isManual && currentValue) continue;
+          if (currentValue === generated) continue;
+
+          nextMap = nextMap ?? { ...currentMap };
+          nextMap[locale] = generated;
+          changed = true;
+        }
+
+        if (nextMap) {
+          nextFormData[field.name] = nextMap;
+        }
+        continue;
+      }
+
+      const generated = slugify(getSlugSourceValue());
+      if (!generated) continue;
+
+      const currentValue = typeof nextFormData[field.name] === 'string' ? nextFormData[field.name] : '';
+      const isManual = slugOverrides[field.name] ?? false;
+      if (isManual && currentValue) continue;
+      if (currentValue === generated) continue;
+
+      nextFormData[field.name] = generated;
+      changed = true;
+    }
+
+    if (changed) {
+      setFormData(nextFormData);
+    }
+  }, [collection.fields, collectionLocales, formData, getSlugSourceValue, localizedSlugOverrides, slugOverrides]);
 
   // ── Localized field input (single input for the active locale) ─────────────
   const renderLocalizedInput = (field: CollectionFieldMeta) => {
@@ -363,11 +478,8 @@ export function CollectionEdit({
     const ariaLabel = `${getFieldLabel(field)} (${activeLocale.toUpperCase()})`;
 
     if (localizedAs === 'text') {
-      const isPostSlugField = isPostCollection && field.name === 'slug';
-      const titleMap = (formData.title as Record<string, unknown>) ?? {};
-      const titleValue = titleMap[activeLocale];
-      const generatedSlug =
-        typeof titleValue === 'string' && titleValue.trim() ? slugify(titleValue) : '';
+      const isSlugField = field.name === 'slug';
+      const generatedSlug = isSlugField ? slugify(getSlugSourceValue(activeLocale)) : '';
 
       return (
         <div className="flex items-center gap-2">
@@ -376,18 +488,24 @@ export function CollectionEdit({
             type="text"
             aria-label={ariaLabel}
             value={String(localeValue)}
-            onChange={(e) => updateLocalizedField(field.name, activeLocale, e.target.value)}
+            onChange={(e) => {
+              if (isSlugField) {
+                setLocalizedSlugFieldValue(field.name, activeLocale, e.target.value, true);
+                return;
+              }
+              updateLocalizedField(field.name, activeLocale, e.target.value);
+            }}
             required={field.required && activeLocale === collectionLocales[0]}
-            placeholder={isPostSlugField ? 'Leave empty to auto-generate from title' : undefined}
+            placeholder={isSlugField ? 'Leave empty to auto-generate from title or name' : undefined}
             className={cn(baseInput, 'h-10')}
           />
-          {isPostSlugField && (
+          {isSlugField && (
             <Button
               type="button"
               variant="outline"
               size="sm"
               disabled={!generatedSlug}
-              onClick={() => updateLocalizedField(field.name, activeLocale, generatedSlug)}
+              onClick={() => setLocalizedSlugFieldValue(field.name, activeLocale, generatedSlug, false)}
               className="shrink-0"
             >
               Generate
@@ -449,6 +567,36 @@ export function CollectionEdit({
     switch (field.type) {
       case 'text':
       case 'email':
+        if (field.type === 'text' && field.name === 'slug') {
+          const generatedSlug = slugify(getSlugSourceValue());
+
+          return (
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                id={field.name}
+                value={(value as string) || ''}
+                onChange={(e) => setSlugFieldValue(field.name, e.target.value, true)}
+                required={field.required}
+                readOnly={isReadOnly}
+                disabled={isDisabled}
+                placeholder="Leave empty to auto-generate from title or name"
+                className={baseInput}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!generatedSlug || isDisabled || isReadOnly}
+                onClick={() => setSlugFieldValue(field.name, generatedSlug, false)}
+                className="shrink-0"
+              >
+                Generate
+              </Button>
+            </div>
+          );
+        }
+
         return (
           <input
             type={field.type}
