@@ -2,9 +2,8 @@ import Link from 'next/link'
 import { ProductRecord } from '@/lib/cms'
 import { t as agbonT } from '@/lib/agbon-translations'
 import { buildLocalizedPath } from '@/lib/agbon-routes'
-import { AgbonProductCard } from './product-card'
+import { AgbonProductList } from './product-list'
 import { ProductDetailGallery } from './product-detail-gallery'
-import { DEFAULT_AGBON_PRODUCT_GRID_COLUMNS } from './product-list'
 
 interface ProductDetailProps {
   product: ProductRecord
@@ -102,18 +101,23 @@ export function AgbonProductDetail({
             {agbonT('common.contactUs', locale)}
           </Link>
         </div>
-
-        {relatedProducts.length > 0 && (
-          <div>
-            <h3 className="text-xl font-bold mb-4 text-black">{agbonT('common.relatedProducts', locale)}</h3>
-            <div className={`grid ${DEFAULT_AGBON_PRODUCT_GRID_COLUMNS} gap-2`}>
-              {relatedProducts.slice(0, 4).map((p) => (
-                <AgbonProductCard key={p.id} product={p} locale={locale} />
-              ))}
-            </div>
-          </div>
-        )}
       </div>
+
+      {relatedProducts.length > 0 && (
+        <div className="mt-10">
+          <h3 className="mb-4 text-xl font-bold text-black">
+            {agbonT('common.relatedProducts', locale)}
+          </h3>
+          <AgbonProductList
+            products={relatedProducts.slice(0, 4)}
+            locale={locale}
+            showHeader={false}
+            showPagination={false}
+            itemsPerPage={4}
+            title={agbonT('common.relatedProducts', locale)}
+          />
+        </div>
+      )}
     </div>
   )
 }
