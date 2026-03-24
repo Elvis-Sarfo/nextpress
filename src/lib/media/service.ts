@@ -1,4 +1,5 @@
 import { prisma } from '@/adapters/prisma-adapter';
+import { getPrismaProvider } from '@/adapters/prisma-adapter/provider';
 import { MEDIA_ALLOWED_MIME_TYPES, MEDIA_MAX_FILE_SIZE_BYTES, inferMediaKind } from './constants';
 import type { MediaRecord } from './types';
 
@@ -71,17 +72,18 @@ export async function listMedia(input: MediaSearchInput) {
   const page = Math.max(1, input.page || 1);
   const limit = Math.min(100, Math.max(1, input.limit || 24));
   const skip = (page - 1) * limit;
+  const provider = getPrismaProvider();
 
   const where: Record<string, unknown> = {};
   if (input.query) {
     where.OR = [
-      { filename: { contains: input.query, mode: 'insensitive' } },
-      { originalFilename: { contains: input.query, mode: 'insensitive' } },
-      { altText: { contains: input.query, mode: 'insensitive' } },
-      { title: { contains: input.query, mode: 'insensitive' } },
-      { description: { contains: input.query, mode: 'insensitive' } },
-      { alt: { contains: input.query, mode: 'insensitive' } },
-      { caption: { contains: input.query, mode: 'insensitive' } },
+      { filename: buildContainsFilter(input.query, provider) },
+      { originalFilename: buildContainsFilter(input.query, provider) },
+      { altText: buildContainsFilter(input.query, provider) },
+      { title: buildContainsFilter(input.query, provider) },
+      { description: buildContainsFilter(input.query, provider) },
+      { alt: buildContainsFilter(input.query, provider) },
+      { caption: buildContainsFilter(input.query, provider) },
     ];
   }
 
@@ -171,4 +173,12 @@ export async function deleteMediaById(id: string) {
 
 function cryptoRandomDocumentId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function buildContainsFilter(query: string, provider: string) {
+  if (provider === 'postgresql' || provider === 'cockroachdb') {
+    return { contains: query, mode: 'insensitive' as const };
+  }
+
+  return { contains: query };
 }
