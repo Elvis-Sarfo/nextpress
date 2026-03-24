@@ -271,7 +271,7 @@ export function AgbonSidebarCategories({
               const hasChildren = (category.children?.length ?? 0) > 0
               const isSelected = selectedCategory === category.id
               const isExpanded = expandedCategories.has(category.id)
-              const indentClass = depth === 0 ? '' : depth === 1 ? 'md:pl-6' : 'md:pl-10'
+              const indentClass = depth === 0 ? '' : depth === 1 ? 'md:pl-4' : 'md:pl-6'
 
               const buttonClassName = usesCompactLayout
                 ? `${compactItemBase} ${isSelected ? compactActive : isExpanded ? compactExpanded : compactInactive}`
@@ -281,7 +281,7 @@ export function AgbonSidebarCategories({
                       : isExpanded
                         ? 'bg-gray-800/70 text-white hover:bg-gray-700'
                         : 'hover:bg-gray-900 text-white'
-                  } flex items-center gap-2 md:gap-3 p-2 md:p-3 text-left ${indentClass}`
+                  } relative flex items-center gap-2 md:gap-3 p-2 md:p-3 text-left ${indentClass}`
 
               return (
                 <div key={category.id}>
@@ -290,7 +290,12 @@ export function AgbonSidebarCategories({
                     onClick={() => {
                       if (hasChildren) {
                         toggleExpanded(category.id)
+                        if (!isSelected) {
+                          setCategory(category.id)
+                        }
+                        return
                       }
+
                       setCategory(isSelected ? null : category.id)
                     }}
                     className={buttonClassName}
@@ -300,16 +305,20 @@ export function AgbonSidebarCategories({
                       <span className="absolute inset-y-0 left-0 w-1 bg-[#ff8a2a] md:hidden" />
                     )}
                     {hasChildren ? (
-                      <span
-                        className={`hidden md:inline shrink-0 transition-transform ${
+                      <button
+                        type="button"
+                        aria-label={isExpanded ? `Collapse ${name}` : `Expand ${name}`}
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          toggleExpanded(category.id)
+                        }}
+                        className={`hidden absolute right-3 top-1/2 -translate-y-1/2 md:inline-flex h-6 w-6 items-center justify-center rounded text-inherit transition hover:bg-white/10 ${
                           isExpanded || isSelected ? 'text-white' : 'text-gray-400'
                         }`}
                       >
                         {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                      </span>
-                    ) : (
-                      <span className="hidden h-4 w-4 shrink-0 md:inline" />
-                    )}
+                      </button>
+                    ) : null}
                     {imageUrl ? (
                       <div className="relative w-5 h-5 md:w-6 md:h-6 shrink-0">
                         <Image src={imageUrl} alt={name} fill className="object-contain" unoptimized />
