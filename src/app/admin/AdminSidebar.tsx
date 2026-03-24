@@ -479,7 +479,7 @@ export function AdminSidebar() {
     void loadContactNotificationCount();
     const interval = window.setInterval(() => {
       void loadContactNotificationCount();
-    }, 30000);
+    }, 1800000); // Refresh every 30 minutes 1hr = 3600000ms, 300000ms = 5min = 300000ms, 600000ms = 10min, 900000ms = 15min = 900000ms, 1200000ms = 20min = 1200000ms, 1500000ms = 25min = 1500000ms
 
     return () => {
       cancelled = true;
