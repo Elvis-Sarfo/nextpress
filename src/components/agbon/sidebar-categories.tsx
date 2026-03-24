@@ -1,7 +1,8 @@
 'use client'
 
+import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
-import { Search } from 'lucide-react'
+import { ChevronDown, ChevronRight, Search } from 'lucide-react'
 import { ProductCategoryRecord } from '@/lib/cms'
 import { t as agbonT } from '@/lib/agbon-translations'
 import { useAgbonProductNav } from '@/contexts/agbon-product-nav-context'
@@ -53,6 +54,24 @@ function buildCategoryTree(categories: ProductCategoryRecord[]): ProductCategory
   return attach(null)
 }
 
+function getCategoryPathIds(
+  categoryId: string,
+  categories: ProductCategoryRecord[],
+): string[] {
+  const byId = new Map(categories.map((category) => [category.id, category]))
+  const path: string[] = []
+  const seen = new Set<string>()
+  let current = byId.get(categoryId)
+
+  while (current && !seen.has(current.id)) {
+    seen.add(current.id)
+    path.unshift(current.id)
+    current = current.parentCategoryId ? byId.get(current.parentCategoryId) : undefined
+  }
+
+  return path
+}
+
 export function AgbonSidebarCategories({
   categories,
   locale = 'en',
@@ -75,7 +94,8 @@ export function AgbonSidebarCategories({
     navigateToProducts,
   } = useAgbonProductNav()
 
-  const categoryTree = buildCategoryTree(categories)
+  const categoryTree = useMemo(() => buildCategoryTree(categories), [categories])
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
   const isCompact = layoutMode === 'compact'
   const isResponsive = layoutMode === 'responsive'
   const usesCompactLayout = isCompact || isResponsive
@@ -122,6 +142,39 @@ export function AgbonSidebarCategories({
   const renderResponsiveSearch =
     showSearch && searchMode === 'auto' && layoutMode === 'responsive'
   const renderSearchInput = showSearch && (searchMode === 'inline' || searchMode === 'auto' && layoutMode === 'standard')
+
+  useEffect(() => {
+    if (!selectedCategory) {
+      setExpandedCategories((prev) => (prev.size === 0 ? prev : new Set()))
+      return
+    }
+
+    const pathIds = getCategoryPathIds(selectedCategory, categories)
+    if (pathIds.length === 0) {
+      setExpandedCategories((prev) => (prev.size === 0 ? prev : new Set()))
+      return
+    }
+
+    setExpandedCategories((prev) => {
+      const next = new Set(pathIds)
+      if (prev.size === next.size && [...prev].every((id) => next.has(id))) {
+        return prev
+      }
+      return next
+    })
+  }, [categories, selectedCategory])
+
+  const toggleExpanded = (categoryId: string) => {
+    setExpandedCategories((prev) => {
+      const next = new Set(prev)
+      if (next.has(categoryId)) {
+        next.delete(categoryId)
+      } else {
+        next.add(categoryId)
+      }
+      return next
+    })
+  }
 
   return (
     <aside className="h-fit overflow-hidden rounded-[.3rem] bg-[#2b2d35] text-white md:rounded-lg md:bg-[#1a1a1a]">
@@ -210,43 +263,82 @@ export function AgbonSidebarCategories({
         <div className="space-y-0">
           {categoryTree.map((cat) => {
             const renderCategory = (category: ProductCategoryRecord, depth = 0): React.ReactNode => {
-            const name = getLocalized(category.name, locale) || 'Category'
-            const imageUrl = category.imageUrl || null
+              const name = getLocalized(category.name, locale) || 'Category'
+              const imageUrl = category.imageUrl || null
+              const hasChildren = (category.children?.length ?? 0) > 0
+              const isSelected = selectedCategory === category.id
+              const isExpanded = expandedCategories.has(category.id)
+              const indentClass = depth === 0 ? '' : depth === 1 ? 'md:pl-6' : 'md:pl-10'
 
-            return (
-              <div key={category.id}>
-              <button
-                type="button"
-                onClick={() => setCategory(selectedCategory === category.id ? null : category.id)}
-                className={
-                  usesCompactLayout
-                    ? `${compactItemBase} ${selectedCategory === category.id ? compactActive : compactInactive}`
-                    : `w-full transition border-b border-gray-800 last:border-b-0 ${
-                        selectedCategory === category.id
-                          ? 'bg-[#1a1a1a] text-white'
-                          : 'hover:bg-gray-900 text-white'
-                      } flex items-center gap-2 md:gap-3 p-2 md:p-3 text-left`
-                }
-                style={depth > 0 ? { paddingLeft: `${depth * 16 + 8}px` } : undefined}
-              >
-                {usesCompactLayout && selectedCategory === category.id && (
-                  <span className="absolute inset-y-0 left-0 w-1 bg-[#ff8a2a] md:hidden" />
-                )}
-                {imageUrl ? (
-                  <div className="relative w-5 h-5 md:w-6 md:h-6 shrink-0">
-                    <Image src={imageUrl} alt={name} fill className="object-contain" unoptimized />
-                  </div>
-                ) : (
-                  <span className={`shrink-0 ${usesCompactLayout ? 'text-2xl md:text-base lg:text-xl' : 'text-base md:text-xl'}`}>{category.icon || '📦'}</span>
-                )}
-                <span className={`whitespace-normal ${usesCompactLayout ? `${compactLabel} md:text-sm md:flex-1` : 'text-xs md:text-sm flex-1'}`}>
-                  {depth > 0 ? `— ${name}` : name}
-                </span>
-              </button>
-              {category.children?.map((child) => renderCategory(child, depth + 1))}
-              </div>
-            )
+              const buttonClassName = usesCompactLayout
+                ? `${compactItemBase} ${isSelected ? compactActive : isExpanded ? 'bg-white/[0.08]' : compactInactive}`
+                : `w-full transition border-b border-gray-800 last:border-b-0 ${
+                    isSelected
+                      ? 'bg-[#000] text-white font-semibold border-l-4 border-l-[#ff8a2a]'
+                      : isExpanded
+                        ? 'bg-gray-800/70 text-white hover:bg-gray-700'
+                        : 'hover:bg-gray-900 text-white'
+                  } flex items-center gap-2 md:gap-3 p-2 md:p-3 text-left ${indentClass}`
+
+              return (
+                <div key={category.id}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (hasChildren) {
+                        toggleExpanded(category.id)
+                      }
+                      setCategory(isSelected ? null : category.id)
+                    }}
+                    className={buttonClassName}
+                    style={usesCompactLayout && depth > 0 ? { paddingLeft: `${depth * 16 + 8}px` } : undefined}
+                    title={name}
+                  >
+                    {usesCompactLayout && isSelected && (
+                      <span className="absolute inset-y-0 left-0 w-1 bg-[#ff8a2a] md:hidden" />
+                    )}
+                    {hasChildren ? (
+                      <span
+                        className={`hidden md:inline shrink-0 transition-transform ${
+                          isExpanded || isSelected ? 'text-white' : 'text-gray-400'
+                        }`}
+                      >
+                        {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                      </span>
+                    ) : (
+                      <span className="hidden h-4 w-4 shrink-0 md:inline" />
+                    )}
+                    {imageUrl ? (
+                      <div className="relative w-5 h-5 md:w-6 md:h-6 shrink-0">
+                        <Image src={imageUrl} alt={name} fill className="object-contain" unoptimized />
+                      </div>
+                    ) : (
+                      <span className={`shrink-0 ${usesCompactLayout ? 'text-2xl md:text-base lg:text-xl' : 'text-base md:text-xl'}`}>
+                        {category.icon || '📦'}
+                      </span>
+                    )}
+                    <span
+                      className={`whitespace-normal ${
+                        usesCompactLayout ? `${compactLabel} md:text-sm md:flex-1` : 'text-xs md:text-sm flex-1'
+                      } ${isSelected ? 'font-bold' : usesCompactLayout ? 'font-semibold' : 'font-medium'}`}
+                    >
+                      {name}
+                    </span>
+                    {hasChildren && !isSelected && !usesCompactLayout && (
+                      <span className="hidden rounded bg-gray-700/50 px-1.5 py-0.5 text-[10px] text-gray-300 md:inline">
+                        {category.children?.length}
+                      </span>
+                    )}
+                  </button>
+                  {hasChildren && isExpanded && (
+                    <div className={usesCompactLayout ? 'bg-black/20 md:bg-black md:border-l-2 md:border-[#ff8a2a]/30 md:ml-2' : 'bg-black border-l-2 border-[#ff8a2a]/30 ml-1 md:ml-2'}>
+                      {category.children?.map((child) => renderCategory(child, depth + 1))}
+                    </div>
+                  )}
+                </div>
+              )
             }
+
             return renderCategory(cat)
           })}
         </div>
