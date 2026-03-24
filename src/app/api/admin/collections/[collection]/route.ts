@@ -124,18 +124,23 @@ const SEARCH_FIELDS: Record<string, string[]> = {
   roles: ['name', 'displayName', 'description'],
   permissions: ['name', 'resource', 'action'],
   media: ['filename', 'alt', 'caption'],
-  pages: [],
+  pages: ['title', 'slug', 'status'],
   settings: ['siteName'],
   blocks: ['label', 'name', 'templateName', 'status'],
   'contact-messages': ['name', 'email', 'phone', 'company', 'subject', 'status', 'sourcePage', 'locale'],
   menus: ['name', 'location'],
   countries: ['name', 'code', 'flag'],
   jobs: ['title', 'location', 'employmentType', 'salary'],
-  categories: ['name'],
-  'product-categories': ['slug', 'icon'],
-  products: ['slug'],
-  posts: [],
+  categories: ['name', 'slug'],
+  'product-categories': ['name', 'slug', 'icon'],
+  products: ['name', 'model', 'slug'],
+  posts: ['title', 'slug', 'excerpt', 'status'],
   comments: ['authorName', 'authorEmail', 'content'],
+};
+
+type SearchFieldDescriptor = {
+  name: string;
+  strategy: 'db' | 'localized';
 };
 
 function supportsBlocksContentDefinition(): boolean {
@@ -162,28 +167,35 @@ function supportsBlocksDataSource(): boolean {
   return model.fields.some((field) => field.name === 'dataSource');
 }
 
-function modelHasField(collection: string, fieldName: string): boolean {
-  const runtime = (prisma as unknown as {
-    _runtimeDataModel?: {
-      models?: Record<string, { fields?: Array<{ name?: string }> }>;
-    };
-  })._runtimeDataModel;
-
-  const pascalCollection = collection.charAt(0).toUpperCase() + collection.slice(1);
-  const model = runtime?.models?.[collection] ?? runtime?.models?.[pascalCollection];
-  if (!model?.fields) return false;
-  return model.fields.some((field) => field.name === fieldName);
-}
-
-function getModelFieldType(collection: string, fieldName: string): string | null {
+function getRuntimeModel(collection: string) {
   const runtime = (prisma as unknown as {
     _runtimeDataModel?: {
       models?: Record<string, { fields?: Array<{ name?: string; type?: string }> }>;
     };
   })._runtimeDataModel;
 
-  const pascalCollection = collection.charAt(0).toUpperCase() + collection.slice(1);
-  const model = runtime?.models?.[collection] ?? runtime?.models?.[pascalCollection];
+  const delegateMap: Record<string, string> = {
+    'contact-messages': 'contactMessages',
+    'product-categories': 'productCategories',
+  };
+  const runtimeKey = delegateMap[collection] ?? collection;
+  const pascalCollection = runtimeKey
+    .split(/[-_]/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join('');
+
+  return runtime?.models?.[runtimeKey] ?? runtime?.models?.[pascalCollection];
+}
+
+function modelHasField(collection: string, fieldName: string): boolean {
+  const model = getRuntimeModel(collection);
+  if (!model?.fields) return false;
+  return model.fields.some((field) => field.name === fieldName);
+}
+
+function getModelFieldType(collection: string, fieldName: string): string | null {
+  const model = getRuntimeModel(collection);
   if (!model?.fields) return null;
 
   const field = model.fields.find((entry) => entry.name === fieldName);
@@ -203,24 +215,77 @@ function buildContainsFilter(field: string, value: string): Record<string, unkno
   return { [field]: filter };
 }
 
-function getSearchableFields(collection: string): string[] {
-  return (SEARCH_FIELDS[collection] ?? []).filter(
-    (fieldName) => modelHasField(collection, fieldName) && getModelFieldType(collection, fieldName) === 'String'
-  );
+function isLocalizedCollectionField(collection: string, fieldName: string): boolean {
+  const collectionMeta = getCollection(collection);
+  if (!collectionMeta) return false;
+
+  const field = collectionMeta.fields.find((entry) => entry.name === fieldName);
+  return Boolean(field?.localized);
 }
 
-function getFilterableFields(collection: string): Set<string> {
-  const collectionMeta = getCollection(collection);
-  if (!collectionMeta) return new Set();
+function getSearchableFields(collection: string): SearchFieldDescriptor[] {
+  const descriptors: SearchFieldDescriptor[] = [];
 
-  return new Set(
-    collectionMeta.fields
-      .filter((field) => ['text', 'email', 'textarea', 'select'].includes(field.type))
-      .map((field) => field.name)
-      .filter(
-        (fieldName) => modelHasField(collection, fieldName) && getModelFieldType(collection, fieldName) === 'String'
-      )
-  );
+  for (const fieldName of SEARCH_FIELDS[collection] ?? []) {
+    if (!modelHasField(collection, fieldName)) continue;
+
+    const modelType = getModelFieldType(collection, fieldName);
+    if (modelType === 'String') {
+      descriptors.push({ name: fieldName, strategy: 'db' });
+      continue;
+    }
+
+    if (isLocalizedCollectionField(collection, fieldName)) {
+      descriptors.push({ name: fieldName, strategy: 'localized' });
+    }
+  }
+
+  return descriptors;
+}
+
+function getFilterableFieldDescriptors(collection: string): Map<string, SearchFieldDescriptor['strategy']> {
+  const collectionMeta = getCollection(collection);
+  if (!collectionMeta) return new Map();
+
+  const descriptors = new Map<string, SearchFieldDescriptor['strategy']>();
+
+  for (const field of collectionMeta.fields) {
+    if (!['text', 'email', 'textarea', 'select'].includes(field.type)) continue;
+    if (!modelHasField(collection, field.name)) continue;
+
+    const modelType = getModelFieldType(collection, field.name);
+    if (modelType === 'String') {
+      descriptors.set(field.name, 'db');
+      continue;
+    }
+
+    if (field.localized) {
+      descriptors.set(field.name, 'localized');
+    }
+  }
+
+  return descriptors;
+}
+
+function collectFilterTexts(value: unknown): string[] {
+  if (value === null || value === undefined) return [];
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    const text = String(value).trim();
+    return text ? [text] : [];
+  }
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => collectFilterTexts(item));
+  }
+  if (typeof value === 'object') {
+    return Object.values(value as Record<string, unknown>).flatMap((item) => collectFilterTexts(item));
+  }
+  return [];
+}
+
+function matchesContainsValue(value: unknown, query: string): boolean {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return true;
+  return collectFilterTexts(value).some((text) => text.toLowerCase().includes(needle));
 }
 
 function getDefaultSortField(collection: string): string | null {
@@ -350,7 +415,13 @@ export async function GET(
     const skip = (page - 1) * limit;
 
     const searchableFields = getSearchableFields(collection);
-    const filterableFields = getFilterableFields(collection);
+    const dbSearchableFields = searchableFields
+      .filter((field) => field.strategy === 'db')
+      .map((field) => field.name);
+    const localizedSearchableFields = searchableFields
+      .filter((field) => field.strategy === 'localized')
+      .map((field) => field.name);
+    const filterableFieldDescriptors = getFilterableFieldDescriptors(collection);
     let parsedFilters: Record<string, string> = {};
     if (rawFilters) {
       try {
@@ -361,7 +432,7 @@ export async function GET(
             typeof k === 'string' &&
             typeof v === 'string' &&
             v.trim().length > 0 &&
-            filterableFields.has(k)
+            filterableFieldDescriptors.has(k)
           ) {
             next[k] = v;
           }
@@ -372,14 +443,23 @@ export async function GET(
       }
     }
 
+    const dbFilters = Object.entries(parsedFilters).filter(
+      ([field]) => filterableFieldDescriptors.get(field) === 'db'
+    );
+    const localizedFilters = Object.entries(parsedFilters).filter(
+      ([field]) => filterableFieldDescriptors.get(field) === 'localized'
+    );
+    const needsLocalizedSearch = search.trim().length > 0 && localizedSearchableFields.length > 0;
+    const needsLocalizedFiltering = localizedFilters.length > 0;
+
     const andClauses: Array<Record<string, unknown>> = [];
-    if (search && searchableFields.length > 0) {
+    if (search && !needsLocalizedSearch && dbSearchableFields.length > 0) {
       andClauses.push({
-        OR: searchableFields.map((field) => buildContainsFilter(field, search)),
+        OR: dbSearchableFields.map((field) => buildContainsFilter(field, search)),
       });
     }
 
-    for (const [field, rawValue] of Object.entries(parsedFilters)) {
+    for (const [field, rawValue] of dbFilters) {
       const value = rawValue.trim();
       if (!value) continue;
       andClauses.push(buildContainsFilter(field, value));
@@ -395,21 +475,102 @@ export async function GET(
     let total = 0;
 
     try {
-      [docs, total] = await Promise.all([
-        model.findMany({ where, skip, take: limit, include, ...(orderBy ? { orderBy } : {}) }),
-        model.count({ where }),
-      ]);
+      if (needsLocalizedSearch || needsLocalizedFiltering) {
+        const baseDocs = await model.findMany({ where, include, ...(orderBy ? { orderBy } : {}) });
+        const filteredDocs = (baseDocs as Array<Record<string, unknown>>).filter((doc) => {
+          if (search.trim()) {
+            const searchFields = needsLocalizedSearch
+              ? [...dbSearchableFields, ...localizedSearchableFields]
+              : dbSearchableFields;
+            const matchesSearch =
+              searchFields.length === 0 ||
+              searchFields.some((field) => matchesContainsValue(doc[field], search));
+
+            if (!matchesSearch) return false;
+          }
+
+          for (const [field, value] of localizedFilters) {
+            if (!matchesContainsValue(doc[field], value)) {
+              return false;
+            }
+          }
+
+          return true;
+        });
+
+        total = filteredDocs.length;
+        docs = filteredDocs.slice(skip, skip + limit);
+      } else {
+        [docs, total] = await Promise.all([
+          model.findMany({ where, skip, take: limit, include, ...(orderBy ? { orderBy } : {}) }),
+          model.count({ where }),
+        ]);
+      }
     } catch {
       try {
-        [docs, total] = await Promise.all([
-          model.findMany({ where, skip, take: limit, ...(fallbackOrderBy ? { orderBy: fallbackOrderBy } : {}) }),
-          model.count({ where }),
-        ]);
+        if (needsLocalizedSearch || needsLocalizedFiltering) {
+          const baseDocs = await model.findMany({ where, ...(fallbackOrderBy ? { orderBy: fallbackOrderBy } : {}) });
+          const filteredDocs = (baseDocs as Array<Record<string, unknown>>).filter((doc) => {
+            if (search.trim()) {
+              const searchFields = needsLocalizedSearch
+                ? [...dbSearchableFields, ...localizedSearchableFields]
+                : dbSearchableFields;
+              const matchesSearch =
+                searchFields.length === 0 ||
+                searchFields.some((field) => matchesContainsValue(doc[field], search));
+
+              if (!matchesSearch) return false;
+            }
+
+            for (const [field, value] of localizedFilters) {
+              if (!matchesContainsValue(doc[field], value)) {
+                return false;
+              }
+            }
+
+            return true;
+          });
+
+          total = filteredDocs.length;
+          docs = filteredDocs.slice(skip, skip + limit);
+        } else {
+          [docs, total] = await Promise.all([
+            model.findMany({ where, skip, take: limit, ...(fallbackOrderBy ? { orderBy: fallbackOrderBy } : {}) }),
+            model.count({ where }),
+          ]);
+        }
       } catch {
-        [docs, total] = await Promise.all([
-          model.findMany({ where, skip, take: limit }),
-          model.count({ where }),
-        ]);
+        if (needsLocalizedSearch || needsLocalizedFiltering) {
+          const baseDocs = await model.findMany({ where });
+          const filteredDocs = (baseDocs as Array<Record<string, unknown>>).filter((doc) => {
+            if (search.trim()) {
+              const searchFields = needsLocalizedSearch
+                ? [...dbSearchableFields, ...localizedSearchableFields]
+                : dbSearchableFields;
+              const matchesSearch =
+                searchFields.length === 0 ||
+                searchFields.some((field) => matchesContainsValue(doc[field], search));
+
+              if (!matchesSearch) return false;
+            }
+
+            for (const [field, value] of localizedFilters) {
+              if (!matchesContainsValue(doc[field], value)) {
+                return false;
+              }
+            }
+
+            return true;
+          });
+
+          total = filteredDocs.length;
+          docs = filteredDocs.slice(skip, skip + limit);
+        } else {
+          [docs, total] = await Promise.all([
+            model.findMany({ where, skip, take: limit }),
+            model.count({ where }),
+          ]);
+        }
       }
     }
 

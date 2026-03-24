@@ -818,7 +818,6 @@ export function CollectionList({ collection }: CollectionListProps) {
         onToggleExpanded={() => setEditorExpanded((prev) => !prev)}
         onOpenInPage={openEditorInPage}
         onSaved={async () => {
-          closeEditor();
           await fetchDocs();
         }}
         onDeleted={async () => {
