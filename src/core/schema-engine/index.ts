@@ -183,6 +183,14 @@ function formatTableName(slug: string, prefix?: string): string {
   return prefix ? `${prefix}_${tableName}` : tableName;
 }
 
+function getRelationScalarFieldName(fieldName: string): string {
+  return fieldName.endsWith('Id') ? fieldName : `${fieldName}Id`;
+}
+
+function getSelfRelationName(modelName: string, fieldName: string): string {
+  return `${modelName}_${fieldName}_SelfRelation`;
+}
+
 // ============================================================================
 // MAIN MODEL GENERATOR
 // ============================================================================
@@ -267,20 +275,28 @@ function generateMainModel(config: CollectionConfig, options: SchemaEngineOption
       } else {
         // Many-to-one: FK + @relation
         const foreignKeyField = mapFieldToPrisma(field, options);
-        foreignKeyField.name = `${field.name}Id`;
+        foreignKeyField.name = getRelationScalarFieldName(field.name);
         fields.push(foreignKeyField);
 
+        const modelName = formatModelName(config.slug);
+        const targetModelName = formatModelName(targetSlug);
+        const relationName = modelName === targetModelName
+          ? getSelfRelationName(modelName, field.name)
+          : field.name;
+
         const relation: PrismaRelation = {
-          name: field.name,
-          model: formatModelName(targetSlug),
+          name: relationName,
+          model: targetModelName,
           fields: [foreignKeyField.name],
           references: ['id'],
           onDelete: 'SetNull',
         };
 
         relationshipFields.push({
-          name: field.name,
-          type: formatModelName(targetSlug),
+          name: modelName === targetModelName && foreignKeyField.name === field.name
+            ? field.name.replace(/Id$/, '') || field.name
+            : field.name,
+          type: targetModelName,
           isOptional: foreignKeyField.isOptional,
           isList: false,
           attributes: [],
@@ -454,13 +470,20 @@ function generateModelString(model: PrismaModel): string {
     
     // Add relation
     if (field.relation) {
-      fieldLine += ` @relation(`;
-      fieldLine += `fields: [${field.relation.fields.join(', ')}], `;
-      fieldLine += `references: [${field.relation.references.join(', ')}]`;
-      if (field.relation.onDelete) {
-        fieldLine += `, onDelete: ${field.relation.onDelete}`;
+      const relationArgs: string[] = [];
+      if (field.relation.name) {
+        relationArgs.push(`"${field.relation.name}"`);
       }
-      fieldLine += ')';
+      if (field.relation.fields.length > 0) {
+        relationArgs.push(`fields: [${field.relation.fields.join(', ')}]`);
+      }
+      if (field.relation.references.length > 0) {
+        relationArgs.push(`references: [${field.relation.references.join(', ')}]`);
+      }
+      if (field.relation.onDelete) {
+        relationArgs.push(`onDelete: ${field.relation.onDelete}`);
+      }
+      fieldLine += ` @relation(${relationArgs.join(', ')})`;
     }
     
     output += fieldLine + '\n';
@@ -540,12 +563,24 @@ function injectBackRelations(models: PrismaModel[]): void {
         // Skip if a field with this name already exists
         if (targetModel.fields.some(f => f.name === backFieldName)) continue;
 
+        const sourceModel = modelMap.get(sourceModelName);
+        const relationField = sourceModel?.fields.find(f => f.name === fieldName);
+        const relationName = relationField?.relation?.name;
+
         targetModel.fields.push({
           name: backFieldName,
           type: sourceModelName,
           isOptional: false,
           isList: true,
           attributes: [],
+          relation: relationName
+            ? {
+                name: relationName,
+                model: sourceModelName,
+                fields: [],
+                references: [],
+              }
+            : undefined,
         });
       }
     }

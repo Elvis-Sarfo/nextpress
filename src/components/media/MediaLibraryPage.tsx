@@ -45,11 +45,32 @@ interface TrimEditState {
 interface MediaLibraryPageProps {
   pickerMode?: boolean;
   onPickerSelect?: (media: MediaValue) => void;
+  viewMode?: ViewMode;
+  onViewModeChange?: (view: ViewMode) => void;
+  hidePickerHeader?: boolean;
+  queryValue?: string;
+  onQueryChange?: (value: string) => void;
+  hideSearchControl?: boolean;
+  typeFilterValue?: string;
+  onTypeFilterChange?: (value: string) => void;
+  hideTypeFilterControl?: boolean;
 }
 
-export function MediaLibraryPage({ pickerMode = false, onPickerSelect }: MediaLibraryPageProps = {}) {
+export function MediaLibraryPage({
+  pickerMode = false,
+  onPickerSelect,
+  viewMode,
+  onViewModeChange,
+  hidePickerHeader = false,
+  queryValue,
+  onQueryChange,
+  hideSearchControl = false,
+  typeFilterValue,
+  onTypeFilterChange,
+  hideTypeFilterControl = false,
+}: MediaLibraryPageProps = {}) {
   const media = useMediaLibrary();
-  const [view, setView] = useState<ViewMode>('grid');
+  const [internalView, setInternalView] = useState<ViewMode>('grid');
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [form, setForm] = useState({ altText: '', title: '', description: '' });
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
@@ -71,20 +92,38 @@ export function MediaLibraryPage({ pickerMode = false, onPickerSelect }: MediaLi
   });
 
   const selected = selectedIndex !== null ? media.items[selectedIndex] ?? null : null;
+  const view = viewMode ?? internalView;
+  const effectiveQuery = queryValue ?? media.query;
+  const effectiveTypeFilter = typeFilterValue ?? media.typeFilter;
   const selectedAbsoluteUrl = selected ? toAbsoluteUrl(selected.url) : '';
   const isImage = selected?.kind === 'image';
   const isVideoOrAudio = !!selected && (selected.kind === 'video' || selected.type.startsWith('audio/'));
+
+  const setView = (nextView: ViewMode) => {
+    if (viewMode === undefined) setInternalView(nextView);
+    onViewModeChange?.(nextView);
+  };
 
   useEffect(() => {
     media.loadMedia();
   }, [media.page, media.typeFilter]);
 
   useEffect(() => {
+    if (queryValue === undefined || queryValue === media.query) return;
+    media.setQuery(queryValue);
+  }, [queryValue, media.query]);
+
+  useEffect(() => {
+    if (typeFilterValue === undefined || typeFilterValue === media.typeFilter) return;
+    media.setTypeFilter(typeFilterValue);
+  }, [typeFilterValue, media.typeFilter]);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
-      media.loadMedia({ page: 1, query: media.query });
+      media.loadMedia({ page: 1, query: effectiveQuery });
     }, 250);
     return () => clearTimeout(timer);
-  }, [media.query]);
+  }, [effectiveQuery]);
 
   useEffect(() => {
     if (!selected) return;
@@ -299,70 +338,96 @@ export function MediaLibraryPage({ pickerMode = false, onPickerSelect }: MediaLi
   );
 
   return (
-    <div className={pickerMode ? 'mx-auto max-w-7xl space-y-5 p-5 md:p-6' : 'mx-auto max-w-7xl space-y-6 p-4 md:p-8'}>
-      <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className={pickerMode ? 'text-2xl font-semibold tracking-tight' : 'text-3xl font-semibold tracking-tight'}>
-            {pickerMode ? 'Choose from your library' : 'Media Library'}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {pickerMode ? 'Search, filter, upload, and click any card to select it.' : 'Manage uploads and metadata in one place.'}
-          </p>
-        </div>
+    <div className={pickerMode ? 'mx-auto max-w-7xl space-y-4 p-4' : 'mx-auto max-w-7xl space-y-6 p-4 md:p-8'}>
+      {!pickerMode || !hidePickerHeader ? (
+        <div className={pickerMode ? 'space-y-3' : 'space-y-6'}>
+          <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h1 className={pickerMode ? 'text-lg font-semibold tracking-tight text-slate-950' : 'text-3xl font-semibold tracking-tight'}>
+                {pickerMode ? 'Choose from your library' : 'Media Library'}
+              </h1>
+              <p className={pickerMode ? 'mt-0.5 text-xs text-muted-foreground' : 'mt-1 text-sm text-muted-foreground'}>
+                {pickerMode ? 'Search, filter, upload, and select a file.' : 'Manage uploads and metadata in one place.'}
+              </p>
+            </div>
 
-        <div className="flex items-center gap-2">
-          <Button
-            variant={view === 'grid' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setView('grid')}
+            <div className="flex items-center gap-2 self-start md:self-auto">
+              <Button
+                variant={view === 'grid' ? 'default' : 'outline'}
+                size="sm"
+                className={pickerMode ? 'h-8 px-3 text-xs' : undefined}
+                onClick={() => setView('grid')}
+              >
+                <Grid3X3 className={pickerMode ? 'mr-1.5 h-3.5 w-3.5' : 'mr-2 h-4 w-4'} /> Grid
+              </Button>
+              <Button
+                variant={view === 'list' ? 'default' : 'outline'}
+                size="sm"
+                className={pickerMode ? 'h-8 px-3 text-xs' : undefined}
+                onClick={() => setView('list')}
+              >
+                <List className={pickerMode ? 'mr-1.5 h-3.5 w-3.5' : 'mr-2 h-4 w-4'} /> List
+              </Button>
+            </div>
+          </header>
+        </div>
+      ) : null}
+
+      <section className={pickerMode ? 'flex flex-col gap-2 md:flex-row md:items-center' : 'flex flex-col gap-3 md:flex-row md:items-center'}>
+        {!hideSearchControl && (
+          <div className="relative flex-1">
+            <Search className={`pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground ${pickerMode ? 'h-3.5 w-3.5' : 'h-4 w-4'}`} />
+            <input
+              value={effectiveQuery}
+              onChange={(e) => {
+                const nextQuery = e.target.value;
+                if (queryValue === undefined) media.setQuery(nextQuery);
+                onQueryChange?.(nextQuery);
+              }}
+              placeholder="Search by name, title, alt text..."
+              className={pickerMode ? 'h-10 w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-8 pr-3 text-xs' : 'w-full rounded-md border bg-background py-2 pl-9 pr-3 text-sm'}
+            />
+          </div>
+        )}
+
+        {!hideTypeFilterControl && (
+          <select
+            aria-label="Type filter"
+            value={effectiveTypeFilter}
+            onChange={(e) => {
+              const nextType = e.target.value;
+              if (typeFilterValue === undefined) media.setTypeFilter(nextType);
+              media.setPage(1);
+              onTypeFilterChange?.(nextType);
+            }}
+            className={pickerMode ? 'h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs' : 'rounded-md border bg-background px-3 py-2 text-sm'}
           >
-            <Grid3X3 className="mr-2 h-4 w-4" /> Grid
-          </Button>
-          <Button
-            variant={view === 'list' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setView('list')}
-          >
-            <List className="mr-2 h-4 w-4" /> List
-          </Button>
-        </div>
-      </header>
-
-      <MediaDropzone
-        onFilesSelected={onFiles}
-        uploadState={media.uploadState}
-        dropLabel={pickerMode ? 'Drop files here to add them instantly' : 'Drag and drop files here, or click to browse'}
-        subLabel={pickerMode ? 'Upload without leaving the picker.' : undefined}
-      />
-
-      <section className={pickerMode ? 'flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:flex-row md:items-center' : 'flex flex-col gap-3 md:flex-row md:items-center'}>
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            value={media.query}
-            onChange={(e) => media.setQuery(e.target.value)}
-            placeholder="Search by name, title, alt text..."
-            className={pickerMode ? 'w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-sm' : 'w-full rounded-md border bg-background py-2 pl-9 pr-3 text-sm'}
-          />
-        </div>
-
-        <select
-          aria-label="Type filter"
-          value={media.typeFilter}
-          onChange={(e) => {
-            media.setTypeFilter(e.target.value);
-            media.setPage(1);
-          }}
-          className={pickerMode ? 'rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm' : 'rounded-md border bg-background px-3 py-2 text-sm'}
-        >
-          {typeOptions.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
+            {typeOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        )}
       </section>
 
+      {pickerMode && (
+        <MediaDropzone
+          onFilesSelected={onFiles}
+          uploadState={media.uploadState}
+          compact
+          dropLabel="Drop files here to upload instantly"
+          subLabel="Upload without leaving the picker."
+        />
+      )}
+
+      {!pickerMode && (
+        <MediaDropzone
+          onFilesSelected={onFiles}
+          uploadState={media.uploadState}
+          dropLabel="Drag and drop files here, or click to browse"
+        />
+      )}
       {media.error && (
         <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {media.error}
@@ -378,40 +443,40 @@ export function MediaLibraryPage({ pickerMode = false, onPickerSelect }: MediaLi
           No media found.
         </div>
       ) : view === 'grid' ? (
-        <div className={pickerMode ? 'grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5' : 'grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'}>
+        <div className={pickerMode ? 'grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7' : 'grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'}>
           {media.items.map((item, index) => (
             <button
               key={item.id}
               className={`group overflow-hidden border bg-card text-left transition-all ${
                 pickerMode
-                  ? 'rounded-2xl border-slate-200 bg-white shadow-sm hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md hover:ring-2 hover:ring-primary/20'
+                  ? 'rounded-xl border-slate-200 bg-white shadow-sm hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md hover:ring-2 hover:ring-primary/20'
                   : 'rounded-xl'
               }`}
               onClick={() => openItemAt(index)}
               title={pickerMode ? `Select: ${item.title || item.filename}` : undefined}
             >
-              <div className={`relative ${pickerMode ? 'aspect-[1.05/1]' : 'aspect-square'} bg-muted`}>
+              <div className={`relative ${pickerMode ? 'aspect-[1.1/1]' : 'aspect-square'} bg-muted`}>
                 <MediaThumb item={item} />
                 {pickerMode && (
                   <>
-                    <div className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-medium text-slate-600 shadow-sm">
+                    <div className="absolute left-2 top-2 rounded-full bg-white/90 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-[0.08em] text-slate-600 shadow-sm">
                       {item.kind}
                     </div>
                     <div className="absolute inset-0 flex items-end justify-center bg-black/0 transition-colors group-hover:bg-black/20">
-                      <span className="mb-3 rounded-full bg-slate-950 px-3 py-1 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
+                      <span className="mb-2 rounded-full bg-slate-950 px-2 py-1 text-[10px] font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
                         Select media
                       </span>
                     </div>
                   </>
                 )}
               </div>
-              <div className={pickerMode ? 'space-y-2 p-3.5' : 'p-2'}>
+              <div className={pickerMode ? 'space-y-1 p-2' : 'p-2'}>
                 <div>
-                  <p className="truncate text-sm font-medium">{item.title || item.filename}</p>
-                  {pickerMode && <p className="mt-1 truncate text-xs text-muted-foreground">{item.filename}</p>}
+                  <p className={pickerMode ? 'truncate text-[11px] font-medium text-slate-900' : 'truncate text-sm font-medium'}>{item.title || item.filename}</p>
+                  {pickerMode && <p className="mt-0.5 truncate text-[10px] text-muted-foreground">{item.filename}</p>}
                 </div>
                 {pickerMode ? (
-                  <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                  <div className="flex items-center justify-between gap-2 text-[10px] text-muted-foreground">
                     <span>{formatBytes(item.size)}</span>
                     <span>{formatShortDate(item.uploadedAt)}</span>
                   </div>

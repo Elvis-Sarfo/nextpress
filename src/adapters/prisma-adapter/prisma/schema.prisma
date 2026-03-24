@@ -20,9 +20,9 @@ model Users {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   createdBy String? @db.VarChar(255)
-  posts Posts[]
-  comments Comments[]
-  contactMessages ContactMessages[]
+  posts Posts[] @relation("author")
+  comments Comments[] @relation("author")
+  contactMessages ContactMessages[] @relation("assignedTo")
   @@index([status])
   @@map("users")
 }
@@ -86,10 +86,10 @@ model Media {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   createdBy String? @db.VarChar(255)
-  pages Pages[]
-  posts Posts[]
-  countries Countries[]
-  productCategories ProductCategories[]
+  pages Pages[] @relation("featuredImage")
+  posts Posts[] @relation("featuredImage")
+  countries Countries[] @relation("backgroundImage")
+  productCategories ProductCategories[] @relation("image")
   @@index([status])
   @@unique([documentId, status])
   @@index([documentId])
@@ -123,7 +123,7 @@ model Pages {
   isIndexPage Boolean @default(false)
   featuredImageId String? @db.VarChar(255)
   seo Json?
-  featuredImage Media? @relation(fields: [featuredImageId], references: [id], onDelete: SetNull)
+  featuredImage Media? @relation("featuredImage", fields: [featuredImageId], references: [id], onDelete: SetNull)
   metadata Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -188,7 +188,7 @@ model Categories {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   createdBy String? @db.VarChar(255)
-  posts Posts[]
+  posts Posts[] @relation("category")
   @@index([status])
   @@map("categories")
 }
@@ -207,9 +207,9 @@ model Posts {
   publishedAt DateTime?
   status String @db.VarChar(100) @default("draft")
   seo Json?
-  category Categories? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  featuredImage Media? @relation(fields: [featuredImageId], references: [id], onDelete: SetNull)
-  author Users? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  category Categories? @relation("category", fields: [categoryId], references: [id], onDelete: SetNull)
+  featuredImage Media? @relation("featuredImage", fields: [featuredImageId], references: [id], onDelete: SetNull)
+  author Users? @relation("author", fields: [authorId], references: [id], onDelete: SetNull)
   metadata Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -242,7 +242,7 @@ model Comments {
   contentId String @db.VarChar(255)
   parentId String? @db.VarChar(255)
   status String @db.VarChar(100) @default("pending")
-  author Users? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  author Users? @relation("author", fields: [authorId], references: [id], onDelete: SetNull)
   metadata Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -265,7 +265,7 @@ model ContactMessages {
   sourcePage String? @db.VarChar(255)
   locale String? @db.VarChar(255)
   submittedAt DateTime?
-  assignedTo Users? @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
+  assignedTo Users? @relation("assignedTo", fields: [assignedToId], references: [id], onDelete: SetNull)
   metadata Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -285,7 +285,7 @@ model Countries {
   backgroundImageId String? @db.VarChar(255)
   offices Json?
   order Int @default(0)
-  backgroundImage Media? @relation(fields: [backgroundImageId], references: [id], onDelete: SetNull)
+  backgroundImage Media? @relation("backgroundImage", fields: [backgroundImageId], references: [id], onDelete: SetNull)
   metadata Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -345,16 +345,16 @@ model ProductCategories {
   description Json?
   imageId String? @db.VarChar(255)
   icon String? @db.VarChar(255)
-  parentCategoryId String? @map("parentCategoryId") @db.VarChar(100)
+  parentCategoryId String? @db.VarChar(100)
   order Int @default(0)
-  image Media? @relation(fields: [imageId], references: [id], onDelete: SetNull)
-  parentCategory ProductCategories? @relation("ProductCategoryHierarchy", fields: [parentCategoryId], references: [id], onDelete: SetNull)
+  image Media? @relation("image", fields: [imageId], references: [id], onDelete: SetNull)
+  parentCategory ProductCategories? @relation("ProductCategories_parentCategoryId_SelfRelation", fields: [parentCategoryId], references: [id], onDelete: SetNull)
   metadata Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   createdBy String? @db.VarChar(255)
-  productCategories ProductCategories[] @relation("ProductCategoryHierarchy")
-  products Products[]
+  productCategories ProductCategories[] @relation("ProductCategories_parentCategoryId_SelfRelation")
+  products Products[] @relation("category")
   @@index([status])
   @@map("product_categories")
 }
@@ -374,7 +374,7 @@ model Products {
   featured Boolean @default(false)
   order Int @default(0)
   instructions Json?
-  category ProductCategories? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  category ProductCategories? @relation("category", fields: [categoryId], references: [id], onDelete: SetNull)
   metadata Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -382,3 +382,4 @@ model Products {
   @@index([status])
   @@map("products")
 }
+
