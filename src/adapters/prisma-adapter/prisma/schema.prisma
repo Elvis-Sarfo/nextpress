@@ -345,15 +345,15 @@ model ProductCategories {
   description Json?
   imageId String? @db.VarChar(255)
   icon String? @db.VarChar(255)
-  parentCategoryIdId String? @db.VarChar(100)
+  parentCategoryId String? @map("parentCategoryId") @db.VarChar(100)
   order Int @default(0)
   image Media? @relation(fields: [imageId], references: [id], onDelete: SetNull)
-  parentCategoryId ProductCategories? @relation(fields: [parentCategoryIdId], references: [id], onDelete: SetNull)
+  parentCategory ProductCategories? @relation("ProductCategoryHierarchy", fields: [parentCategoryId], references: [id], onDelete: SetNull)
   metadata Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   createdBy String? @db.VarChar(255)
-  productCategories ProductCategories[]
+  productCategories ProductCategories[] @relation("ProductCategoryHierarchy")
   products Products[]
   @@index([status])
   @@map("product_categories")
@@ -382,4 +382,3 @@ model Products {
   @@index([status])
   @@map("products")
 }
-
