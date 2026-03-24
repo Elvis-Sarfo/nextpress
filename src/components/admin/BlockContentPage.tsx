@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowLeft, Loader2, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { AdminSurfaceHeader } from '@/components/admin/AdminSurfaceHeader';
 import { useAdminLocale } from '@/components/providers/AdminLocaleProvider';
 import { BlockContentEditor } from '@/components/admin/BlockContentEditor';
 import { DataSourceBuilder, type DataSourceValue } from '@/components/admin/DataSourceBuilder/DataSourceBuilder';
@@ -201,61 +202,56 @@ export function BlockContentPage({ blockId }: BlockContentPageProps) {
 
   return (
     <div className="space-y-6">
-      {/* ── Header ── */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <AdminSurfaceHeader
+        title={<span className="text-3xl">Block Content</span>}
+        description={blockLabel || blockName ? `${blockLabel || blockName}${blockLabel && blockName ? ` (${blockName})` : ''}` : undefined}
+        leading={
           <Link href={`/admin/blocks/${blockId}`}>
             <Button variant="ghost" size="icon" type="button">
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Block Content</h1>
-            <p className="text-muted-foreground mt-1">
-              {blockLabel || blockName}{blockLabel && blockName ? ` (${blockName})` : ''}
-            </p>
-          </div>
-        </div>
+        }
+        actions={
+          <>
+            <div className="flex items-center gap-1.5 rounded-md border border-input px-2 py-1">
+              <span className="text-xs text-muted-foreground">Locale:</span>
+              {locales.map((loc) => {
+                const hasAnyContent = !!content[loc] && Object.keys(content[loc]).length > 0;
+                return (
+                  <button
+                    key={loc}
+                    type="button"
+                    onClick={() => setActiveLocale(loc)}
+                    className={cn(
+                      'px-2 py-0.5 rounded text-xs font-medium transition-colors',
+                      loc === activeLocale
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-muted-foreground hover:text-foreground',
+                      hasAnyContent && loc !== activeLocale && 'underline decoration-dotted'
+                    )}
+                    title={hasAnyContent ? `${loc.toUpperCase()} — has content` : loc.toUpperCase()}
+                  >
+                    {loc.toUpperCase()}
+                  </button>
+                );
+              })}
+            </div>
 
-        <div className="flex items-center gap-3">
-          {/* Locale switcher */}
-          <div className="flex items-center gap-1.5 rounded-md border border-input px-2 py-1">
-            <span className="text-xs text-muted-foreground">Locale:</span>
-            {locales.map((loc) => {
-              const hasAnyContent = !!content[loc] && Object.keys(content[loc]).length > 0;
-              return (
-                <button
-                  key={loc}
-                  type="button"
-                  onClick={() => setActiveLocale(loc)}
-                  className={cn(
-                    'px-2 py-0.5 rounded text-xs font-medium transition-colors',
-                    loc === activeLocale
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:text-foreground',
-                    hasAnyContent && loc !== activeLocale && 'underline decoration-dotted'
-                  )}
-                  title={hasAnyContent ? `${loc.toUpperCase()} — has content` : loc.toUpperCase()}
-                >
-                  {loc.toUpperCase()}
-                </button>
-              );
-            })}
-          </div>
+            {success && <span className="text-sm font-medium text-green-600">Saved</span>}
+            {error && <span className="text-sm text-red-600">{error}</span>}
 
-          {success && <span className="text-sm text-green-600 font-medium">Saved</span>}
-          {error && <span className="text-sm text-red-600">{error}</span>}
-
-          <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="mr-2 h-4 w-4" />
-            )}
-            {isSaving ? 'Saving…' : 'Save Content'}
-          </Button>
-        </div>
-      </div>
+            <Button onClick={handleSave} disabled={isSaving}>
+              {isSaving ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
+              {isSaving ? 'Saving…' : 'Save Content'}
+            </Button>
+          </>
+        }
+      />
 
       {/* ── Content editor ── */}
       <div className="rounded-lg border bg-card p-6">

@@ -15,6 +15,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Save, Loader2, Check, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { AdminSurfaceHeader } from '@/components/admin/AdminSurfaceHeader';
 import { useAdminLocale } from '@/components/providers/AdminLocaleProvider';
 import { GroupFieldEditor } from '@/components/admin/GroupFieldEditor/GroupFieldEditor';
 import { MediaSelector, type MediaValue } from '@/components/admin/MediaSelector';
@@ -332,64 +333,60 @@ export function SettingsEditor({ meta, documentId }: SettingsEditorProps) {
 
   return (
     <div className="space-y-0">
-      {/* Page header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Global site configuration
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {/* Locale switcher */}
-          {hasLocalizedFields && (
-            <div className="flex items-center gap-1.5 rounded-md border border-input px-2 py-1">
-              <span className="text-xs text-muted-foreground">Locale:</span>
-              {locales.map((loc) => (
-                <button
-                  key={loc}
-                  type="button"
-                  onClick={() => setActiveLocale(loc)}
-                  className={cn(
-                    'px-2 py-0.5 rounded text-xs font-medium transition-colors',
-                    loc === activeLocale
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:text-foreground'
-                  )}
-                >
-                  {loc.toUpperCase()}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {saveSuccess && (
-            <span className="flex items-center gap-1 text-sm text-green-600 font-medium">
-              <Check className="h-4 w-4" /> Saved
-            </span>
-          )}
-          {saveError && (
-            <span className="flex items-center gap-1 text-sm text-red-600">
-              <AlertCircle className="h-4 w-4" /> {saveError}
-            </span>
-          )}
-
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={isSaving}
-            className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-          >
-            {isSaving ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="h-4 w-4" />
+      <AdminSurfaceHeader
+        title={<span className="text-2xl">Settings</span>}
+        description="Global site configuration"
+        bodyClassName="px-6 py-4"
+        actions={
+          <>
+            {hasLocalizedFields && (
+              <div className="flex items-center gap-1.5 rounded-md border border-input px-2 py-1">
+                <span className="text-xs text-muted-foreground">Locale:</span>
+                {locales.map((loc) => (
+                  <button
+                    key={loc}
+                    type="button"
+                    onClick={() => setActiveLocale(loc)}
+                    className={cn(
+                      'px-2 py-0.5 rounded text-xs font-medium transition-colors',
+                      loc === activeLocale
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    {loc.toUpperCase()}
+                  </button>
+                ))}
+              </div>
             )}
-            {isSaving ? 'Saving…' : 'Save Changes'}
-          </button>
-        </div>
-      </div>
+
+            {saveSuccess && (
+              <span className="flex items-center gap-1 text-sm font-medium text-green-600">
+                <Check className="h-4 w-4" /> Saved
+              </span>
+            )}
+            {saveError && (
+              <span className="flex items-center gap-1 text-sm text-red-600">
+                <AlertCircle className="h-4 w-4" /> {saveError}
+              </span>
+            )}
+
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={isSaving}
+              className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            >
+              {isSaving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4" />
+              )}
+              {isSaving ? 'Saving…' : 'Save Changes'}
+            </button>
+          </>
+        }
+      />
 
       {/* Two-panel layout */}
       <div className="flex min-h-[calc(100vh-10rem)]">

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { AdminSurfaceHeader } from '@/components/admin/AdminSurfaceHeader';
 import { CollectionEdit } from '@/components/admin/CollectionEdit';
 import type { CollectionMeta } from '@/lib/collections-data';
 
@@ -46,15 +47,15 @@ export function QuickAddCollectionDialog({
       }}
     >
       <div className="flex h-[min(90vh,64rem)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border bg-background shadow-2xl">
-        <div className="flex items-center justify-between border-b px-4 py-3">
-          <div>
-            <h2 className="text-base font-semibold">Quick Add {collection.labels.singular}</h2>
-            <p className="text-sm text-muted-foreground">Create a related record without leaving this editor.</p>
-          </div>
-          <Button type="button" variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
+        <AdminSurfaceHeader
+          title={<span className="text-base">Quick Add {collection.labels.singular}</span>}
+          description="Create a related record without leaving this editor."
+          actions={
+            <Button type="button" variant="ghost" size="icon" onClick={onClose}>
+              <X className="h-4 w-4" />
+            </Button>
+          }
+        />
         <div className="min-h-0 flex-1 overflow-y-auto p-4">
           <CollectionEdit
             collection={collection}

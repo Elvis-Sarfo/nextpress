@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Filter, Grid3X3, LayoutTemplate, Loader2, RotateCcw, Search, SquareStack, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { AdminSurfaceHeader } from '@/components/admin/AdminSurfaceHeader';
 import { getBlockComponent } from '@/core/blocks/registry';
 import { AgbonProductNavProvider } from '@/contexts/agbon-product-nav-context';
 
@@ -939,12 +940,16 @@ export function BlockPickerModal({ open, onClose, onSelect }: BlockPickerModalPr
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="flex h-[84vh] w-full max-w-[1400px] flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-slate-200 px-8 py-6">
-          <h2 className="text-2xl font-semibold text-slate-950">Add Block</h2>
-          <Button variant="ghost" size="icon" onClick={onClose} type="button">
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
+        <AdminSurfaceHeader
+          title={<span className="text-2xl text-slate-950">Add Block</span>}
+          className="border-slate-200 bg-white"
+          bodyClassName="px-8 py-6"
+          actions={
+            <Button variant="ghost" size="icon" onClick={onClose} type="button">
+              <X className="h-5 w-5" />
+            </Button>
+          }
+        />
 
         <div className="border-b border-slate-200 px-8 py-4">
           <div className="flex flex-col gap-3">

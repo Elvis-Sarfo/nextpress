@@ -2,6 +2,7 @@
 
 import { FileSpreadsheet, Loader2, Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { AdminSurfaceHeader } from '@/components/admin/AdminSurfaceHeader';
 import type { CollectionFieldMeta, CollectionMeta } from '@/lib/collections-data';
 import { IGNORED_COLUMN, labelFor } from '@/components/admin/data-table/collection-table-utils';
 
@@ -57,12 +58,24 @@ export function CollectionImportDialog({
         aria-label="Close import dialog"
       />
       <div className="absolute left-1/2 top-[calc(var(--admin-topbar-height)+1rem)] w-[min(96vw,56rem)] -translate-x-1/2 rounded-lg border bg-background shadow-xl">
-        <div className="flex items-center justify-between border-b px-4 py-3">
-          <h2 className="text-base font-semibold">Import {collection.labels.plural}</h2>
-          <Button type="button" variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
+        <AdminSurfaceHeader
+          title={<span className="text-base">Import {collection.labels.plural}</span>}
+          description="Upload a file, map source columns, and run the import."
+          actions={
+            <>
+              <Button type="button" variant="outline" onClick={onClose}>
+                Close
+              </Button>
+              <Button type="button" onClick={() => void onRunImport()} disabled={isImporting || importRows.length === 0}>
+                {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                {isImporting ? 'Importing...' : 'Run Import'}
+              </Button>
+              <Button type="button" variant="ghost" size="icon" onClick={onClose}>
+                <X className="h-4 w-4" />
+              </Button>
+            </>
+          }
+        />
 
         <div className="space-y-4 p-4">
           <div className="rounded-md border border-dashed p-3">
@@ -163,18 +176,7 @@ export function CollectionImportDialog({
             </div>
           )}
         </div>
-
-        <div className="flex items-center justify-end gap-2 border-t px-4 py-3">
-          <Button type="button" variant="outline" onClick={onClose}>
-            Close
-          </Button>
-          <Button type="button" onClick={() => void onRunImport()} disabled={isImporting || importRows.length === 0}>
-            {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-            {isImporting ? 'Importing...' : 'Run Import'}
-          </Button>
-        </div>
       </div>
     </div>
   );
 }
-

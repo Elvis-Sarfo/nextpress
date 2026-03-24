@@ -12,17 +12,22 @@ import {
   ArrowLeft,
   Clock,
   Eye,
+  ExternalLink,
   Globe,
   GlobeLock,
+  Maximize2,
+  Minimize2,
   Plus,
   PencilLine,
   Save,
   Trash2,
   Loader2,
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { slugify } from '@/lib/utils';
+import { AdminSurfaceHeader } from '@/components/admin/AdminSurfaceHeader';
 import { useAdminLocale } from '@/components/providers/AdminLocaleProvider';
 import type { CollectionMeta, CollectionFieldMeta } from '@/lib/collections-data';
 import { BlockContentEditor } from '@/components/admin/BlockContentEditor';
@@ -44,6 +49,12 @@ interface CollectionEditProps {
   onSaved?: (doc: Record<string, unknown>) => void;
   onDeleted?: (id: string) => void;
   onCancel?: () => void;
+  sliderChrome?: {
+    expanded: boolean;
+    onClose: () => void;
+    onOpenInPage: () => void;
+    onToggleExpanded: () => void;
+  };
 }
 
 type FieldValue = string | number | boolean | string[] | Record<string, unknown> | null;
@@ -136,6 +147,7 @@ export function CollectionEdit({
   onSaved,
   onDeleted,
   onCancel,
+  sliderChrome,
 }: CollectionEditProps) {
   const router = useRouter();
   const [formData, setFormData] = useState<Record<string, FieldValue>>({});
@@ -151,6 +163,7 @@ export function CollectionEdit({
   const isCountryCollection = collection.slug === 'countries';
   const isJobCollection = collection.slug === 'jobs';
   const isPageMode = mode === 'page';
+  const isSliderMode = mode === 'slider';
 
 
   // Options for relationship fields: slug → list of {id, name/displayName/email}
@@ -230,9 +243,9 @@ export function CollectionEdit({
       const options = target === 'product-categories'
         ? buildHierarchicalRelationOptions(docs, activeLocale, field.name === 'parentCategoryId' ? documentId ?? undefined : undefined)
         : docs.map((doc) => ({
-            id: doc.id as string,
-            label: getOptionLabel(doc, activeLocale),
-          }));
+          id: doc.id as string,
+          label: getOptionLabel(doc, activeLocale),
+        }));
 
       setRelationOptions((prev) => ({ ...prev, [field.name]: options }));
     } catch (error) {
@@ -946,19 +959,19 @@ export function CollectionEdit({
         if (isPostCollection && field.name === 'tags') {
           const items = (value as Array<{ tag?: string }>) ?? [];
           const tags = items.map((item) => item.tag).filter(Boolean) as string[];
-          
+
           const addTag = (tag: string) => {
             if (tag.trim()) {
               const newItems = [...items, { tag: tag.trim() }];
               updateField(field.name, newItems as unknown as FieldValue);
             }
           };
-          
+
           const removeTag = (index: number) => {
             const newItems = items.filter((_, i) => i !== index);
             updateField(field.name, newItems as unknown as FieldValue);
           };
-          
+
           return (
             <div className="space-y-2">
               <div className="flex flex-wrap gap-1.5 min-h-[32px]">
@@ -999,7 +1012,7 @@ export function CollectionEdit({
             </div>
           );
         }
-        
+
         // Default array rendering for other collections
         const items = (value as unknown as Array<Record<string, unknown>>) ?? [];
         return (
@@ -1083,30 +1096,30 @@ export function CollectionEdit({
   const mainFields = isPageCollection
     ? visibleFields.filter((f) => !PAGE_SIDEBAR_FIELDS.includes(f.name))
     : isPostCollection
-    ? visibleFields.filter((f) => !POST_SIDEBAR_FIELDS.includes(f.name))
-    : isProductCollection
-    ? visibleFields.filter((f) => !PRODUCT_SIDEBAR_FIELDS.includes(f.name))
-    : isProductCategoryCollection
-    ? visibleFields.filter((f) => !PRODUCT_CATEGORY_SIDEBAR_FIELDS.includes(f.name))
-    : isCountryCollection
-    ? visibleFields.filter((f) => !COUNTRY_SIDEBAR_FIELDS.includes(f.name))
-    : isJobCollection
-    ? visibleFields.filter((f) => !JOB_SIDEBAR_FIELDS.includes(f.name))
-    : visibleFields;
+      ? visibleFields.filter((f) => !POST_SIDEBAR_FIELDS.includes(f.name))
+      : isProductCollection
+        ? visibleFields.filter((f) => !PRODUCT_SIDEBAR_FIELDS.includes(f.name))
+        : isProductCategoryCollection
+          ? visibleFields.filter((f) => !PRODUCT_CATEGORY_SIDEBAR_FIELDS.includes(f.name))
+          : isCountryCollection
+            ? visibleFields.filter((f) => !COUNTRY_SIDEBAR_FIELDS.includes(f.name))
+            : isJobCollection
+              ? visibleFields.filter((f) => !JOB_SIDEBAR_FIELDS.includes(f.name))
+              : visibleFields;
 
   const sidebarFields = isPageCollection
     ? PAGE_SIDEBAR_FIELDS.map((name) => visibleFields.find((f) => f.name === name)).filter(Boolean) as typeof visibleFields
     : isPostCollection
-    ? POST_SIDEBAR_FIELDS.map((name) => visibleFields.find((f) => f.name === name)).filter(Boolean) as typeof visibleFields
-    : isProductCollection
-    ? PRODUCT_SIDEBAR_FIELDS.map((name) => visibleFields.find((f) => f.name === name)).filter(Boolean) as typeof visibleFields
-    : isProductCategoryCollection
-    ? PRODUCT_CATEGORY_SIDEBAR_FIELDS.map((name) => visibleFields.find((f) => f.name === name)).filter(Boolean) as typeof visibleFields
-    : isCountryCollection
-    ? COUNTRY_SIDEBAR_FIELDS.map((name) => visibleFields.find((f) => f.name === name)).filter(Boolean) as typeof visibleFields
-    : isJobCollection
-    ? JOB_SIDEBAR_FIELDS.map((name) => visibleFields.find((f) => f.name === name)).filter(Boolean) as typeof visibleFields
-    : [];
+      ? POST_SIDEBAR_FIELDS.map((name) => visibleFields.find((f) => f.name === name)).filter(Boolean) as typeof visibleFields
+      : isProductCollection
+        ? PRODUCT_SIDEBAR_FIELDS.map((name) => visibleFields.find((f) => f.name === name)).filter(Boolean) as typeof visibleFields
+        : isProductCategoryCollection
+          ? PRODUCT_CATEGORY_SIDEBAR_FIELDS.map((name) => visibleFields.find((f) => f.name === name)).filter(Boolean) as typeof visibleFields
+          : isCountryCollection
+            ? COUNTRY_SIDEBAR_FIELDS.map((name) => visibleFields.find((f) => f.name === name)).filter(Boolean) as typeof visibleFields
+            : isJobCollection
+              ? JOB_SIDEBAR_FIELDS.map((name) => visibleFields.find((f) => f.name === name)).filter(Boolean) as typeof visibleFields
+              : [];
 
   // ── Preview URL (pages only) ─────────────────────────────────────────────
   const previewSlug = isPageCollection
@@ -1127,505 +1140,526 @@ export function CollectionEdit({
 
   const formBody = (
     <>
-      <form onSubmit={handleSubmit} className="space-y-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          {isPageMode ? (
-            <Link href={`/admin/${collection.slug}`}>
-              <Button variant="ghost" size="icon" type="button">
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </Link>
-          ) : (
-            <Button variant="ghost" size="sm" type="button" onClick={onCancel}>
-              Cancel
-            </Button>
-          )}
-          <div>
-            <h1 className={cn(isPageMode ? 'text-3xl' : 'text-2xl', 'font-bold tracking-tight')}>
+      <form onSubmit={handleSubmit} className={cn('space-y-8', isSliderMode && 'space-y-0')}>
+        {/* Header */}
+        <AdminSurfaceHeader
+          sticky={isSliderMode}
+          className={cn(isSliderMode && 'px-2 py-2')}
+          bodyClassName={cn(isSliderMode && 'px-0 py-0')}
+          title={
+            <span className={cn(isPageMode ? 'text-3xl' : 'text-2xl')}>
               {documentId ? 'Edit' : 'Create'} {collection.labels.singular}
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              {documentId
-                ? `Editing ${collection.labels.singular.toLowerCase()}`
-                : `Creating a new ${collection.labels.singular.toLowerCase()}`}
-            </p>
+            </span>
+          }
+          leading={
+            isPageMode ? (
+              <Link href={`/admin/${collection.slug}`}>
+                <Button variant="ghost" size="icon" type="button">
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              </Link>
+            ) : (
+              <Button variant="ghost" size="sm" type="button" onClick={onCancel}>
+                Cancel
+              </Button>
+            )
+          }
+          actions={
+            <>
+              {collection.slug === 'blocks' && documentId && (
+                <Link href={`/admin/blocks/${documentId}/content`}>
+                  <Button type="button" variant="outline">
+                    <PencilLine className="mr-2 h-4 w-4" />
+                    Edit Content
+                  </Button>
+                </Link>
+              )}
+
+              {isPageCollection && documentId && previewUrl && (
+                <a href={previewUrl} target="_blank" rel="noreferrer">
+                  <Button type="button" variant="outline">
+                    <Eye className="mr-2 h-4 w-4" />
+                    Preview
+                  </Button>
+                </a>
+              )}
+
+              {hasVersions && documentId && (
+                <Link href={`/admin/${collection.slug}/${documentId}/history`}>
+                  <Button type="button" variant="outline">
+                    <Clock className="mr-2 h-4 w-4" />
+                    History
+                  </Button>
+                </Link>
+              )}
+
+              {isSliderMode && sliderChrome && (
+                <>
+                  <Button type="button" variant="ghost" size="sm" onClick={sliderChrome.onOpenInPage} title="Open in page">
+                    <ExternalLink className="h-4 w-4" />
+                    <span className="sr-only">Open in page</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={sliderChrome.onToggleExpanded}
+                    title={sliderChrome.expanded ? 'Restore size' : 'Expand size'}
+                  >
+                    {sliderChrome.expanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                  </Button>
+                  <Button type="button" variant="ghost" size="icon" onClick={sliderChrome.onClose}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
+
+              {hasLocalizedFields && (
+                <div className="flex items-center gap-1.5 rounded-md border border-input px-2 py-1">
+                  <span className="text-xs text-muted-foreground">Locale:</span>
+                  {collectionLocales.map((loc) => {
+                    const localeMap = formData as Record<string, Record<string, unknown>>;
+                    const hasAnyContent = collection.fields
+                      .filter((f) => f.localized)
+                      .some((f) => {
+                        const v = localeMap[f.name];
+                        return v && typeof v === 'object' && (v as Record<string, unknown>)[loc];
+                      });
+                    return (
+                      <button
+                        key={loc}
+                        type="button"
+                        onClick={() => setActiveLocale(loc)}
+                        className={cn(
+                          'px-2 py-0.5 rounded text-xs font-medium transition-colors',
+                          loc === activeLocale
+                            ? 'bg-primary text-primary-foreground'
+                            : 'text-muted-foreground hover:text-foreground',
+                          hasAnyContent && loc !== activeLocale && 'underline decoration-dotted'
+                        )}
+                        title={hasAnyContent ? `${loc.toUpperCase()} — has content` : loc.toUpperCase()}
+                      >
+                        {loc.toUpperCase()}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {saveSuccess && <span className="text-sm font-medium text-green-600">Saved</span>}
+              {saveError && <span className="text-sm text-red-600">{saveError}</span>}
+              <Button type="submit" disabled={isSaving}>
+                {isSaving ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="mr-2 h-4 w-4" />
+                )}
+                {isSaving ? 'Saving…' : 'Save'}
+              </Button>
+            </>
+          }
+        />
+
+        {/* Fields */}
+        <div
+          style={{ marginTop: 0 }}
+          className={cn(
+            isSliderMode && 'px-4 pb-6 pt-6',
+            isPostCollection || isProductCollection ? 'flex gap-8' : 'grid gap-8 lg:grid-cols-3'
+          )}
+        >
+          {/* Main Content Area */}
+          <div className={isPostCollection || isProductCollection ? 'flex-1 min-w-0' : 'lg:col-span-2 space-y-6'}>
+            {isPostCollection ? (
+              // WordPress-style layout for Posts: stacked with larger rich text editor
+              <div className="space-y-6">
+                {mainFields.map((field) => (
+                  <div key={field.name} className={field.name === 'content' ? 'space-y-2' : 'space-y-2'}>
+                    <label
+                      htmlFor={field.localized ? undefined : field.name}
+                      className="text-sm font-medium leading-none"
+                    >
+                      {getFieldLabel(field)}
+                      {field.required && <span className="text-red-500 ml-1">*</span>}
+                      {field.localized && (
+                        <span className="ml-2 text-xs text-muted-foreground font-normal">
+                          — {activeLocale.toUpperCase()}
+                        </span>
+                      )}
+                    </label>
+                    {/* Make content field larger for posts */}
+                    {field.name === 'content' ? (
+                      <div className="[&_.ProseMirror]:min-h-[400px]">
+                        {renderField(field)}
+                      </div>
+                    ) : (
+                      renderField(field)
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : isProductCollection ? (
+              <div className="space-y-6">
+                {mainFields.map((field) => (
+                  <div key={field.name} className="space-y-2">
+                    <label
+                      htmlFor={field.localized ? undefined : field.name}
+                      className="text-sm font-medium leading-none"
+                    >
+                      {getFieldLabel(field)}
+                      {field.required && <span className="text-red-500 ml-1">*</span>}
+                      {field.localized && (
+                        <span className="ml-2 text-xs text-muted-foreground font-normal">
+                          — {activeLocale.toUpperCase()}
+                        </span>
+                      )}
+                    </label>
+                    {renderField(field)}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              // Default layout for other collections
+              <div className="space-y-6">
+                {mainFields.map((field) => (
+                  <div key={field.name} className="space-y-2">
+                    <label
+                      htmlFor={field.localized ? undefined : field.name}
+                      className="text-sm font-medium leading-none"
+                    >
+                      {getFieldLabel(field)}
+                      {field.required && <span className="text-red-500 ml-1">*</span>}
+                      {field.localized && (
+                        <span className="ml-2 text-xs text-muted-foreground font-normal">
+                          — {activeLocale.toUpperCase()}
+                        </span>
+                      )}
+                    </label>
+                    {renderField(field)}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Sidebar */}
+          <div className={isPostCollection || isProductCollection ? 'w-80 flex-shrink-0 space-y-4' : 'space-y-4'}>
+            {/* Post metadata sidebar - organized in collapsible sections */}
+            {sidebarFields.length > 0 && (
+              <div className="rounded-lg border bg-card divide-y">
+                {isProductCollection && (
+                  <>
+                    {sidebarFields.find((f) => f.name === 'category') && (
+                      <div className="p-4 space-y-3">
+                        <h3 className="font-semibold text-sm">Category</h3>
+                        {renderField(sidebarFields.find((f) => f.name === 'category')!)}
+                      </div>
+                    )}
+
+                    {(sidebarFields.find((f) => f.name === 'featured') || sidebarFields.find((f) => f.name === 'order')) && (
+                      <div className="p-4 space-y-3">
+                        <h3 className="font-semibold text-sm">Display</h3>
+                        {sidebarFields.find((f) => f.name === 'featured') && (
+                          <div className="space-y-1.5">
+                            <label className="text-xs text-muted-foreground">Featured</label>
+                            {renderField(sidebarFields.find((f) => f.name === 'featured')!)}
+                          </div>
+                        )}
+                        {sidebarFields.find((f) => f.name === 'order') && (
+                          <div className="space-y-1.5">
+                            <label className="text-xs text-muted-foreground">Order</label>
+                            {renderField(sidebarFields.find((f) => f.name === 'order')!)}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {isProductCategoryCollection && (
+                  <>
+                    {(sidebarFields.find((f) => f.name === 'slug') || sidebarFields.find((f) => f.name === 'order')) && (
+                      <div className="p-4 space-y-3">
+                        <h3 className="font-semibold text-sm">Structure</h3>
+                        {sidebarFields.find((f) => f.name === 'slug') && (
+                          <div className="space-y-1.5">
+                            <label className="text-xs text-muted-foreground">Slug</label>
+                            {renderField(sidebarFields.find((f) => f.name === 'slug')!)}
+                          </div>
+                        )}
+                        {sidebarFields.find((f) => f.name === 'parentCategoryId') && (
+                          <div className="space-y-1.5">
+                            <label className="text-xs text-muted-foreground">Parent Category</label>
+                            {renderField(sidebarFields.find((f) => f.name === 'parentCategoryId')!)}
+                          </div>
+                        )}
+                        {sidebarFields.find((f) => f.name === 'order') && (
+                          <div className="space-y-1.5">
+                            <label className="text-xs text-muted-foreground">Order</label>
+                            {renderField(sidebarFields.find((f) => f.name === 'order')!)}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {(sidebarFields.find((f) => f.name === 'image') || sidebarFields.find((f) => f.name === 'icon')) && (
+                      <div className="p-4 space-y-3">
+                        <h3 className="font-semibold text-sm">Display</h3>
+                        {sidebarFields.find((f) => f.name === 'image') && (
+                          <div className="space-y-1.5">
+                            <label className="text-xs text-muted-foreground">Image</label>
+                            {renderField(sidebarFields.find((f) => f.name === 'image')!)}
+                          </div>
+                        )}
+                        {sidebarFields.find((f) => f.name === 'icon') && (
+                          <div className="space-y-1.5">
+                            <label className="text-xs text-muted-foreground">Icon</label>
+                            {renderField(sidebarFields.find((f) => f.name === 'icon')!)}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {isCountryCollection && (
+                  <>
+                    {(sidebarFields.find((f) => f.name === 'code') || sidebarFields.find((f) => f.name === 'flag')) && (
+                      <div className="p-4 space-y-3">
+                        <h3 className="font-semibold text-sm">Identity</h3>
+                        {sidebarFields.find((f) => f.name === 'code') && (
+                          <div className="space-y-1.5">
+                            <label className="text-xs text-muted-foreground">Code</label>
+                            {renderField(sidebarFields.find((f) => f.name === 'code')!)}
+                          </div>
+                        )}
+                        {sidebarFields.find((f) => f.name === 'flag') && (
+                          <div className="space-y-1.5">
+                            <label className="text-xs text-muted-foreground">Flag</label>
+                            {renderField(sidebarFields.find((f) => f.name === 'flag')!)}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {(sidebarFields.find((f) => f.name === 'color') || sidebarFields.find((f) => f.name === 'backgroundImage') || sidebarFields.find((f) => f.name === 'order')) && (
+                      <div className="p-4 space-y-3">
+                        <h3 className="font-semibold text-sm">Display</h3>
+                        {sidebarFields.find((f) => f.name === 'color') && (
+                          <div className="space-y-1.5">
+                            <label className="text-xs text-muted-foreground">Accent Color</label>
+                            {renderField(sidebarFields.find((f) => f.name === 'color')!)}
+                          </div>
+                        )}
+                        {sidebarFields.find((f) => f.name === 'backgroundImage') && (
+                          <div className="space-y-1.5">
+                            <label className="text-xs text-muted-foreground">Background Image</label>
+                            {renderField(sidebarFields.find((f) => f.name === 'backgroundImage')!)}
+                          </div>
+                        )}
+                        {sidebarFields.find((f) => f.name === 'order') && (
+                          <div className="space-y-1.5">
+                            <label className="text-xs text-muted-foreground">Order</label>
+                            {renderField(sidebarFields.find((f) => f.name === 'order')!)}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {isJobCollection && (
+                  <>
+                    {(sidebarFields.find((f) => f.name === 'employmentType') || sidebarFields.find((f) => f.name === 'flag')) && (
+                      <div className="p-4 space-y-3">
+                        <h3 className="font-semibold text-sm">Job Meta</h3>
+                        {sidebarFields.find((f) => f.name === 'employmentType') && (
+                          <div className="space-y-1.5">
+                            <label className="text-xs text-muted-foreground">Employment Type</label>
+                            {renderField(sidebarFields.find((f) => f.name === 'employmentType')!)}
+                          </div>
+                        )}
+                        {sidebarFields.find((f) => f.name === 'flag') && (
+                          <div className="space-y-1.5">
+                            <label className="text-xs text-muted-foreground">Flag</label>
+                            {renderField(sidebarFields.find((f) => f.name === 'flag')!)}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {(sidebarFields.find((f) => f.name === 'applyLink') || sidebarFields.find((f) => f.name === 'order')) && (
+                      <div className="p-4 space-y-3">
+                        <h3 className="font-semibold text-sm">Apply & Order</h3>
+                        {sidebarFields.find((f) => f.name === 'applyLink') && (
+                          <div className="space-y-1.5">
+                            <label className="text-xs text-muted-foreground">Apply Link</label>
+                            {renderField(sidebarFields.find((f) => f.name === 'applyLink')!)}
+                          </div>
+                        )}
+                        {sidebarFields.find((f) => f.name === 'order') && (
+                          <div className="space-y-1.5">
+                            <label className="text-xs text-muted-foreground">Order</label>
+                            {renderField(sidebarFields.find((f) => f.name === 'order')!)}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {!isProductCollection && !isProductCategoryCollection && !isCountryCollection && !isJobCollection && (
+                  <>
+                    {/* Status Section */}
+                    {sidebarFields.find((f) => f.name === 'status') && (
+                      <div className="p-4 space-y-3">
+                        <h3 className="font-semibold text-sm flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-green-500" />
+                          Status
+                        </h3>
+                        {renderField(sidebarFields.find((f) => f.name === 'status')!)}
+                      </div>
+                    )}
+
+                    {/* Publication Section */}
+                    {(sidebarFields.find((f) => f.name === 'publishedAt') || sidebarFields.find((f) => f.name === 'category')) && (
+                      <div className="p-4 space-y-3">
+                        <h3 className="font-semibold text-sm">Publication</h3>
+                        {sidebarFields.find((f) => f.name === 'category') && (
+                          <div className="space-y-1.5">
+                            <label className="text-xs text-muted-foreground">Category</label>
+                            {renderField(sidebarFields.find((f) => f.name === 'category')!)}
+                          </div>
+                        )}
+                        {sidebarFields.find((f) => f.name === 'publishedAt') && (
+                          <div className="space-y-1.5">
+                            <label className="text-xs text-muted-foreground">Publish Date</label>
+                            {renderField(sidebarFields.find((f) => f.name === 'publishedAt')!)}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Media Section */}
+                    {sidebarFields.find((f) => f.name === 'featuredImage') && (
+                      <div className="p-4 space-y-3">
+                        <h3 className="font-semibold text-sm">Featured Image</h3>
+                        {renderField(sidebarFields.find((f) => f.name === 'featuredImage')!)}
+                      </div>
+                    )}
+
+                    {/* Author Section */}
+                    {sidebarFields.find((f) => f.name === 'author') && (
+                      <div className="p-4 space-y-3">
+                        <h3 className="font-semibold text-sm">Author</h3>
+                        {renderField(sidebarFields.find((f) => f.name === 'author')!)}
+                      </div>
+                    )}
+
+                    {/* Tags Section */}
+                    {sidebarFields.find((f) => f.name === 'tags') && (
+                      <div className="p-4 space-y-3">
+                        <h3 className="font-semibold text-sm">Tags</h3>
+                        {renderField(sidebarFields.find((f) => f.name === 'tags')!)}
+                      </div>
+                    )}
+
+                    {/* SEO Section */}
+                    {sidebarFields.find((f) => f.name === 'seo') && (
+                      <div className="p-4 space-y-3">
+                        <h3 className="font-semibold text-sm flex items-center gap-2">
+                          <span className="text-lg">🔍</span>
+                          SEO
+                        </h3>
+                        {renderField(sidebarFields.find((f) => f.name === 'seo')!)}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Password field for users */}
+            {collection.slug === 'users' && (
+              <div className="rounded-lg border bg-card p-4 space-y-4">
+                {sidebarFields.map((field) => (
+                  <div key={field.name} className="space-y-1.5">
+                    <label
+                      htmlFor={field.localized ? undefined : field.name}
+                      className="text-sm font-medium leading-none"
+                    >
+                      {getFieldLabel(field)}
+                      {field.required && <span className="text-red-500 ml-1">*</span>}
+                    </label>
+                    {renderField(field)}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Password field for users */}
+            {collection.slug === 'users' && (
+              <div className="rounded-lg border bg-card p-4 space-y-3">
+                <h3 className="font-semibold text-sm">
+                  {documentId ? 'Change Password' : 'Password'}
+                </h3>
+                <input
+                  type="password"
+                  placeholder={documentId ? 'Leave blank to keep current' : 'Set password'}
+                  onChange={(e) => updateField('password', e.target.value)}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                />
+              </div>
+            )}
+
+            {/* Actions */}
+            {documentId && (
+              <div className="rounded-lg border bg-card p-4 space-y-2">
+                <h3 className="font-semibold text-sm">Actions</h3>
+
+                {/* Publish / Unpublish */}
+                {hasStatusField && (
+                  isPublished ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-start"
+                      onClick={() => handlePublish('draft')}
+                      disabled={isSaving}
+                    >
+                      <GlobeLock className="mr-2 h-4 w-4" />
+                      Unpublish
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-start text-green-700 hover:text-green-700 hover:bg-green-50"
+                      onClick={() => handlePublish('published')}
+                      disabled={isSaving}
+                    >
+                      <Globe className="mr-2 h-4 w-4" />
+                      Publish
+                    </Button>
+                  )
+                )}
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-start text-red-600 hover:text-red-600 hover:bg-red-50"
+                  onClick={handleDelete}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete {collection.labels.singular}
+                </Button>
+              </div>
+            )}
           </div>
         </div>
-
-        <div className="flex items-center gap-3">
-          {collection.slug === 'blocks' && documentId && (
-            <Link href={`/admin/blocks/${documentId}/content`}>
-              <Button type="button" variant="outline">
-                <PencilLine className="mr-2 h-4 w-4" />
-                Edit Content
-              </Button>
-            </Link>
-          )}
-
-          {isPageCollection && documentId && previewUrl && (
-            <a href={previewUrl} target="_blank" rel="noreferrer">
-              <Button type="button" variant="outline">
-                <Eye className="mr-2 h-4 w-4" />
-                Preview
-              </Button>
-            </a>
-          )}
-
-          {hasVersions && documentId && (
-            <Link href={`/admin/${collection.slug}/${documentId}/history`}>
-              <Button type="button" variant="outline">
-                <Clock className="mr-2 h-4 w-4" />
-                History
-              </Button>
-            </Link>
-          )}
-
-          {/* Locale switcher — only shown for collections with localized fields */}
-          {hasLocalizedFields && (
-            <div className="flex items-center gap-1.5 rounded-md border border-input px-2 py-1">
-              <span className="text-xs text-muted-foreground">Locale:</span>
-              {collectionLocales.map((loc) => {
-                const localeMap = formData as Record<string, Record<string, unknown>>;
-                const hasAnyContent = collection.fields
-                  .filter((f) => f.localized)
-                  .some((f) => {
-                    const v = localeMap[f.name];
-                    return v && typeof v === 'object' && (v as Record<string, unknown>)[loc];
-                  });
-                return (
-                  <button
-                    key={loc}
-                    type="button"
-                    onClick={() => setActiveLocale(loc)}
-                    className={cn(
-                      'px-2 py-0.5 rounded text-xs font-medium transition-colors',
-                      loc === activeLocale
-                        ? 'bg-primary text-primary-foreground'
-                        : 'text-muted-foreground hover:text-foreground',
-                      hasAnyContent && loc !== activeLocale && 'underline decoration-dotted'
-                    )}
-                    title={hasAnyContent ? `${loc.toUpperCase()} — has content` : loc.toUpperCase()}
-                  >
-                    {loc.toUpperCase()}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {saveSuccess && (
-            <span className="text-sm text-green-600 font-medium">Saved</span>
-          )}
-          {saveError && (
-            <span className="text-sm text-red-600">{saveError}</span>
-          )}
-          <Button type="submit" disabled={isSaving}>
-            {isSaving ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="mr-2 h-4 w-4" />
-            )}
-            {isSaving ? 'Saving…' : 'Save'}
-          </Button>
-        </div>
-      </div>
-
-      {/* Fields */}
-      <div className={isPostCollection || isProductCollection ? 'flex gap-8' : sidebarFields.length > 0 ? 'grid gap-8 lg:grid-cols-3' : 'grid gap-8 lg:grid-cols-3'}>
-        {/* Main Content Area */}
-        <div className={isPostCollection || isProductCollection ? 'flex-1 min-w-0' : 'lg:col-span-2 space-y-6'}>
-          {isPostCollection ? (
-            // WordPress-style layout for Posts: stacked with larger rich text editor
-            <div className="space-y-6">
-              {mainFields.map((field) => (
-                <div key={field.name} className={field.name === 'content' ? 'space-y-2' : 'space-y-2'}>
-                  <label
-                    htmlFor={field.localized ? undefined : field.name}
-                    className="text-sm font-medium leading-none"
-                  >
-                    {getFieldLabel(field)}
-                    {field.required && <span className="text-red-500 ml-1">*</span>}
-                    {field.localized && (
-                      <span className="ml-2 text-xs text-muted-foreground font-normal">
-                        — {activeLocale.toUpperCase()}
-                      </span>
-                    )}
-                  </label>
-                  {/* Make content field larger for posts */}
-                  {field.name === 'content' ? (
-                    <div className="[&_.ProseMirror]:min-h-[400px]">
-                      {renderField(field)}
-                    </div>
-                  ) : (
-                    renderField(field)
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : isProductCollection ? (
-            <div className="space-y-6">
-              {mainFields.map((field) => (
-                <div key={field.name} className="space-y-2">
-                  <label
-                    htmlFor={field.localized ? undefined : field.name}
-                    className="text-sm font-medium leading-none"
-                  >
-                    {getFieldLabel(field)}
-                    {field.required && <span className="text-red-500 ml-1">*</span>}
-                    {field.localized && (
-                      <span className="ml-2 text-xs text-muted-foreground font-normal">
-                        — {activeLocale.toUpperCase()}
-                      </span>
-                    )}
-                  </label>
-                  {renderField(field)}
-                </div>
-              ))}
-            </div>
-          ) : (
-            // Default layout for other collections
-            <div className="space-y-6">
-              {mainFields.map((field) => (
-                <div key={field.name} className="space-y-2">
-                  <label
-                    htmlFor={field.localized ? undefined : field.name}
-                    className="text-sm font-medium leading-none"
-                  >
-                    {getFieldLabel(field)}
-                    {field.required && <span className="text-red-500 ml-1">*</span>}
-                    {field.localized && (
-                      <span className="ml-2 text-xs text-muted-foreground font-normal">
-                        — {activeLocale.toUpperCase()}
-                      </span>
-                    )}
-                  </label>
-                  {renderField(field)}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Sidebar */}
-        <div className={isPostCollection || isProductCollection ? 'w-80 flex-shrink-0 space-y-4' : 'space-y-4'}>
-          {/* Post metadata sidebar - organized in collapsible sections */}
-          {sidebarFields.length > 0 && (
-            <div className="rounded-lg border bg-card divide-y">
-              {isProductCollection && (
-                <>
-                  {sidebarFields.find((f) => f.name === 'category') && (
-                    <div className="p-4 space-y-3">
-                      <h3 className="font-semibold text-sm">Category</h3>
-                      {renderField(sidebarFields.find((f) => f.name === 'category')!)}
-                    </div>
-                  )}
-
-                  {(sidebarFields.find((f) => f.name === 'featured') || sidebarFields.find((f) => f.name === 'order')) && (
-                    <div className="p-4 space-y-3">
-                      <h3 className="font-semibold text-sm">Display</h3>
-                      {sidebarFields.find((f) => f.name === 'featured') && (
-                        <div className="space-y-1.5">
-                          <label className="text-xs text-muted-foreground">Featured</label>
-                          {renderField(sidebarFields.find((f) => f.name === 'featured')!)}
-                        </div>
-                      )}
-                      {sidebarFields.find((f) => f.name === 'order') && (
-                        <div className="space-y-1.5">
-                          <label className="text-xs text-muted-foreground">Order</label>
-                          {renderField(sidebarFields.find((f) => f.name === 'order')!)}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </>
-              )}
-
-              {isProductCategoryCollection && (
-                <>
-                  {(sidebarFields.find((f) => f.name === 'slug') || sidebarFields.find((f) => f.name === 'order')) && (
-                    <div className="p-4 space-y-3">
-                      <h3 className="font-semibold text-sm">Structure</h3>
-                      {sidebarFields.find((f) => f.name === 'slug') && (
-                        <div className="space-y-1.5">
-                          <label className="text-xs text-muted-foreground">Slug</label>
-                          {renderField(sidebarFields.find((f) => f.name === 'slug')!)}
-                        </div>
-                      )}
-                      {sidebarFields.find((f) => f.name === 'parentCategoryId') && (
-                        <div className="space-y-1.5">
-                          <label className="text-xs text-muted-foreground">Parent Category</label>
-                          {renderField(sidebarFields.find((f) => f.name === 'parentCategoryId')!)}
-                        </div>
-                      )}
-                      {sidebarFields.find((f) => f.name === 'order') && (
-                        <div className="space-y-1.5">
-                          <label className="text-xs text-muted-foreground">Order</label>
-                          {renderField(sidebarFields.find((f) => f.name === 'order')!)}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {(sidebarFields.find((f) => f.name === 'image') || sidebarFields.find((f) => f.name === 'icon')) && (
-                    <div className="p-4 space-y-3">
-                      <h3 className="font-semibold text-sm">Display</h3>
-                      {sidebarFields.find((f) => f.name === 'image') && (
-                        <div className="space-y-1.5">
-                          <label className="text-xs text-muted-foreground">Image</label>
-                          {renderField(sidebarFields.find((f) => f.name === 'image')!)}
-                        </div>
-                      )}
-                      {sidebarFields.find((f) => f.name === 'icon') && (
-                        <div className="space-y-1.5">
-                          <label className="text-xs text-muted-foreground">Icon</label>
-                          {renderField(sidebarFields.find((f) => f.name === 'icon')!)}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </>
-              )}
-
-              {isCountryCollection && (
-                <>
-                  {(sidebarFields.find((f) => f.name === 'code') || sidebarFields.find((f) => f.name === 'flag')) && (
-                    <div className="p-4 space-y-3">
-                      <h3 className="font-semibold text-sm">Identity</h3>
-                      {sidebarFields.find((f) => f.name === 'code') && (
-                        <div className="space-y-1.5">
-                          <label className="text-xs text-muted-foreground">Code</label>
-                          {renderField(sidebarFields.find((f) => f.name === 'code')!)}
-                        </div>
-                      )}
-                      {sidebarFields.find((f) => f.name === 'flag') && (
-                        <div className="space-y-1.5">
-                          <label className="text-xs text-muted-foreground">Flag</label>
-                          {renderField(sidebarFields.find((f) => f.name === 'flag')!)}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {(sidebarFields.find((f) => f.name === 'color') || sidebarFields.find((f) => f.name === 'backgroundImage') || sidebarFields.find((f) => f.name === 'order')) && (
-                    <div className="p-4 space-y-3">
-                      <h3 className="font-semibold text-sm">Display</h3>
-                      {sidebarFields.find((f) => f.name === 'color') && (
-                        <div className="space-y-1.5">
-                          <label className="text-xs text-muted-foreground">Accent Color</label>
-                          {renderField(sidebarFields.find((f) => f.name === 'color')!)}
-                        </div>
-                      )}
-                      {sidebarFields.find((f) => f.name === 'backgroundImage') && (
-                        <div className="space-y-1.5">
-                          <label className="text-xs text-muted-foreground">Background Image</label>
-                          {renderField(sidebarFields.find((f) => f.name === 'backgroundImage')!)}
-                        </div>
-                      )}
-                      {sidebarFields.find((f) => f.name === 'order') && (
-                        <div className="space-y-1.5">
-                          <label className="text-xs text-muted-foreground">Order</label>
-                          {renderField(sidebarFields.find((f) => f.name === 'order')!)}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </>
-              )}
-
-              {isJobCollection && (
-                <>
-                  {(sidebarFields.find((f) => f.name === 'employmentType') || sidebarFields.find((f) => f.name === 'flag')) && (
-                    <div className="p-4 space-y-3">
-                      <h3 className="font-semibold text-sm">Job Meta</h3>
-                      {sidebarFields.find((f) => f.name === 'employmentType') && (
-                        <div className="space-y-1.5">
-                          <label className="text-xs text-muted-foreground">Employment Type</label>
-                          {renderField(sidebarFields.find((f) => f.name === 'employmentType')!)}
-                        </div>
-                      )}
-                      {sidebarFields.find((f) => f.name === 'flag') && (
-                        <div className="space-y-1.5">
-                          <label className="text-xs text-muted-foreground">Flag</label>
-                          {renderField(sidebarFields.find((f) => f.name === 'flag')!)}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {(sidebarFields.find((f) => f.name === 'applyLink') || sidebarFields.find((f) => f.name === 'order')) && (
-                    <div className="p-4 space-y-3">
-                      <h3 className="font-semibold text-sm">Apply & Order</h3>
-                      {sidebarFields.find((f) => f.name === 'applyLink') && (
-                        <div className="space-y-1.5">
-                          <label className="text-xs text-muted-foreground">Apply Link</label>
-                          {renderField(sidebarFields.find((f) => f.name === 'applyLink')!)}
-                        </div>
-                      )}
-                      {sidebarFields.find((f) => f.name === 'order') && (
-                        <div className="space-y-1.5">
-                          <label className="text-xs text-muted-foreground">Order</label>
-                          {renderField(sidebarFields.find((f) => f.name === 'order')!)}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </>
-              )}
-
-              {!isProductCollection && !isProductCategoryCollection && !isCountryCollection && !isJobCollection && (
-                <>
-              {/* Status Section */}
-              {sidebarFields.find((f) => f.name === 'status') && (
-                <div className="p-4 space-y-3">
-                  <h3 className="font-semibold text-sm flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-green-500" />
-                    Status
-                  </h3>
-                  {renderField(sidebarFields.find((f) => f.name === 'status')!)}
-                </div>
-              )}
-
-              {/* Publication Section */}
-              {(sidebarFields.find((f) => f.name === 'publishedAt') || sidebarFields.find((f) => f.name === 'category')) && (
-                <div className="p-4 space-y-3">
-                  <h3 className="font-semibold text-sm">Publication</h3>
-                  {sidebarFields.find((f) => f.name === 'category') && (
-                    <div className="space-y-1.5">
-                      <label className="text-xs text-muted-foreground">Category</label>
-                      {renderField(sidebarFields.find((f) => f.name === 'category')!)}
-                    </div>
-                  )}
-                  {sidebarFields.find((f) => f.name === 'publishedAt') && (
-                    <div className="space-y-1.5">
-                      <label className="text-xs text-muted-foreground">Publish Date</label>
-                      {renderField(sidebarFields.find((f) => f.name === 'publishedAt')!)}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Media Section */}
-              {sidebarFields.find((f) => f.name === 'featuredImage') && (
-                <div className="p-4 space-y-3">
-                  <h3 className="font-semibold text-sm">Featured Image</h3>
-                  {renderField(sidebarFields.find((f) => f.name === 'featuredImage')!)}
-                </div>
-              )}
-
-              {/* Author Section */}
-              {sidebarFields.find((f) => f.name === 'author') && (
-                <div className="p-4 space-y-3">
-                  <h3 className="font-semibold text-sm">Author</h3>
-                  {renderField(sidebarFields.find((f) => f.name === 'author')!)}
-                </div>
-              )}
-
-              {/* Tags Section */}
-              {sidebarFields.find((f) => f.name === 'tags') && (
-                <div className="p-4 space-y-3">
-                  <h3 className="font-semibold text-sm">Tags</h3>
-                  {renderField(sidebarFields.find((f) => f.name === 'tags')!)}
-                </div>
-              )}
-
-              {/* SEO Section */}
-              {sidebarFields.find((f) => f.name === 'seo') && (
-                <div className="p-4 space-y-3">
-                  <h3 className="font-semibold text-sm flex items-center gap-2">
-                    <span className="text-lg">🔍</span>
-                    SEO
-                  </h3>
-                  {renderField(sidebarFields.find((f) => f.name === 'seo')!)}
-                </div>
-              )}
-                </>
-              )}
-            </div>
-          )}
-
-          {/* Password field for users */}
-          {collection.slug === 'users' && (
-            <div className="rounded-lg border bg-card p-4 space-y-4">
-              {sidebarFields.map((field) => (
-                <div key={field.name} className="space-y-1.5">
-                  <label
-                    htmlFor={field.localized ? undefined : field.name}
-                    className="text-sm font-medium leading-none"
-                  >
-                    {getFieldLabel(field)}
-                    {field.required && <span className="text-red-500 ml-1">*</span>}
-                  </label>
-                  {renderField(field)}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Password field for users */}
-          {collection.slug === 'users' && (
-            <div className="rounded-lg border bg-card p-4 space-y-3">
-              <h3 className="font-semibold text-sm">
-                {documentId ? 'Change Password' : 'Password'}
-              </h3>
-              <input
-                type="password"
-                placeholder={documentId ? 'Leave blank to keep current' : 'Set password'}
-                onChange={(e) => updateField('password', e.target.value)}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              />
-            </div>
-          )}
-
-          {/* Actions */}
-          {documentId && (
-            <div className="rounded-lg border bg-card p-4 space-y-2">
-              <h3 className="font-semibold text-sm">Actions</h3>
-
-              {/* Publish / Unpublish */}
-              {hasStatusField && (
-                isPublished ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="w-full justify-start"
-                    onClick={() => handlePublish('draft')}
-                    disabled={isSaving}
-                  >
-                    <GlobeLock className="mr-2 h-4 w-4" />
-                    Unpublish
-                  </Button>
-                ) : (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="w-full justify-start text-green-700 hover:text-green-700 hover:bg-green-50"
-                    onClick={() => handlePublish('published')}
-                    disabled={isSaving}
-                  >
-                    <Globe className="mr-2 h-4 w-4" />
-                    Publish
-                  </Button>
-                )
-              )}
-
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="w-full justify-start text-red-600 hover:text-red-600 hover:bg-red-50"
-                onClick={handleDelete}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete {collection.labels.singular}
-              </Button>
-            </div>
-          )}
-        </div>
-      </div>
       </form>
 
       {quickAddField && quickAddCollection && (
