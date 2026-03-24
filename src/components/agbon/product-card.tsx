@@ -70,7 +70,7 @@ export function AgbonProductCard({ product, locale = 'en', showSpecs = true }: P
           />
         </div>
 
-        <div className="p-2 md:p-5 flex-1 flex flex-col bg-white">
+        <div className="p-2 md:p-3 flex-1 flex flex-col bg-white">
           <div className="overflow-hidden">
             <h3 className="font-bold text-[#FF6B35] text-sm md:text-base leading-snug overflow-hidden">
               <span className="line-clamp-2" title={productName}>{productName}</span>

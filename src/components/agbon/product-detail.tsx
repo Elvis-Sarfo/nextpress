@@ -4,6 +4,7 @@ import { t as agbonT } from '@/lib/agbon-translations'
 import { buildLocalizedPath } from '@/lib/agbon-routes'
 import { AgbonProductCard } from './product-card'
 import { ProductDetailGallery } from './product-detail-gallery'
+import { DEFAULT_AGBON_PRODUCT_GRID_COLUMNS } from './product-list'
 
 interface ProductDetailProps {
   product: ProductRecord
@@ -105,7 +106,7 @@ export function AgbonProductDetail({
         {relatedProducts.length > 0 && (
           <div>
             <h3 className="text-xl font-bold mb-4 text-black">{agbonT('common.relatedProducts', locale)}</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className={`grid ${DEFAULT_AGBON_PRODUCT_GRID_COLUMNS} gap-2`}>
               {relatedProducts.slice(0, 4).map((p) => (
                 <AgbonProductCard key={p.id} product={p} locale={locale} />
               ))}
