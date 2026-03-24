@@ -60,8 +60,14 @@ export function AgbonProductCard({ product, locale = 'en', showSpecs = true }: P
   return (
     <Link href={buildProductPath(locale, product.slug)}>
       <div className="bg-white rounded-[8px] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer h-full flex flex-col border-2 border-[#e7e9ef] hover:border-[#FF6B35]/40 hover:scale-[1.01]">
-        <div className="relative w-full aspect-[4/3] bg-[#f6f7fb]">
-          <Image src={imageUrl} alt={productName} fill className="object-cover" />
+        <div className="relative flex w-full aspect-[4/3] items-center justify-center overflow-hidden bg-[#f6f7fb] p-2 md:p-3">
+          <Image
+            src={imageUrl}
+            alt={productName}
+            fill
+            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+            className="object-contain object-center"
+          />
         </div>
 
         <div className="p-2 md:p-5 flex-1 flex flex-col bg-white">
