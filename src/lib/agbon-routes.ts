@@ -12,8 +12,9 @@ export function buildProductPath(locale: string, slug: string): string {
   return buildLocalizedPath(locale, `/products/${slug}`)
 }
 
-export function buildProductCategoryPath(locale: string, categoryId: string): string {
-  return `${buildLocalizedPath(locale, '/products')}?category=${encodeURIComponent(categoryId)}`
+export function buildProductCategoryPath(locale: string, categoryPath: string | string[]): string {
+  const pathSegments = Array.isArray(categoryPath) ? categoryPath : [categoryPath]
+  return buildLocalizedPath(locale, `/products/category/${pathSegments.join('/')}`)
 }
 
 export function buildPostsListingPath(locale: string, page?: number): string {

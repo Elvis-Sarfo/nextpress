@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { ChevronRight } from 'lucide-react'
 import { ProductCategoryRecord } from '@/lib/cms'
+import { buildProductCategoryPath } from '@/lib/agbon-routes'
 
 interface CategoryCardProps {
   category: ProductCategoryRecord
@@ -89,7 +90,7 @@ export function AgbonCategoryCard({
   }
 
   return (
-    <Link href={`/${locale}/products?category=${category.id}`} className="block">
+    <Link href={buildProductCategoryPath(locale, category.path)} className="block">
       {cardContent}
     </Link>
   )

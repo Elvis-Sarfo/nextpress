@@ -18,7 +18,7 @@ export function ProductPageSidebar({ locale, categories }: ProductPageSidebarPro
       showSearch
       showAllProducts
       showHotSelling
-      showCategoryHeading
+      showCategoryHeading={false}
     />
   )
 }

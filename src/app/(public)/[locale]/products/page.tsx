@@ -1,10 +1,12 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import {
   localeEngine,
+  getProductCategory,
   getProducts,
   getProductCategories,
 } from '@/lib/cms';
 import { getSiteConfig } from '@/lib/site-config';
+import { buildProductCategoryPath } from '@/lib/agbon-routes';
 import { AgbonProductList, DEFAULT_AGBON_PRODUCT_GRID_COLUMNS } from '@/components/agbon/product-list';
 import { ProductPageShell } from '@/components/agbon/product-page-shell';
 import type { Metadata } from 'next';
@@ -20,6 +22,19 @@ export default async function ProductsPage({ params, searchParams }: Props) {
 
   if (!localeEngine.isSupported(locale)) {
     notFound();
+  }
+
+  if (category) {
+    const matchedCategory = await getProductCategory(category);
+    if (matchedCategory) {
+      const params = new URLSearchParams();
+      if (search) params.set('search', search);
+      if (featured) params.set('featured', featured);
+      if (page) params.set('page', page);
+      const queryString = params.toString();
+      const target = buildProductCategoryPath(locale, matchedCategory.path);
+      redirect(queryString ? `${target}?${queryString}` : target);
+    }
   }
 
   const currentPage = parseInt(page || '1', 10);

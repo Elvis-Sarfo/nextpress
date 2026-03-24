@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next';
-import { getPages, getPosts, localeEngine } from '@/lib/cms';
+import { getPages, getPosts, getProductCategories, localeEngine } from '@/lib/cms';
+import { buildProductCategoryPath } from '@/lib/agbon-routes';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000';
@@ -18,9 +19,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   // Fetch all published content
-  const [pagesResult, postsResult] = await Promise.all([
+  const [pagesResult, postsResult, productCategories] = await Promise.all([
     getPages({ status: 'PUBLISHED', limit: 1000 }),
     getPosts({ status: 'PUBLISHED', limit: 1000 }),
+    getProductCategories(),
   ]);
 
   // Add pages to sitemap — pages use locale-first JSON slug: { en: '...', fr: '...' }
@@ -63,6 +65,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       });
       break;
     }
+  }
+
+  for (const category of productCategories) {
+    const alternates = Object.fromEntries(
+      locales.map((locale) => [locale, `${baseUrl}${buildProductCategoryPath(locale, category.path)}`]),
+    );
+
+    entries.push({
+      url: `${baseUrl}${buildProductCategoryPath(locales[0], category.path)}`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.7,
+      alternates: Object.keys(alternates).length > 1 ? { languages: alternates } : undefined,
+    });
   }
 
   return entries;

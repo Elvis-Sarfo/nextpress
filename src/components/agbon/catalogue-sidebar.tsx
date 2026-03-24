@@ -30,7 +30,7 @@ export function CatalogueSidebar({
   showSearch = true,
   showAllProducts = true,
   showHotSelling = true,
-  showCategoryHeading = true,
+  showCategoryHeading = false,
 }: CatalogueSidebarProps) {
   const [searchOpen, setSearchOpen] = useState(false)
   const useDialogSearch = showSearch && shouldUseDialogSearch(layoutMode, searchMode)

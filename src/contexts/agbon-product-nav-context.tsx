@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { buildLocalizedPath } from '@/lib/agbon-routes'
 
 interface ProductNavContextValue {
   selectedCategory: string | null
@@ -25,6 +26,8 @@ interface ProductNavProviderProps {
   mode?: 'navigation' | 'filter'
   syncWithUrl?: boolean
   locale?: string
+  activeCategoryId?: string | null
+  categoryPaths?: Record<string, string>
 }
 
 export function AgbonProductNavProvider({
@@ -32,11 +35,13 @@ export function AgbonProductNavProvider({
   mode = 'filter',
   syncWithUrl = false,
   locale = 'en',
+  activeCategoryId = null,
+  categoryPaths,
 }: ProductNavProviderProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const initialCategory = syncWithUrl ? searchParams.get('category') || null : null
+  const initialCategory = activeCategoryId ?? (syncWithUrl ? searchParams.get('category') || null : null)
   const initialSearch = syncWithUrl ? searchParams.get('search') || '' : ''
   const initialFeatured = syncWithUrl ? searchParams.get('featured') === 'true' : false
 
@@ -45,17 +50,50 @@ export function AgbonProductNavProvider({
   const [featuredOnly, setFeaturedOnlyState] = useState(initialFeatured)
 
   useEffect(() => {
-    if (syncWithUrl) {
+    if (activeCategoryId !== null) {
+      setSelectedCategory(activeCategoryId)
+      setSearchQuery(searchParams.get('search') || '')
+      setFeaturedOnlyState(searchParams.get('featured') === 'true')
+    } else if (syncWithUrl) {
       setSelectedCategory(searchParams.get('category') || null)
       setSearchQuery(searchParams.get('search') || '')
       setFeaturedOnlyState(searchParams.get('featured') === 'true')
     }
-  }, [searchParams, syncWithUrl])
+  }, [activeCategoryId, searchParams, syncWithUrl])
+
+  const getCategoryUrl = useCallback(
+    (categoryId: string) => {
+      const categoryPath = categoryPaths?.[categoryId]
+      if (!categoryPath) return null
+
+      if (!syncWithUrl) {
+        return categoryPath
+      }
+
+      const params = new URLSearchParams(searchParams.toString())
+      params.delete('category')
+      params.delete('featured')
+      params.delete('page')
+      const queryString = params.toString()
+      return queryString ? `${categoryPath}?${queryString}` : categoryPath
+    },
+    [categoryPaths, searchParams, syncWithUrl],
+  )
 
   const setCategory = useCallback(
     (categoryId: string | null) => {
       setSelectedCategory(categoryId)
-      setFeaturedOnlyState(false)
+      if (activeCategoryId === null) {
+        setFeaturedOnlyState(false)
+      }
+
+      if (categoryId) {
+        const categoryUrl = getCategoryUrl(categoryId)
+        if (categoryUrl) {
+          router.push(categoryUrl, { scroll: false })
+          return
+        }
+      }
 
       if (mode === 'navigation' && categoryId) {
         router.push(`/${locale}/products?category=${categoryId}`)
@@ -71,7 +109,7 @@ export function AgbonProductNavProvider({
         router.push(`?${params.toString()}`, { scroll: false })
       }
     },
-    [mode, syncWithUrl, router, searchParams, locale],
+    [activeCategoryId, getCategoryUrl, mode, syncWithUrl, router, searchParams, locale],
   )
 
   const setSearch = useCallback(
@@ -95,7 +133,26 @@ export function AgbonProductNavProvider({
   const setFeaturedOnly = useCallback(
     (nextFeaturedOnly: boolean) => {
       setFeaturedOnlyState(nextFeaturedOnly)
-      setSelectedCategory(null)
+      if (activeCategoryId === null) {
+        setSelectedCategory(null)
+      }
+
+      if (activeCategoryId !== null) {
+        const params = new URLSearchParams(searchParams.toString())
+        if (nextFeaturedOnly) {
+          params.set('featured', 'true')
+        } else {
+          params.delete('featured')
+        }
+        params.delete('page')
+
+        const categoryPath = categoryPaths?.[activeCategoryId]
+        if (categoryPath) {
+          const queryString = params.toString()
+          router.push(queryString ? `${categoryPath}?${queryString}` : categoryPath, { scroll: false })
+          return
+        }
+      }
 
       if (mode === 'navigation' && nextFeaturedOnly) {
         router.push(`/${locale}/products?featured=true`)
@@ -113,7 +170,7 @@ export function AgbonProductNavProvider({
         router.push(`?${params.toString()}`, { scroll: false })
       }
     },
-    [mode, syncWithUrl, router, searchParams, locale],
+    [activeCategoryId, categoryPaths, mode, syncWithUrl, router, searchParams, locale],
   )
 
   const resetFilters = useCallback(() => {
@@ -121,29 +178,45 @@ export function AgbonProductNavProvider({
     setSearchQuery('')
     setFeaturedOnlyState(false)
 
+    const productsPath = buildLocalizedPath(locale, '/products')
+
     if (mode === 'navigation') {
-      router.push(`/${locale}/products`)
+      router.push(productsPath)
     } else if (syncWithUrl) {
       const params = new URLSearchParams(searchParams.toString())
       params.delete('category')
       params.delete('search')
       params.delete('featured')
       params.delete('page')
-      router.push(`?${params.toString()}`, { scroll: false })
+      const queryString = params.toString()
+      router.push(queryString ? `${productsPath}?${queryString}` : productsPath, { scroll: false })
     }
   }, [mode, syncWithUrl, router, searchParams, locale])
 
   const navigateToProducts = useCallback(
     (params?: { category?: string; search?: string; featured?: boolean }, navLocale?: string) => {
+      const target = navLocale || locale
+
+      if (params?.category) {
+        const categoryPath = categoryPaths?.[params.category]
+        if (categoryPath) {
+          const queryParams = new URLSearchParams()
+          if (params.search) queryParams.set('search', params.search)
+          if (params.featured) queryParams.set('featured', 'true')
+          const queryString = queryParams.toString()
+          router.push(queryString ? `${categoryPath}?${queryString}` : categoryPath)
+          return
+        }
+      }
+
       const queryParams = new URLSearchParams()
       if (params?.category) queryParams.set('category', params.category)
       if (params?.search) queryParams.set('search', params.search)
       if (params?.featured) queryParams.set('featured', 'true')
       const queryString = queryParams.toString()
-      const target = navLocale || locale
       router.push(queryString ? `/${target}/products?${queryString}` : `/${target}/products`)
     },
-    [router, locale],
+    [categoryPaths, router, locale],
   )
 
   return (

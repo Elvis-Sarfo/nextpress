@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { ProductCategoryRecord } from '@/lib/cms';
 import { AgbonProductNavProvider } from '@/contexts/agbon-product-nav-context';
-import { buildPostCategoryPath, buildPostsListingPath } from '@/lib/agbon-routes';
+import { buildPostCategoryPath, buildPostsListingPath, buildProductCategoryPath } from '@/lib/agbon-routes';
 import { ProductPageSidebar } from './product-page-sidebar';
 
 export interface EditorialSidebarCategory {
@@ -23,6 +23,10 @@ export function EditorialPageSidebar({
   activeCategorySlug = null,
   productCategories = [],
 }: EditorialPageSidebarProps) {
+  const productCategoryPaths = Object.fromEntries(
+    productCategories.map((category) => [category.id, buildProductCategoryPath(locale, category.path)]),
+  );
+
   return (
     <div className="space-y-4">
       <aside className="overflow-hidden rounded-[.3rem] border border-[#eadfca] bg-white shadow-sm md:rounded-lg">
@@ -80,7 +84,12 @@ export function EditorialPageSidebar({
 
       {productCategories.length > 0 ? (
         <div className="w-16 md:w-64 lg:w-72 shrink-0 sticky top-5 self-start">
-          <AgbonProductNavProvider mode="navigation" syncWithUrl={false} locale={locale}>
+          <AgbonProductNavProvider
+            mode="navigation"
+            syncWithUrl={false}
+            locale={locale}
+            categoryPaths={productCategoryPaths}
+          >
             <ProductPageSidebar locale={locale} categories={productCategories} />
           </AgbonProductNavProvider>
         </div>

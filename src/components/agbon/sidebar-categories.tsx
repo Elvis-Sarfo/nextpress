@@ -81,7 +81,7 @@ export function AgbonSidebarCategories({
   showSearch = true,
   showAllProducts = true,
   showHotSelling = true,
-  showCategoryHeading = true,
+  showCategoryHeading = false,
 }: SidebarCategoriesProps) {
   const {
     selectedCategory,
@@ -103,7 +103,10 @@ export function AgbonSidebarCategories({
     ? 'relative flex w-full flex-col items-center justify-center gap-1 px-1 py-1 text-center text-white transition md:flex-row md:items-center md:justify-start md:gap-3 md:px-1 md:py-1 md:text-left'
     : 'relative flex w-full flex-col items-center justify-center gap-1 px-1 py-1 text-center text-white transition'
   const compactInactive = 'bg-transparent hover:bg-white/[0.04]'
-  const compactActive = isResponsive ? 'bg-black md:bg-[#1a1a1a]' : 'bg-black'
+  const compactActive = isResponsive
+    ? 'bg-black text-white ring-1 ring-inset ring-[#ff8a2a]/50 md:bg-[#111111]'
+    : 'bg-black text-white ring-1 ring-inset ring-[#ff8a2a]/50'
+  const compactExpanded = 'bg-white/[0.08]'
   const compactLabel = 'text-[0.62rem] leading-tight font-semibold tracking-[0.01em]'
 
   const searchCardClass = usesCompactLayout
@@ -271,10 +274,10 @@ export function AgbonSidebarCategories({
               const indentClass = depth === 0 ? '' : depth === 1 ? 'md:pl-6' : 'md:pl-10'
 
               const buttonClassName = usesCompactLayout
-                ? `${compactItemBase} ${isSelected ? compactActive : isExpanded ? 'bg-white/[0.08]' : compactInactive}`
+                ? `${compactItemBase} ${isSelected ? compactActive : isExpanded ? compactExpanded : compactInactive}`
                 : `w-full transition border-b border-gray-800 last:border-b-0 ${
                     isSelected
-                      ? 'bg-[#000] text-white font-semibold border-l-4 border-l-[#ff8a2a]'
+                      ? 'bg-gradient-to-r from-[#050505] via-[#111111] to-[#2b2116] text-white font-semibold border-l-4 border-l-[#ff8a2a] ring-1 ring-inset ring-[#ff8a2a]/35 shadow-[0_0_0_1px_rgba(255,138,42,0.08)]'
                       : isExpanded
                         ? 'bg-gray-800/70 text-white hover:bg-gray-700'
                         : 'hover:bg-gray-900 text-white'
@@ -291,7 +294,6 @@ export function AgbonSidebarCategories({
                       setCategory(isSelected ? null : category.id)
                     }}
                     className={buttonClassName}
-                    style={usesCompactLayout && depth > 0 ? { paddingLeft: `${depth * 16 + 8}px` } : undefined}
                     title={name}
                   >
                     {usesCompactLayout && isSelected && (
@@ -324,6 +326,11 @@ export function AgbonSidebarCategories({
                     >
                       {name}
                     </span>
+                    {isSelected && !usesCompactLayout && (
+                      <span className="hidden rounded-full bg-[#ff8a2a] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-black md:inline-flex">
+                        Active
+                      </span>
+                    )}
                     {hasChildren && !isSelected && !usesCompactLayout && (
                       <span className="hidden rounded bg-gray-700/50 px-1.5 py-0.5 text-[10px] text-gray-300 md:inline">
                         {category.children?.length}

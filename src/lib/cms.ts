@@ -1019,6 +1019,7 @@ export type ProductCategoryRecord = {
   id: string;
   name: Record<string, string>;
   slug: string;
+  path: string[];
   description: Record<string, string> | null;
   imageUrl: string | null;
   icon: string | null;
@@ -1027,12 +1028,44 @@ export type ProductCategoryRecord = {
   children?: ProductCategoryRecord[];
 };
 
+function attachCategoryPaths(categories: Array<{
+  id: string;
+  name: Record<string, string>;
+  slug: string;
+  description: Record<string, string> | null;
+  imageUrl: string | null;
+  icon: string | null;
+  parentCategoryId: string | null;
+  order: number;
+}>): ProductCategoryRecord[] {
+  const byId = new Map(categories.map((category) => [category.id, category]));
+
+  const getPath = (category: { id: string; slug: string; parentCategoryId: string | null }): string[] => {
+    const path: string[] = [];
+    const seen = new Set<string>();
+    let current: typeof category | undefined = category;
+
+    while (current && !seen.has(current.id)) {
+      seen.add(current.id);
+      path.unshift(current.slug);
+      current = current.parentCategoryId ? byId.get(current.parentCategoryId) : undefined;
+    }
+
+    return path;
+  };
+
+  return categories.map((category) => ({
+    ...category,
+    path: getPath(category),
+  }));
+}
+
 export async function getProductCategories(): Promise<ProductCategoryRecord[]> {
   const rows = await prisma.productCategories.findMany({
     orderBy: { order: 'asc' },
     include: { image: { select: { url: true } } },
   });
-  return rows.map((r) => ({
+  return attachCategoryPaths(rows.map((r) => ({
     id: r.id,
     name: r.name as Record<string, string>,
     slug: r.slug,
@@ -1041,25 +1074,17 @@ export async function getProductCategories(): Promise<ProductCategoryRecord[]> {
     icon: r.icon ?? null,
     parentCategoryId: r.parentCategoryId ?? null,
     order: r.order,
-  }));
+  })));
 }
 
 export async function getProductCategoryBySlug(slug: string): Promise<ProductCategoryRecord | null> {
-  const row = await prisma.productCategories.findUnique({
-    where: { slug },
-    include: { image: { select: { url: true } } },
-  });
-  if (!row) return null;
-  return {
-    id: row.id,
-    name: row.name as Record<string, string>,
-    slug: row.slug,
-    description: row.description as Record<string, string> | null,
-    imageUrl: (row as any).image?.url ?? null,
-    icon: row.icon ?? null,
-    parentCategoryId: row.parentCategoryId ?? null,
-    order: row.order,
-  };
+  const categories = await getProductCategories();
+  return categories.find((category) => category.slug === slug) ?? null;
+}
+
+export async function getProductCategory(id: string): Promise<ProductCategoryRecord | null> {
+  const categories = await getProductCategories();
+  return categories.find((category) => category.id === id) ?? null;
 }
 
 // ============================================================================
@@ -1185,10 +1210,11 @@ function mapProductRow(r: any): ProductRecord {
     shortDescription: r.shortDescription as Record<string, string> | null,
     categoryId: r.categoryId ?? null,
     category: cat
-      ? {
+        ? {
           id: cat.id,
           name: cat.name as Record<string, string>,
           slug: cat.slug,
+          path: [cat.slug],
           description: cat.description as Record<string, string> | null,
           imageUrl: cat.image?.url ?? null,
           icon: cat.icon ?? null,

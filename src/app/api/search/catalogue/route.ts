@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/adapters/prisma-adapter'
 import { buildLocalizedPath, buildProductCategoryPath, buildProductPath } from '@/lib/agbon-routes'
+import { getProductCategories } from '@/lib/cms'
 
 type CatalogueSearchResult = {
   id: string
@@ -55,10 +56,7 @@ export async function GET(request: NextRequest) {
       orderBy: { order: 'asc' },
       take: 200,
     }),
-    prisma.productCategories.findMany({
-      orderBy: { order: 'asc' },
-      take: 100,
-    }),
+    getProductCategories(),
     prisma.countries.findMany({
       orderBy: { order: 'asc' },
       take: 100,
@@ -109,7 +107,7 @@ export async function GET(request: NextRequest) {
           title,
           subtitle: 'Category',
           description: description || undefined,
-          href: buildProductCategoryPath(locale, category.id),
+          href: buildProductCategoryPath(locale, category.path),
         },
       }
     })
