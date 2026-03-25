@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { ProductRecord, ProductCategoryRecord } from '@/lib/cms'
 import { AgbonProductCard } from './product-card'
 import { t as agbonT } from '@/lib/agbon-translations'
@@ -55,6 +55,19 @@ function findCategoryName(categories: ProductCategoryRecord[], categoryId: strin
   return getLocalized(category?.name, locale)
 }
 
+function getVisiblePages(page: number, totalPages: number): Array<number | 'ellipsis'> {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1)
+  }
+
+  if (page <= 4) return [1, 2, 3, 4, 5, 'ellipsis', totalPages]
+  if (page >= totalPages - 3) {
+    return [1, 'ellipsis', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages]
+  }
+
+  return [1, 'ellipsis', page - 1, page, page + 1, 'ellipsis', totalPages]
+}
+
 export function AgbonProductList({
   products,
   categories = [],
@@ -70,6 +83,7 @@ export function AgbonProductList({
 }: AgbonProductListProps) {
   const { selectedCategory, searchQuery, featuredOnly } = useAgbonProductNav()
   const [currentPage, setCurrentPage] = useState(1)
+  const listRef = useRef<HTMLDivElement>(null)
 
   // Reset pagination when filters change
   useEffect(() => {
@@ -107,6 +121,12 @@ export function AgbonProductList({
   const totalPages = Math.ceil(filtered.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
   const currentProducts = filtered.slice(startIndex, startIndex + itemsPerPage)
+  const visiblePages = getVisiblePages(currentPage, totalPages)
+
+  const goToPage = (page: number) => {
+    setCurrentPage(page)
+    listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 
   // Category name for header
   const categoryName = selectedCategory
@@ -116,7 +136,7 @@ export function AgbonProductList({
       : agbonT('common.allProducts', locale)
 
   return (
-    <div className="space-y-6">
+    <div ref={listRef} className="space-y-6">
       {/* Featured / Hot Selling */}
       {showFeatured && featuredProducts.length > 0 && (
         <div className="mb-8">
@@ -160,33 +180,40 @@ export function AgbonProductList({
 
       {/* Pagination */}
       {showPagination && totalPages > 1 && (
-        <div className="flex justify-center gap-2 mt-8">
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
           <button
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            onClick={() => goToPage(Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}
-            className="px-4 py-2 text-sm rounded border border-gray-300 hover:border-[#FF6B35] disabled:opacity-50 disabled:cursor-not-allowed transition"
+            className="min-w-24 rounded-xl border border-[#d0d5dd] bg-white px-4 py-2 text-sm font-medium text-[#344054] transition hover:border-[#FF6B35] hover:text-[#FF6B35] disabled:cursor-not-allowed disabled:border-[#eaecf0] disabled:text-[#98a2b3]"
           >
             {agbonT('home.previous', locale)}
           </button>
 
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-            <button
-              key={page}
-              onClick={() => setCurrentPage(page)}
-              className={`px-4 py-2 text-sm rounded border transition ${
-                currentPage === page
-                  ? 'bg-[#FF6B35] text-white border-[#FF6B35]'
-                  : 'border-gray-300 hover:border-[#FF6B35]'
-              }`}
-            >
-              {page}
-            </button>
-          ))}
+          {visiblePages.map((page, index) =>
+            page === 'ellipsis' ? (
+              <span key={`ellipsis-${index}`} className="px-2 text-sm font-medium text-[#98a2b3]">
+                ...
+              </span>
+            ) : (
+              <button
+                key={page}
+                onClick={() => goToPage(page)}
+                aria-current={currentPage === page ? 'page' : undefined}
+                className={`min-w-12 rounded-xl border px-4 py-2 text-sm font-semibold transition ${
+                  currentPage === page
+                    ? 'border-[#FF6B35] bg-[#FF6B35] text-white shadow-[0_8px_20px_rgba(255,107,53,0.18)]'
+                    : 'border-[#d0d5dd] bg-white text-[#344054] hover:border-[#FF6B35] hover:text-[#FF6B35]'
+                }`}
+              >
+                {page}
+              </button>
+            )
+          )}
 
           <button
-            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            onClick={() => goToPage(Math.min(totalPages, currentPage + 1))}
             disabled={currentPage === totalPages}
-            className="px-4 py-2 text-sm rounded border border-gray-300 hover:border-[#FF6B35] disabled:opacity-50 disabled:cursor-not-allowed transition"
+            className="min-w-24 rounded-xl border border-[#d0d5dd] bg-white px-4 py-2 text-sm font-medium text-[#344054] transition hover:border-[#FF6B35] hover:text-[#FF6B35] disabled:cursor-not-allowed disabled:border-[#eaecf0] disabled:text-[#98a2b3]"
           >
             {agbonT('home.next', locale)}
           </button>
