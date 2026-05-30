@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+vendor/
+.venv/
+
+# Build outputs
+dist/
+build/
+.next/
+__pycache__/
+
+# Large data files
+*.csv
+*.sql
+*.db
+
+# Sensitive files
+.env
+.env.*
+*.pem
+*.key
+secrets/
